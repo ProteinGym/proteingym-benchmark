@@ -4,6 +4,17 @@
 
 ## Getting started
 
+1. Build the image:
+
 ```
-pg2-benchmark train model --toml-file config/pls.tom
+git clone -b test/pg2-benchmark https://github.com/ProteinGym2/pg2-model-pls.git
+
+cd pg2-model-pls
+docker build -t pls-model .
+```
+
+2. Run the benchmark:
+
+```
+uv run pg2-benchmark train model --toml-file config/pls.toml
 ```

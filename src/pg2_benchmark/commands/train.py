@@ -19,10 +19,15 @@ def train(
     logger.info(f"loaded dataset: {df[:3]}")
     logger.info(f"loaded params: {ds.settings.assays['assay_one'].constants}")
 
-    git.clone()
-    docker.build()
+    # git.clone()
+    # docker.build()
 
-    docker.run(image="pls-model", volumes=[("data", "/data")], command=["--input-file", "data/A0A140D2T1_ZIKV_Sourisseau_2019.parquet", "--output-file", "data/output.json"])
+    docker.run(
+        image="pls-model", 
+        volumes=[("data", "/data")], 
+        remove=True,
+        command=["--input-file", "data/A0A140D2T1_ZIKV_Sourisseau_2019.parquet", "--output-file", "data/output.json"],
+    )
 
 if __name__ == "__main__":
     app()
