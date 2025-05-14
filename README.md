@@ -18,3 +18,7 @@ docker build -t pls-model .
 ```
 uv run pg2-benchmark train model --toml-file config/pls.toml
 ```
+
+## Todo
+
+- [ ] add docker health check for the container
