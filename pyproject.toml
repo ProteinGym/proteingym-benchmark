@@ -1,0 +1,17 @@
+[project]
+name = "pg2-benchmark"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "tintinrevient", email = "zhaobenben007@googlemail.com" }
+]
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+pg2-benchmark = "pg2_benchmark:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
