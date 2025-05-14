@@ -7,11 +7,19 @@ authors = [
     { name = "tintinrevient", email = "zhaobenben007@googlemail.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "typer==0.15.3",
+    "click==8.1.8",
+    "loguru>=0.7.3",
+    "pg2-dataset",
+]
 
 [project.scripts]
-pg2-benchmark = "pg2_benchmark:main"
+pg2-benchmark = "pg2_benchmark.cli:app"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.uv.sources]
+pg2-dataset = { git = "https://github.com/ProteinGym2/pg2-dataset.git", branch = "main" }
