@@ -1907,6 +1907,7 @@ dependencies = [
     { name = "click" },
     { name = "loguru" },
     { name = "pg2-dataset" },
+    { name = "python-on-whales" },
     { name = "typer" },
 ]
 
@@ -1915,6 +1916,7 @@ requires-dist = [
     { name = "click", specifier = "==8.1.8" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "pg2-dataset", git = "https://github.com/ProteinGym2/pg2-dataset.git?branch=main" },
+    { name = "python-on-whales", specifier = ">=0.76.1" },
     { name = "typer", specifier = "==0.15.3" },
 ]
 
@@ -2375,6 +2377,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/88/2c/7bb1416c5620485aa793f2de31d3df393d3686aa8a8506d11e10e13c5baf/python_dotenv-1.1.0.tar.gz", hash = "sha256:41f90bc6f5f177fb41f53e87666db362025010eb28f60a01c9143bfa33a2b2d5", size = 39920, upload_time = "2025-03-25T10:14:56.835Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1e/18/98a99ad95133c6a6e2005fe89faedf294a748bd5dc803008059409ac9b1e/python_dotenv-1.1.0-py3-none-any.whl", hash = "sha256:d7c01d9e2293916c18baf562d95698754b0dbbb5e74d457c45d4f6561fb9d55d", size = 20256, upload_time = "2025-03-25T10:14:55.034Z" },
+]
+
+[[package]]
+name = "python-on-whales"
+version = "0.76.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/74/e2/134c6d34206ef1fd30ebd45bda22f13cd9db20447e9773e24d454542a00c/python_on_whales-0.76.1.tar.gz", hash = "sha256:6ac4ea947a0466402a857a31ce3340b50be8a6f1f7e6075f74fbef410b4914cd", size = 111288, upload_time = "2025-03-27T11:16:07.364Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8c/01/0a2c4c5bdc50d4fd5813243b34580a81c90f6ad4df1fa095850629063134/python_on_whales-0.76.1-py3-none-any.whl", hash = "sha256:7a930ae25e9f07fd2bd3fb2f22c714a62105f7464f985ab342eeebc71c02c22c", size = 115366, upload_time = "2025-03-27T11:16:05.881Z" },
 ]
 
 [[package]]
