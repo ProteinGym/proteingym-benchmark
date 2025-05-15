@@ -11,22 +11,20 @@ app = typer.Typer(help="Training commands")
 
 @app.command("model")
 def train(
-    toml_file: str = typer.Option("--toml-file", help="Configuration TOML file"),
-    git_repo: str = typer.Option("--git-repo", help="Git repository URI"),
-    git_branch: str = typer.Option("--git-branch", help="Git branch name"),
+    dataset_toml_file: str = typer.Option(help="Configuration dataset TOML file"),
+    assay_name: str = typer.Option(help="Assay name defined in TOML file"),
+    git_repo: str = typer.Option(help="Git repository URI"),
+    git_branch: str = typer.Option(help="Git branch name"),
 ):  
     # 1. Load the dataset
     ds = RecordsDataset(
-        toml_file=toml_file,
+        toml_file=dataset_toml_file,
         include_records=True,
     )
     
     # 2. Load the parameters
-    logger.info(f"Loaded params: {ds.settings}")
-
-    target_col_name = ds.settings.assays['assay_one'].constants["target_col_name"]
-    sequence_length = ds.settings.assays['assay_one'].constants["sequence_length"]
-    n_components = ds.settings.assays['assay_one'].constants["n_components"]
+    params = list(ds.settings.assays[assay_name].constants.values())
+    logger.info(f"Loaded params: {params}")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         # 3. Clone the git repository
@@ -37,7 +35,7 @@ def train(
         logger.info("Building Docker image...")
         docker.build(
             context_path="./",
-            tags=["pls-model:latest"],
+            tags=["test-model:latest"],
             load=True,
         )
 
@@ -54,17 +52,14 @@ def train(
         # 6. Run the Docker container
         logger.info("Running Docker container...")
         docker.run(
-            image="pls-model:latest",
+            image="test-model:latest",
             volumes=[(f"{temp_dir}/data", "/data")], 
             remove=True,
             command=[
                 "--train-file-path", "/data/train.csv",
                 "--test-file-path", "/data/test.csv",
                 "--predict-file-path", "/data/predict.csv",
-                "--sequence-length", sequence_length,
-                "--sequence-col-name", "sequence",
-                "--target-col-name", target_col_name,
-                "--n-components", n_components,
+                *params,
             ],
         )
 
@@ -74,7 +69,7 @@ def train(
         # Calculate metrics here
 
         # 7. Clean up
-        docker.image.remove("pls-model:latest", force=False, prune=True)
+        docker.image.remove("test-model:latest", force=False, prune=True)
 
 if __name__ == "__main__":
     app()

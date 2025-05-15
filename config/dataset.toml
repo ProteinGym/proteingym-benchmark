@@ -13,7 +13,9 @@ name = "PLS regression"
 features = ["mutated_sequence"]
 target = "DMS_score"
 
+# TODO: this might be migrated to model.toml into model paramters
 [assays.assay_one.constants]
-target_col_name = "DMS_score"
 sequence_length = 161
+sequence_col_name = "sequence"
+target_col_name = "DMS_score"
 n_components = 2

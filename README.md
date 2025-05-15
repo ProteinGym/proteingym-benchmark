@@ -6,7 +6,8 @@
 
 ```
 uv run pg2-benchmark train model \
-    --toml-file config/pls.toml \
+    --dataset-toml-file config/dataset.toml \
+    --assay-name "assay_one" \
     --git-repo "https://github.com/ProteinGym2/pg2-model-pls.git" \
     --git-branch "test/pg2-benchmark"
 ```
