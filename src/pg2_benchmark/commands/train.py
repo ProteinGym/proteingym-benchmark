@@ -71,6 +71,8 @@ def train(
         result_df = pd.read_csv(f"{temp_dir}/data/predict.csv", encoding="utf-8")
         logger.info(f"Result is: {result_df}")
 
+        # Calculate metrics here
+
         # 7. Clean up
         docker.image.remove("pls-model:latest", force=False, prune=True)
 
