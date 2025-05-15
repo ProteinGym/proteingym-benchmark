@@ -5,7 +5,10 @@
 ## Getting started
 
 ```
-uv run pg2-benchmark train model --toml-file config/pls.toml
+uv run pg2-benchmark train model \
+    --toml-file config/pls.toml \
+    --git-repo "https://github.com/ProteinGym2/pg2-model-pls.git" \
+    --git-branch "test/pg2-benchmark"
 ```
 
 ## Todo

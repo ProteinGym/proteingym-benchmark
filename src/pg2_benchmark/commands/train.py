@@ -2,6 +2,7 @@ import os
 import typer
 from loguru import logger
 import tempfile
+import pandas as pd
 from pg2_dataset.backends.records import RecordsDataset
 from pg2_benchmark.models.git_utils import git_clone
 from python_on_whales import docker
@@ -11,8 +12,9 @@ app = typer.Typer(help="Training commands")
 @app.command("model")
 def train(
     toml_file: str = typer.Option("--toml-file", help="Configuration TOML file"),
+    git_repo: str = typer.Option("--git-repo", help="Git repository URI"),
+    git_branch: str = typer.Option("--git-branch", help="Git branch name"),
 ):  
-    
     # 1. Load the dataset
     ds = RecordsDataset(
         toml_file=toml_file,
@@ -22,10 +24,7 @@ def train(
     # 2. Load the parameters
     logger.info(f"Loaded params: {ds.settings}")
 
-    git_repo = ds.settings.assays['assay_one'].constants["git_repo"]
-    git_branch = ds.settings.assays['assay_one'].constants["git_branch"]
-
-    label_col_name = ds.settings.assays['assay_one'].target
+    target_col_name = ds.settings.assays['assay_one'].constants["target_col_name"]
     sequence_length = ds.settings.assays['assay_one'].constants["sequence_length"]
     n_components = ds.settings.assays['assay_one'].constants["n_components"]
 
@@ -49,6 +48,7 @@ def train(
 
         ds.data_frame()[:7].to_csv(f"{temp_dir}/data/train.csv", index=False)
         ds.data_frame()[7:10].to_csv(f"{temp_dir}/data/test.csv", index=False)
+
         logger.info(f"Loaded data frame: {ds.data_frame()[:10]}")
 
         # 6. Run the Docker container
@@ -60,12 +60,19 @@ def train(
             command=[
                 "--train-file-path", "/data/train.csv",
                 "--test-file-path", "/data/test.csv",
+                "--predict-file-path", "/data/predict.csv",
                 "--sequence-length", sequence_length,
                 "--sequence-col-name", "sequence",
-                "--label-col-name", label_col_name,
+                "--target-col-name", target_col_name,
                 "--n-components", n_components,
             ],
         )
+
+        result_df = pd.read_csv(f"{temp_dir}/data/predict.csv", encoding="utf-8")
+        logger.info(f"Result is: {result_df}")
+
+        # 7. Clean up
+        docker.image.remove("pls-model:latest", force=False, prune=True)
 
 if __name__ == "__main__":
     app()

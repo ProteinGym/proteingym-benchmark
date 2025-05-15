@@ -14,8 +14,6 @@ features = ["mutated_sequence"]
 target = "DMS_score"
 
 [assays.assay_one.constants]
-git_repo = "https://github.com/ProteinGym2/pg2-model-pls.git"
-git_branch = "test/pg2-benchmark"
-
+target_col_name = "DMS_score"
 sequence_length = 161
 n_components = 2

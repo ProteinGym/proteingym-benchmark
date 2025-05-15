@@ -25,3 +25,6 @@ build-backend = "hatchling.build"
 
 [tool.uv.sources]
 pg2-dataset = { git = "https://github.com/ProteinGym2/pg2-dataset.git", branch = "main" }
+
+[tool.ruff]
+line-length = 88
