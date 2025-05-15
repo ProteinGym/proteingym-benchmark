@@ -1905,6 +1905,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
+    { name = "gitpython" },
     { name = "loguru" },
     { name = "pg2-dataset" },
     { name = "python-on-whales" },
@@ -1914,6 +1915,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = "==8.1.8" },
+    { name = "gitpython", specifier = ">=3.1.44" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "pg2-dataset", git = "https://github.com/ProteinGym2/pg2-dataset.git?branch=main" },
     { name = "python-on-whales", specifier = ">=0.76.1" },
