@@ -11,3 +11,6 @@ wheels/
 
 # MasOS
 .DS_Store
+
+# Secret
+ git-auth.txt

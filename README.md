@@ -1,15 +1,13 @@
 # ProteinGym2 Benchmark
 
-<img width="972" alt="image" src="https://github.com/user-attachments/assets/68328a2b-82c9-44b8-ab1b-ff9d97bc8bbc" />
-
 ## Getting started
 
 ```
-uv run pg2-benchmark train model \
-    --dataset-toml-file config/dataset.toml \
-    --assay-name "assay_one" \
+uv run pg2-benchmark supervise \
+    --dataset-toml-file /data/dataset.toml \
+    --model-toml-file /data/model.toml \
     --git-repo "https://github.com/ProteinGym2/pg2-model-pls.git" \
-    --git-branch "test/pg2-benchmark"
+    --git-branch "main"
 ```
 
 ## Todo
