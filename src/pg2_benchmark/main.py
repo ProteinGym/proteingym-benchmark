@@ -4,7 +4,10 @@ import shutil
 from typing import Any
 import tempfile
 from pg2_benchmark.utils.git_utils import git_clone
+from pg2_benchmark.io.data import load_data
 from python_on_whales import docker
+from pycm import ConfusionMatrix
+import pandas as pd
 
 
 app = typer.Typer(
@@ -23,7 +26,8 @@ def supervise(
     curr_dir = os.getcwd()
     
     with tempfile.TemporaryDirectory() as temp_dir:
-        
+
+        typer.echo(f"Git clone the repo: {git_repo}")
         git_clone(repo_url=git_repo, target_dir=temp_dir, branch_name=git_branch)
         os.chdir(temp_dir)
 
@@ -52,6 +56,16 @@ def supervise(
         )
 
         docker.image.remove("test-model:latest", force=False, prune=True)
+
+        typer.echo("Calculationg metrics...")
+        test_Y = load_data(f"{curr_dir}/data/test.json")
+        pred_y = load_data(f"{curr_dir}/data/pred.json")
+
+        cm = ConfusionMatrix(actual_vector=test_Y, predict_vector=pred_y)
+
+        df = pd.DataFrame(list(cm.overall_stat.items()), columns=["Metric", "Value"])
+        df.to_csv(f"{curr_dir}/data/metrics.csv", index=False)
+        typer.echo(f"Metrics saved to {curr_dir}/data/metrics.csv.")
 
 
 @app.command()
