@@ -1,0 +1,70 @@
+Metric,Value
+Overall ACC,0.0
+Overall RACCU,0.0028487947406866327
+Overall RACC,0.0
+Kappa,0.0
+Gwet AC1,-0.0027853163979458507
+Bennett S,-0.002785515320334262
+Kappa Standard Error,0.0
+Kappa Unbiased,-0.0028569335579811004
+Scott PI,-0.0028569335579811004
+Kappa No Prevalence,-1.0
+Kappa 95% CI,"(0.0, 0.0)"
+Standard Error,0.0
+95% CI,"(0.0, 0.0)"
+Chi-Squared,None
+Phi-Squared,None
+Cramer V,None
+Response Entropy,7.477327406462247
+Reference Entropy,7.477327406462247
+Cross Entropy,0
+Joint Entropy,7.5313814605163
+Conditional Entropy,0.05405405405405406
+Mutual Information,7.423273352408192
+KL Divergence,None
+Lambda B,0.9726775956284153
+Lambda A,0.9726775956284153
+Chi-Squared DF,128881
+Overall J,"(0.0, 0.0)"
+Hamming Loss,1.0
+Zero-one Loss,185
+NIR,0.010810810810810811
+P-Value,1
+Overall CEN,0.005697192813259667
+Overall MCEN,0.005697192813259667
+Overall MCC,0.0
+RR,0.5138888888888888
+CBA,0.0
+AUNU,None
+AUNP,None
+RCI,0.9927709392519929
+Pearson C,None
+TPR Micro,0.0
+TPR Macro,None
+CSI,None
+ARI,-0.00029385836027034966
+TNR Micro,0.9972144846796658
+TNR Macro,0.9972222222222222
+Bangdiwala B,None
+Krippendorff Alpha,-0.00014650941322979995
+SOA1(Landis & Koch),Slight
+SOA2(Fleiss),Poor
+SOA3(Altman),Poor
+SOA4(Cicchetti),Poor
+SOA5(Cramer),None
+SOA6(Matthews),Negligible
+SOA7(Lambda A),Very Strong
+SOA8(Lambda B),Very Strong
+SOA9(Krippendorff Alpha),Low
+SOA10(Pearson C),None
+FPR Macro,0.002777777777777768
+FNR Macro,None
+PPV Macro,None
+NPV Macro,0.9972222222222222
+ACC Macro,0.9944444444444445
+F1 Macro,0.0
+FPR Micro,0.0027855153203342198
+FNR Micro,1.0
+PPV Micro,0.0
+F1 Micro,0.0
+NPV Micro,0.9972144846796658
