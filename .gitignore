@@ -1,10 +1,12 @@
 # Python-generated files
 __pycache__/
+.pytest_cache/
 *.py[oc]
 build/
 dist/
 wheels/
 *.egg-info
+.ruff_cache/
 
 # Virtual environments
 .venv
@@ -12,5 +14,5 @@ wheels/
 # MasOS
 .DS_Store
 
-# Secret
+# Git
 git-auth.txt
