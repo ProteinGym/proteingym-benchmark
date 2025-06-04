@@ -1,8 +1,8 @@
 # ProteinGym2 Benchmark
 
-## Getting started
+## Benchmarking
 
-1. Run the benchmarking script:
+You can run a benchmarking script for a supervised model:
 ```
 uv run pg2-benchmark predict \
     --dataset-toml-file /data/dataset.toml \
@@ -11,7 +11,18 @@ uv run pg2-benchmark predict \
     --git-branch "main"
 ```
 
-2. Display the metrics:
+You can also run a benchmarking script for a zero-shot model:
+```
+uv run pg2-benchmark predict \
+    --dataset-toml-file /data/dataset.toml \
+    --model-toml-file /data/model.toml \
+    --git-repo "https://github.com/ProteinGym2/pg2-model-esm.git" \
+    --git-branch "main"
+```
+
+## Metrics
+
+Display the metrics:
 ```
 uv run streamlit run app.py
 ```
