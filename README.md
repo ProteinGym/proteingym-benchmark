@@ -5,6 +5,7 @@
 You can run a benchmarking script for a supervised model:
 ```
 uv run pg2-benchmark predict \
+    --toml-folder data/supervise \
     --dataset-toml-file /data/dataset.toml \
     --model-toml-file /data/model.toml \
     --git-repo "https://github.com/ProteinGym2/pg2-model-pls.git" \
@@ -14,6 +15,7 @@ uv run pg2-benchmark predict \
 You can also run a benchmarking script for a zero-shot model:
 ```
 uv run pg2-benchmark predict \
+    --toml-folder data/zero_shot \
     --dataset-toml-file /data/dataset.toml \
     --model-toml-file /data/model.toml \
     --git-repo "https://github.com/ProteinGym2/pg2-model-esm.git" \

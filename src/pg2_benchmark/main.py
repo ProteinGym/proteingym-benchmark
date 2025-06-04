@@ -17,6 +17,7 @@ app = typer.Typer(
 
 @app.command()
 def predict(
+    toml_folder: str = typer.Option(help="Path to the folder containing TOML files"),
     dataset_toml_file: str = typer.Option(help="Path to the dataset TOML file"),
     model_toml_file: str = typer.Option(help="Path to the model TOML file"),
     git_repo: str = typer.Option(help="Git repository URI"),
@@ -46,7 +47,7 @@ def predict(
         typer.echo("Running the Docker container...")
         docker.run(
             image="test-model:latest",
-            volumes=[(f"{curr_dir}/data", "/data")], 
+            volumes=[(f"{curr_dir}/{toml_folder}", "/data")], 
             remove=True,
             command=[
                 "predict",
@@ -58,13 +59,13 @@ def predict(
         docker.image.remove("test-model:latest", force=False, prune=True)
 
         typer.echo("Calculationg metrics...")
-        df = pd.read_csv(f"{curr_dir}/data/output.csv")
+        df = pd.read_csv(f"{curr_dir}/{toml_folder}/output.csv")
 
         cm = ConfusionMatrix(actual_vector=df["test"].tolist(), predict_vector=df["pred"].tolist())
 
         df = pd.DataFrame(list(cm.overall_stat.items()), columns=["Metric", "Value"])
-        df.to_csv(f"{curr_dir}/data/metrics.csv", index=False)
-        typer.echo(f"Metrics saved to {curr_dir}/data/metrics.csv.")
+        df.to_csv(f"{curr_dir}/{toml_folder}/metrics.csv", index=False)
+        typer.echo(f"Metrics saved to {curr_dir}/{toml_folder}/metrics.csv.")
 
 
 @app.command()
