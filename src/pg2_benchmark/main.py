@@ -16,7 +16,7 @@ app = typer.Typer(
 )
 
 @app.command()
-def supervise(
+def predict(
     dataset_toml_file: str = typer.Option(help="Path to the dataset TOML file"),
     model_toml_file: str = typer.Option(help="Path to the model TOML file"),
     git_repo: str = typer.Option(help="Git repository URI"),
@@ -49,7 +49,7 @@ def supervise(
             volumes=[(f"{curr_dir}/data", "/data")], 
             remove=True,
             command=[
-                "supervise",
+                "predict",
                 "--dataset-toml-file", dataset_toml_file,
                 "--model-toml-file", model_toml_file,
             ],

@@ -4,7 +4,7 @@
 
 1. Run the benchmarking script:
 ```
-uv run pg2-benchmark supervise \
+uv run pg2-benchmark predict \
     --dataset-toml-file /data/dataset.toml \
     --model-toml-file /data/model.toml \
     --git-repo "https://github.com/ProteinGym2/pg2-model-pls.git" \
