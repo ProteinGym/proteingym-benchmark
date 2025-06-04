@@ -1,0 +1,6 @@
+name = "PG2 model"
+location = "esm1v_t33_650M_UR90S_1"
+scoring_strategy = "wt-marginals"
+
+[hyper_params]
+offset_idx = 24
