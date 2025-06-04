@@ -35,7 +35,7 @@ def predict(
 
         typer.echo("Building the Docker image...")
         docker.build(
-            context_path="./",
+            context_path=".",
             tags=["test-model:latest"],
             secrets="id=git_auth,src=git-auth.txt",
             load=True,
@@ -58,10 +58,9 @@ def predict(
         docker.image.remove("test-model:latest", force=False, prune=True)
 
         typer.echo("Calculationg metrics...")
-        test_Y = load_data(f"{curr_dir}/data/test.json")
-        pred_y = load_data(f"{curr_dir}/data/pred.json")
+        df = pd.read_csv(f"{curr_dir}/data/output.csv")
 
-        cm = ConfusionMatrix(actual_vector=test_Y, predict_vector=pred_y)
+        cm = ConfusionMatrix(actual_vector=df["test"].tolist(), predict_vector=df["pred"].tolist())
 
         df = pd.DataFrame(list(cm.overall_stat.items()), columns=["Metric", "Value"])
         df.to_csv(f"{curr_dir}/data/metrics.csv", index=False)
