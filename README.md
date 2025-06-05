@@ -2,6 +2,12 @@
 
 ## Benchmarking
 
+Before you start, you need to create a `git-auth.txt` file in the root path with the following content:
+
+```
+https://username:token@github.com
+```
+
 You can run a benchmarking script for a supervised model:
 ```
 uv run pg2-benchmark predict \
