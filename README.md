@@ -21,4 +21,4 @@ uv run dvc repro zero_shot_predict zero_shot_metric
 ```
 
 > [!NOTE]
-> You can add your data and model for each group, either supervised or zero-shot in [params.yaml](params.yaml)
+> You can add your data and model for each group, either supervised or zero-shot, in [params.yaml](params.yaml)
