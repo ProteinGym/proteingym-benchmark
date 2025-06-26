@@ -1,12 +1,14 @@
 # ProteinGym2 Benchmark
 
-## Benchmarking
+## Getting started
 
 Before you start, you need to create a `git-auth.txt` file in the root path with the following content:
 
 ```
 https://username:token@github.com
 ```
+
+## Benchmark
 
 You can benchmark for a group of supervised models:
 ```
