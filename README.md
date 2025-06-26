@@ -17,7 +17,7 @@ uv run dvc repro supervise_predict supervise_metric
 
 You can benchmark for a group of zero-shot models:
 ```
-uv run dvc repro supervise_predict supervise_metric
+uv run dvc repro zero_shot_predict zero_shot_metric
 ```
 
 > [!NOTE]
