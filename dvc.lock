@@ -1,0 +1,154 @@
+schema: '2.0'
+stages:
+  predict:
+    cmd: uv run pg2-benchmark model predict --dataset-manifest data/supervise/dataset.toml
+      --model-manifest data/supervise/model.toml
+    deps:
+    - path: data/supervise/dataset.toml
+      hash: md5
+      md5: 5f09c70955cd4a42d1d4543ef3f45e10
+      size: 407
+    - path: data/supervise/model.toml
+      hash: md5
+      md5: e332e14d3323147c55b6623e18bd292d
+      size: 300
+    - path: src/pg2_benchmark/cli/model.py
+      hash: md5
+      md5: aa03d4963c9981637ade5e91f5ee2440
+      size: 1913
+    outs:
+    - path: data/supervise/output.csv
+      hash: md5
+      md5: 1b5fa3adc0211caf6fcb4624adb6b588
+      size: 34931
+  metric:
+    cmd: uv run pg2-benchmark metric calculate --output-path data/supervise/output.csv
+      --metric-path data/supervise/metric.csv
+    deps:
+    - path: data/supervise/output.csv
+      hash: md5
+      md5: 1b5fa3adc0211caf6fcb4624adb6b588
+      size: 34931
+    - path: src/pg2_benchmark/cli/metric.py
+      hash: md5
+      md5: 017eb564f8442d911e4abe257f74f2f8
+      size: 779
+    outs:
+    - path: data/supervise/metric.csv
+      hash: md5
+      md5: 891bbf118ef76a867740e70dcc94cb6c
+      size: 1624
+  predict@dataset0-model0:
+    cmd: uv run pg2-benchmark model predict --dataset-manifest data/supervise/dataset/d1.toml
+      --model-manifest data/supervise/model/m1.toml
+    deps:
+    - path: data/supervise/dataset/d1.toml
+      hash: md5
+      md5: 5f09c70955cd4a42d1d4543ef3f45e10
+      size: 407
+    - path: data/supervise/model/m1.toml
+      hash: md5
+      md5: e332e14d3323147c55b6623e18bd292d
+      size: 300
+    - path: src/pg2_benchmark/cli/model.py
+      hash: md5
+      md5: 616cbf192285bf9a92ca54a443f03908
+      size: 1952
+    outs:
+    - path: data/supervise/output/d1_m1.csv
+      hash: md5
+      md5: c2efe589e3a1402ba3a39c088d260001
+      size: 35064
+  metric@dataset0-model0:
+    cmd: uv run pg2-benchmark metric calculate --output-path data/supervise/output/d1_m1.csv
+      --metric-path data/supervise/metric/d1_m1.csv
+    deps:
+    - path: data/supervise/output/d1_m1.csv
+      hash: md5
+      md5: c2efe589e3a1402ba3a39c088d260001
+      size: 35064
+    - path: src/pg2_benchmark/cli/metric.py
+      hash: md5
+      md5: 017eb564f8442d911e4abe257f74f2f8
+      size: 779
+    outs:
+    - path: data/supervise/metric/d1_m1.csv
+      hash: md5
+      md5: d68fd57939cae32951f7766afd595323
+      size: 1620
+  supervise_predict@dataset0-model0:
+    cmd: uv run pg2-benchmark model predict --dataset-manifest data/supervise/data/d1.toml
+      --model-manifest data/supervise/model/m1.toml
+    deps:
+    - path: data/supervise/data/d1.toml
+      hash: md5
+      md5: 5f09c70955cd4a42d1d4543ef3f45e10
+      size: 407
+    - path: data/supervise/model/m1.toml
+      hash: md5
+      md5: e332e14d3323147c55b6623e18bd292d
+      size: 300
+    - path: src/pg2_benchmark/cli/model.py
+      hash: md5
+      md5: 616cbf192285bf9a92ca54a443f03908
+      size: 1952
+    outs:
+    - path: data/supervise/output/d1_m1.csv
+      hash: md5
+      md5: baa2fd83d99c7be466cf278967cd34e9
+      size: 35013
+  supervise_metric@dataset0-model0:
+    cmd: uv run pg2-benchmark metric calc --output-path data/supervise/output/d1_m1.csv
+      --metric-path data/supervise/metric/d1_m1.csv
+    deps:
+    - path: data/supervise/output/d1_m1.csv
+      hash: md5
+      md5: baa2fd83d99c7be466cf278967cd34e9
+      size: 35013
+    - path: src/pg2_benchmark/cli/metric.py
+      hash: md5
+      md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
+      size: 774
+    outs:
+    - path: data/supervise/metric/d1_m1.csv
+      hash: md5
+      md5: de5f3ecd7fca65785634fc3f85042986
+      size: 1618
+  zero_shot_predict@dataset0-model0:
+    cmd: uv run pg2-benchmark model predict --dataset-manifest data/zero_shot/data/d1.toml
+      --model-manifest data/zero_shot/model/m1.toml
+    deps:
+    - path: data/zero_shot/data/d1.toml
+      hash: md5
+      md5: f0a8d4c60f0ad9edeb91b9750ffb7cba
+      size: 1020
+    - path: data/zero_shot/model/m1.toml
+      hash: md5
+      md5: a5f0c7bc2e85edeeb7db44f7e52e9004
+      size: 204
+    - path: src/pg2_benchmark/cli/model.py
+      hash: md5
+      md5: 616cbf192285bf9a92ca54a443f03908
+      size: 1952
+    outs:
+    - path: data/zero_shot/output/d1_m1.csv
+      hash: md5
+      md5: 1fe1b85a84da44e3c0fa1ff7daac0385
+      size: 196319
+  zero_shot_metric@dataset0-model0:
+    cmd: uv run pg2-benchmark metric calc --output-path data/zero_shot/output/d1_m1.csv
+      --metric-path data/zero_shot/metric/d1_m1.csv
+    deps:
+    - path: data/zero_shot/output/d1_m1.csv
+      hash: md5
+      md5: 1fe1b85a84da44e3c0fa1ff7daac0385
+      size: 196319
+    - path: src/pg2_benchmark/cli/metric.py
+      hash: md5
+      md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
+      size: 774
+    outs:
+    - path: data/zero_shot/metric/d1_m1.csv
+      hash: md5
+      md5: 4969ac651d461ac62496caf718afadfa
+      size: 1588

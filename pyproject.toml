@@ -9,12 +9,12 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "typer>=0.15.2",
-    "loguru>=0.7.3",
     "pg2-dataset",
     "python-on-whales>=0.76.1",
     "gitpython>=3.1.44",
     "pycm>=4.3",
-    "streamlit>=1.45.1",
+    "scipy>=1.15.3",
+    "dvc>=3.59.2",
 ]
 
 [project.scripts]
@@ -29,3 +29,7 @@ pg2-dataset = { git = "https://github.com/ProteinGym2/pg2-dataset.git", branch =
 
 [tool.ruff]
 line-length = 88
+
+[tool.click]
+logging_level = "INFO"
+logging_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

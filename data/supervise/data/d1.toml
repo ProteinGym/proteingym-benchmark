@@ -5,7 +5,7 @@ source = "DOI: 10.1000/xyz123"
 xref = ""
 
 [assays_meta]
-file_path = "https://github.com/ProteinGym2/dvc-dataset-registry/protein_gym/A0A1I9GEU1_NEIME_Kennouche_2019.csv"
+file_path = "dvc_pg2/A0A1I9GEU1_NEIME_Kennouche_2019.csv"
 columns = ["mutated_sequence", "mutant", "DMS_score", "DMS_score_bin"]
 sequence_feature = "mutated_sequence"
 split_strategy = "RandomSplitStrategy"
