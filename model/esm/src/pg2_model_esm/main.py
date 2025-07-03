@@ -3,7 +3,7 @@ import typer
 from pg2_dataset.dataset import Manifest
 from tqdm import tqdm
 from esm import pretrained
-from model.esm.src.pg2_model_esm.utils import compute_pppl, label_row
+from pg2_model_esm.utils import compute_pppl, label_row
 from pg2_model_esm.manifest import Manifest as ModelManifest
 
 
