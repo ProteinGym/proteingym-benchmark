@@ -24,10 +24,10 @@ def predict(
     manifest = Manifest.from_path(dataset_toml_file)
     dataset_name = manifest.name
     dataset = manifest.ingest()
-    
+
     assays = dataset.assays.meta.assays
     targets = list(dataset.assays.meta.assays.keys())
-    
+
     sequence = assays[targets[0]].constants["sequence"]
     mutation_col = assays[targets[0]].constants["mutation_col"]
 
