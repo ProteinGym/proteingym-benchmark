@@ -23,8 +23,7 @@ jobs:
       
       - name: Setup Git credentials and clone private repo
         run: |
-          git config --global credential.helper store
-          echo "https://${{ secrets.GH_USERNAME }}:${{ secrets.GH_PAT }}@github.com" > ~/.git-credentials
+          git config --global url."https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/".insteadOf "https://github.com/"
       - name: Install the project
         run: uv sync --locked --all-extras --dev
       - name: Ruff check
@@ -46,8 +45,7 @@ jobs:
           python-version-file: ".python-version"
       - name: Setup Git credentials and clone private repo
         run: |
-          git config --global credential.helper store
-          echo "https://${{ secrets.GH_USERNAME }}:${{ secrets.GH_PAT }}@github.com" > ~/.git-credentials
+          git config --global url."https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/".insteadOf "https://github.com/"
       - name: Install the project
         run: uv sync --locked --all-extras --dev
   
