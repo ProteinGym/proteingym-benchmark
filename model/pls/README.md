@@ -36,4 +36,4 @@ docker run --rm -v $(pwd)/data:/data test-model \
 ```
 
 > [!TIP]
-> You can check the commands with help: `docker run --rm pls-model --help`
+> You can check the commands with help: `docker run --rm test-model --help`
