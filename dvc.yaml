@@ -5,10 +5,11 @@ stages:
       dataset: ${supervise_datasets}
       model: ${supervise_models}
     
-    cmd: uv run pg2-benchmark model predict --dataset-manifest ${item.dataset.path} --model-manifest ${item.model.path}
+    cmd: uv run pg2-benchmark model predict --dataset-manifest ${item.dataset.path} --model-manifest ${item.model.path} --model-dockerfile-folder ${item.model.dockerfile} --model-name ${item.model.name}
     deps:
       - ${item.dataset.path}
       - ${item.model.path}
+      - ${item.model.dockerfile}
       - src/pg2_benchmark/cli/model.py
     outs:
       - data/supervise/output/${item.dataset.name}_${item.model.name}.csv
@@ -31,10 +32,11 @@ stages:
       dataset: ${zero_shot_datasets}
       model: ${zero_shot_models}
     
-    cmd: uv run pg2-benchmark model predict --dataset-manifest ${item.dataset.path} --model-manifest ${item.model.path}
+    cmd: uv run pg2-benchmark model predict --dataset-manifest ${item.dataset.path} --model-manifest ${item.model.path} --model-dockerfile-folder ${item.model.dockerfile} --model-name ${item.model.name}
     deps:
       - ${item.dataset.path}
       - ${item.model.path}
+      - ${item.model.dockerfile}
       - src/pg2_benchmark/cli/model.py
     outs:
       - data/zero_shot/output/${item.dataset.name}_${item.model.name}.csv

@@ -1,8 +1,0 @@
-name = "PG2 model"
-repo_url = "https://github.com/ProteinGym2/pg2-model-esm.git"
-branch_name = "main"
-location = "esm1v_t33_650M_UR90S_1"
-scoring_strategy = "wt-marginals"
-
-[hyper_params]
-offset_idx = 24

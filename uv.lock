@@ -1326,7 +1326,6 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "dvc" },
-    { name = "gitpython" },
     { name = "pg2-dataset" },
     { name = "pycm" },
     { name = "python-on-whales" },
@@ -1337,7 +1336,6 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "dvc", specifier = ">=3.59.2" },
-    { name = "gitpython", specifier = ">=3.1.44" },
     { name = "pg2-dataset", git = "https://github.com/ProteinGym2/pg2-dataset.git?branch=main" },
     { name = "pycm", specifier = ">=4.3" },
     { name = "python-on-whales", specifier = ">=0.76.1" },

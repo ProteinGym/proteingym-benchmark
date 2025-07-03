@@ -1,15 +1,17 @@
 supervise_datasets:
-  - path: data/supervise/data/d1.toml
-    name: d1
+  - path: data/supervise/data/neime.toml
+    name: neime
 
 supervise_models:
-  - path: data/supervise/model/m1.toml
-    name: m1
+  - path: data/supervise/model/pls.toml
+    dockerfile: model/pls
+    name: pls
 
 zero_shot_datasets:
-  - path: data/zero_shot/data/d1.toml
-    name: d1
+  - path: data/zero_shot/data/ranganathan.toml
+    name: ranganathan
 
 zero_shot_models:
-  - path: data/zero_shot/model/m1.toml
-    name: m1
+  - path: data/zero_shot/model/esm.toml
+    dockerfile: model/esm
+    name: esm

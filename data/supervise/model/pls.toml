@@ -1,6 +1,4 @@
-name = "PLSRegression"
-repo_url = "https://github.com/ProteinGym2/pg2-model-pls.git"
-branch_name = "main"
+name = "pls"
 
 [hyper_params]
 sequence_length = 161
