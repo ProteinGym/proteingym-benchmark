@@ -32,3 +32,8 @@ line-length = 88
 [tool.click]
 logging_level = "INFO"
 logging_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.2.0",
+]
