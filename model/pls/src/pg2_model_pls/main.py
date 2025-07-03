@@ -1,7 +1,9 @@
 import polars as pl
 from pathlib import Path
+from pg2_dataset.dataset import Manifest
 from pg2_dataset.splits.abstract_split_strategy import TrainTestValid
-from pg2_model_pls.predict import load_x_and_y, train_model, predict_model
+from pg2_model_pls.manifest import Manifest as ModelManifest
+from model.pls.src.pg2_model_pls.utils import load_x_and_y, train_model, predict_model
 
 import typer
 
@@ -18,7 +20,10 @@ def predict(
 ):
     typer.echo("Start...")
 
+    dataset_name = Manifest.from_path(dataset_toml_file).name
+
     model_path = "/output/model.pkl"
+    model_name = ModelManifest.from_path(model_toml_file).name
 
     train_X, train_Y = load_x_and_y(
         dataset_toml_file=dataset_toml_file,
@@ -51,7 +56,9 @@ def predict(
         }
     )
 
-    df.write_csv(f"/output/{Path(dataset_toml_file).stem}_{Path(model_toml_file).stem}.csv")
+    df.write_csv(
+        f"/output/{dataset_name}_{Path(model_name).stem}.csv"
+    )
 
     typer.echo("Done.")
 

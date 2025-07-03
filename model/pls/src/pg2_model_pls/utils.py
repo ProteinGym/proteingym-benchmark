@@ -22,9 +22,7 @@ def load_x_and_y(
     targets = list(dataset.assays.meta.assays.keys())
 
     dataset.assays.add_split(
-        split_strategy=SPLIT_STRATEGY_MAPPING[
-            dataset.assays.meta.split_strategy
-        ](),
+        split_strategy=SPLIT_STRATEGY_MAPPING[dataset.assays.meta.split_strategy](),
         targets=targets,
     )
 
@@ -100,7 +98,7 @@ def predict_model(
 
     with open(model_path, "rb") as file:
         model = pickle.load(file)
-    
+
     hyper_params = ModelManifest.from_path(model_toml_file).hyper_params
 
     encodings = encode(spit_X=test_X, hyper_params=hyper_params)
