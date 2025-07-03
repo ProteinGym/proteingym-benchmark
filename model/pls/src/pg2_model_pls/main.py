@@ -3,7 +3,7 @@ from pathlib import Path
 from pg2_dataset.dataset import Manifest
 from pg2_dataset.splits.abstract_split_strategy import TrainTestValid
 from pg2_model_pls.manifest import Manifest as ModelManifest
-from model.pls.src.pg2_model_pls.utils import load_x_and_y, train_model, predict_model
+from pg2_model_pls.utils import load_x_and_y, train_model, predict_model
 
 import typer
 
@@ -56,9 +56,7 @@ def predict(
         }
     )
 
-    df.write_csv(
-        f"/output/{dataset_name}_{Path(model_name).stem}.csv"
-    )
+    df.write_csv(f"/output/{dataset_name}_{Path(model_name).stem}.csv")
 
     typer.echo("Done.")
 

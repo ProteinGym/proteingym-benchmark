@@ -121,36 +121,37 @@ stages:
       md5: 07efb4469ed0550c5b76c65ab5437185
       size: 1618
   zero_shot_predict@dataset0-model0:
-    cmd: uv run pg2-benchmark model predict --dataset-manifest data/zero_shot/data/d1.toml
-      --model-manifest data/zero_shot/model/m1.toml --model-dockerfile-folder model/esm
+    cmd: uv run pg2-benchmark model predict --dataset-manifest data/zero_shot/data/ranganathan.toml
+      --model-manifest data/zero_shot/model/esm.toml --model-dockerfile-folder model/esm
+      --model-name esm
     deps:
-    - path: data/zero_shot/data/d1.toml
+    - path: data/zero_shot/data/ranganathan.toml
       hash: md5
-      md5: f0a8d4c60f0ad9edeb91b9750ffb7cba
-      size: 1020
-    - path: data/zero_shot/model/m1.toml
+      md5: 92066d71a50445d5969b8e4a676a142e
+      size: 964
+    - path: data/zero_shot/model/esm.toml
       hash: md5
-      md5: 46eb141d710a1407de74e0cdb276eb7f
-      size: 198
+      md5: 4bc22345e83be6c9ff13a25f0514e126
+      size: 114
     - path: model/esm
       hash: md5
-      md5: e898fb27d7dc5c8dce94d3aaa75e6c94.dir
-      size: 8171
-      nfiles: 8
+      md5: e907d2e3fe570d077f8fa444a611c620.dir
+      size: 755756943
+      nfiles: 28235
     - path: src/pg2_benchmark/cli/model.py
       hash: md5
-      md5: e8a44e6348c4cdc3497b4c2f7b3166e6
-      size: 1612
+      md5: d2db1e5b3da9de6a6b8d5e2fc39d6c26
+      size: 1532
     outs:
-    - path: data/zero_shot/output/d1_m1.csv
+    - path: data/zero_shot/output/ranganathan_esm.csv
       hash: md5
       md5: 1fe1b85a84da44e3c0fa1ff7daac0385
       size: 196319
   zero_shot_metric@dataset0-model0:
-    cmd: uv run pg2-benchmark metric calc --output-path data/zero_shot/output/d1_m1.csv
-      --metric-path data/zero_shot/metric/d1_m1.csv
+    cmd: uv run pg2-benchmark metric calc --output-path data/zero_shot/output/ranganathan_esm.csv
+      --metric-path data/zero_shot/metric/ranganathan_esm.csv
     deps:
-    - path: data/zero_shot/output/d1_m1.csv
+    - path: data/zero_shot/output/ranganathan_esm.csv
       hash: md5
       md5: 1fe1b85a84da44e3c0fa1ff7daac0385
       size: 196319
@@ -159,7 +160,7 @@ stages:
       md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
       size: 774
     outs:
-    - path: data/zero_shot/metric/d1_m1.csv
+    - path: data/zero_shot/metric/ranganathan_esm.csv
       hash: md5
       md5: 4969ac651d461ac62496caf718afadfa
       size: 1588
