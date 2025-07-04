@@ -1,13 +1,13 @@
-FROM python:3.12-slim
+FROM python:3.12
 
 RUN apt-get update && apt-get install -y git
 
-WORKDIR /project
+WORKDIR /opt/program
 
-COPY ./src /project/src
-COPY ./pyproject.toml /project/pyproject.toml
-COPY ./README.md /project/README.md
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
+COPY ./README.md /opt/program/README.md
+COPY ./pyproject.toml /opt/program/pyproject.toml
 
 # TODO: After pg2-dataset is public, below can be removed:
 RUN --mount=type=secret,id=git_auth \
@@ -15,8 +15,8 @@ RUN --mount=type=secret,id=git_auth \
     cat /run/secrets/git_auth > ~/.git-credentials && \
     chmod 600 ~/.git-credentials
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-
 RUN uv sync
+
+COPY ./src /opt/program/src
 
 ENTRYPOINT ["uv", "run", "pg2-model"]
