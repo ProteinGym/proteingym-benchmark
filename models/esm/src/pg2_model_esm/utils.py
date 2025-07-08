@@ -97,10 +97,10 @@ def compute_pppl(
     Notes:
         - The function creates a mutated version of the input sequence
         - For each position (excluding start/end tokens), it masks that position and
-          computes the log probability of the actual amino acid at that position
+            computes the log probability of the actual amino acid at that position
         - The pseudo-perplexity is the sum of these log probabilities
         - This approach differs from traditional perplexity calculation and is commonly
-          used in protein language model evaluation
+            used in protein language model evaluation
     """
     wt, idx, mt = row[0], int(row[1:-1]) - offset_idx, row[-1]
     assert sequence[idx] == wt, (
