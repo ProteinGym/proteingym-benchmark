@@ -135,15 +135,9 @@ stages:
       size: 114
     - path: models/esm
       hash: md5
-<<<<<<< HEAD
       md5: ecb8f8ec92c6b8d207411f4cd9d8e4d1.dir
       size: 756326960
       nfiles: 28269
-=======
-      md5: 20ad3f4dbb76b8885e53bba2c2ba3faf.dir
-      size: 756321225
-      nfiles: 28267
->>>>>>> 2361476 (Fix the 1st round of comments)
     - path: src/pg2_benchmark/cli/model.py
       hash: md5
       md5: cf4d6a9cf47d925e1c581f1b3b76dd34
