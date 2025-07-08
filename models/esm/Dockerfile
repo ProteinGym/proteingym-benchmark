@@ -11,7 +11,6 @@ COPY ./README.md /opt/program/README.md
 COPY ./pyproject.toml /opt/program/pyproject.toml
 
 # TODO: After pg2-dataset is public, below can be removed:
-# Currently, it is required to git clone pg2-dataset, which is a private reppo
 RUN --mount=type=secret,id=git_auth \
     git config --global credential.helper store && \
     cat /run/secrets/git_auth > ~/.git-credentials && \

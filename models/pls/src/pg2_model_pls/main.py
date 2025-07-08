@@ -52,7 +52,7 @@ def predict(
 
     console.print(f"Loaded {len(valid_Y)} test records.")
 
-    console.print("Start the prediction...")
+    console.print("Start the scoring...")
 
     pred_y = predict_model(
         test_X=valid_X,
@@ -60,7 +60,7 @@ def predict(
         model_path=model_path,
     )
 
-    console.print("Finished the prediction...")
+    console.print("Finished the scoring...")
 
     df = pl.DataFrame(
         {
