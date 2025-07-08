@@ -8,7 +8,7 @@ dependencies = [
     "typer>=0.15.2",
     "numpy>=2.2.5",
     "scikit-learn>=1.6.1",
-    "pg2-dataset",
+    "pg2-dataset[biopython]",
     "polars[pyarrow]>=1.30.0",
 ]
 
@@ -20,7 +20,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv.sources]
-pg2-dataset = { git = "https://github.com/ProteinGym2/pg2-dataset.git", branch = "main" }
+pg2-dataset = { git = "https://github.com/ProteinGym2/pg2-dataset.git", rev = "58c327e13bade1effe1312eb2b8d5445016a5a8f" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pg2_model_pls"]

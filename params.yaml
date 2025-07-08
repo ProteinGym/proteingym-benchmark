@@ -4,7 +4,7 @@ supervise_datasets:
 
 supervise_models:
   - path: data/supervise/model/pls.toml
-    dockerfile: model/pls
+    dockerfile: models/pls
     name: pls
 
 zero_shot_datasets:
@@ -13,5 +13,5 @@ zero_shot_datasets:
 
 zero_shot_models:
   - path: data/zero_shot/model/esm.toml
-    dockerfile: model/esm
+    dockerfile: models/esm
     name: esm

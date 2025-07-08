@@ -9,7 +9,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "typer>=0.15.2",
-    "pg2-dataset",
+    "pg2-dataset[biopython]",
     "python-on-whales>=0.76.1",
     "pycm>=4.3",
     "scipy>=1.15.3",
@@ -24,7 +24,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv.sources]
-pg2-dataset = { git = "https://github.com/ProteinGym2/pg2-dataset.git", branch = "main" }
+pg2-dataset = { git = "https://github.com/ProteinGym2/pg2-dataset.git", rev = "58c327e13bade1effe1312eb2b8d5445016a5a8f" }
 
 [tool.ruff]
 line-length = 88
