@@ -1,5 +1,6 @@
 import torch
 import typer
+from rich.console import Console
 from pg2_dataset.dataset import Manifest
 from tqdm import tqdm
 from esm import pretrained
@@ -12,6 +13,9 @@ app = typer.Typer(
     add_completion=True,
 )
 
+err_console = Console(stderr=True)
+console = Console()
+
 
 @app.command()
 def predict(
@@ -19,9 +23,7 @@ def predict(
     model_toml_file: str = typer.Option(help="Path to the model TOML file"),
     nogpu: bool = typer.Option(False, help="GPUs available"),
 ):
-    typer.echo(
-        f"Loading {dataset_toml_file} and {model_toml_file}...", fg=typer.colors.GREEN
-    )
+    console.print(f"Loading {dataset_toml_file} and {model_toml_file}...")
 
     manifest = Manifest.from_path(dataset_toml_file)
     dataset_name = manifest.name
@@ -35,7 +37,7 @@ def predict(
 
     df = dataset.assays.data_frame
 
-    typer.echo(f"Loaded {len(df)} records.", fg=typer.colors.GREEN)
+    console.print(f"Loaded {len(df)} records.")
 
     model_manifest = ModelManifest.from_path(model_toml_file)
 
@@ -47,9 +49,8 @@ def predict(
     model, alphabet = pretrained.load_model_and_alphabet(location)
     model.eval()
 
-    typer.echo(
-        f"Loaded the model from {location} with scoring strategy {scoring_strategy}.",
-        fg=typer.colors.GREEN,
+    console.print(
+        f"Loaded the model from {location} with scoring strategy {scoring_strategy}."
     )
 
     if torch.cuda.is_available() and not nogpu:
@@ -122,20 +123,13 @@ def predict(
             )
 
         case _:
-            typer.echo(
-                f"Error: Invalid scoring strategy: {scoring_strategy}",
-                err=True,
-                fg=typer.colors.RED,
-            )
+            err_console.print(f"Error: Invalid scoring strategy: {scoring_strategy}")
 
     df.rename(columns={targets[0]: "test"}, inplace=True)
     df.to_csv(f"/output/{dataset_name}_{model_name}.csv", index=False)
 
-    typer.echo(
-        f"Saved the metrics in CSV in output/{dataset_name}_{model_name}.csv",
-        fg=typer.colors.GREEN,
-    )
-    typer.echo("Done.", fg=typer.colors.GREEN)
+    console.print(f"Saved the metrics in CSV in output/{dataset_name}_{model_name}.csv")
+    console.print("Done.")
 
 
 @app.command()

@@ -122,7 +122,7 @@ stages:
       size: 1625
   zero_shot_predict@dataset0-model0:
     cmd: uv run pg2-benchmark model predict --dataset-manifest data/zero_shot/data/ranganathan.toml
-      --model-manifest data/zero_shot/model/esm.toml --model-dockerfile-folder model/esm
+      --model-manifest data/zero_shot/model/esm.toml --model-dockerfile-folder models/esm
       --model-name esm
     deps:
     - path: data/zero_shot/data/ranganathan.toml
@@ -133,15 +133,15 @@ stages:
       hash: md5
       md5: 4bc22345e83be6c9ff13a25f0514e126
       size: 114
-    - path: model/esm
+    - path: models/esm
       hash: md5
-      md5: 20ad3f4dbb76b8885e53bba2c2ba3faf.dir
-      size: 756321225
-      nfiles: 28267
+      md5: ecb8f8ec92c6b8d207411f4cd9d8e4d1.dir
+      size: 756326960
+      nfiles: 28269
     - path: src/pg2_benchmark/cli/model.py
       hash: md5
-      md5: d2db1e5b3da9de6a6b8d5e2fc39d6c26
-      size: 1532
+      md5: cf4d6a9cf47d925e1c581f1b3b76dd34
+      size: 1642
     outs:
     - path: data/zero_shot/output/ranganathan_esm.csv
       hash: md5
