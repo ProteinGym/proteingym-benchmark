@@ -78,7 +78,7 @@ stages:
       size: 1620
   supervise_predict@dataset0-model0:
     cmd: uv run pg2-benchmark model predict --dataset-manifest data/supervise/data/neime.toml
-      --model-manifest data/supervise/model/pls.toml --model-dockerfile-folder model/pls
+      --model-manifest data/supervise/model/pls.toml --model-dockerfile-folder models/pls
       --model-name pls
     deps:
     - path: data/supervise/data/neime.toml
@@ -89,28 +89,28 @@ stages:
       hash: md5
       md5: 1ba832ce9f172fa817e884b71dfae23a
       size: 207
-    - path: model/pls
+    - path: models/pls
       hash: md5
-      md5: 789468d33ac4bec99a34bc769d94b2a7.dir
-      size: 498738658
-      nfiles: 15478
+      md5: b88d96e1b85fc3ff5bcdf318bfd29834.dir
+      size: 317863
+      nfiles: 13
     - path: src/pg2_benchmark/cli/model.py
       hash: md5
-      md5: d2db1e5b3da9de6a6b8d5e2fc39d6c26
-      size: 1532
+      md5: 57ebf06741759eb1d8842e2acd7ac8bf
+      size: 1666
     outs:
     - path: data/supervise/output/neime_pls.csv
       hash: md5
-      md5: d5cc48cca3973eca7694bb7564bfc456
-      size: 34982
+      md5: 22ba8451f7c20c7199e58171ae4b7ba7
+      size: 35036
   supervise_metric@dataset0-model0:
     cmd: uv run pg2-benchmark metric calc --output-path data/supervise/output/neime_pls.csv
       --metric-path data/supervise/metric/neime_pls.csv
     deps:
     - path: data/supervise/output/neime_pls.csv
       hash: md5
-      md5: d5cc48cca3973eca7694bb7564bfc456
-      size: 34982
+      md5: 22ba8451f7c20c7199e58171ae4b7ba7
+      size: 35036
     - path: src/pg2_benchmark/cli/metric.py
       hash: md5
       md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
@@ -118,8 +118,8 @@ stages:
     outs:
     - path: data/supervise/metric/neime_pls.csv
       hash: md5
-      md5: 4288d99607b7f967d803afa05bccdcca
-      size: 1625
+      md5: 4dcbbe6b1e15aa48252a4381d5855910
+      size: 1618
   zero_shot_predict@dataset0-model0:
     cmd: uv run pg2-benchmark model predict --dataset-manifest data/zero_shot/data/ranganathan.toml
       --model-manifest data/zero_shot/model/esm.toml --model-dockerfile-folder models/esm

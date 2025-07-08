@@ -8,8 +8,7 @@ def label_row(
     alphabet: object,
     offset_idx: int,
 ) -> float:
-    """
-    Calculate the log probability difference between a mutant and wildtype amino acid at a specific position.
+    """Calculate the log probability difference between a mutant and wildtype amino acid at a specific position.
 
     This function computes the mutation effect score by comparing the log probabilities of the
     mutant amino acid versus the wildtype amino acid at a given sequence position.
@@ -58,8 +57,7 @@ def label_row(
 def compute_pppl(
     row: str, sequence: str, model: object, alphabet: object, offset_idx: int
 ) -> float:
-    """
-    Compute the pseudo-perplexity (PPPL) score for a protein sequence with a specific mutation.
+    """Compute the pseudo-perplexity (PPPL) score for a protein sequence with a specific mutation.
 
     This function calculates the pseudo-perplexity by applying a mutation to the sequence,
     then computing the sum of log probabilities for each position when that position is
@@ -90,19 +88,19 @@ def compute_pppl(
         AssertionError: If the wildtype amino acid in the mutation string doesn't match
                        the amino acid at that position in the provided sequence
 
-    Notes:
-        - The function creates a mutated version of the input sequence
-        - For each position (excluding start/end tokens), it masks that position and
-          computes the log probability of the actual amino acid at that position
-        - The pseudo-perplexity is the sum of these log probabilities
-        - This approach differs from traditional perplexity calculation and is commonly
-          used in protein language model evaluation
-
     Example:
         >>> row = "A50V"  # Alanine at position 50 to Valine
         >>> sequence = "MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQAPILSRVGDGTQDNLSGAEKAVQVKVKALPDAQFEVVHSLAKWKRQTLGQHDFSAGEGLYTHMKALRPDEDRLSLEVKNEQKQIAYIKLAQLPLEVQEKQGLTQVVK"
         >>> pppl_score = compute_pppl(row, sequence, model, alphabet, offset_idx=1)
         >>> print(f"Pseudo-perplexity score: {pppl_score}")
+
+    Notes:
+        - The function creates a mutated version of the input sequence
+        - For each position (excluding start/end tokens), it masks that position and
+            computes the log probability of the actual amino acid at that position
+        - The pseudo-perplexity is the sum of these log probabilities
+        - This approach differs from traditional perplexity calculation and is commonly
+            used in protein language model evaluation
     """
     wt, idx, mt = row[0], int(row[1:-1]) - offset_idx, row[-1]
     assert sequence[idx] == wt, (

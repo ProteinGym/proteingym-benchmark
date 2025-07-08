@@ -134,7 +134,7 @@ def predict(
 
 @app.command()
 def ping():
-    typer.echo("pong")
+    console.print("pong")
 
 
 if __name__ == "__main__":

@@ -1,37 +1,29 @@
 [project]
-name = "pg2-model-esm"
+name = "pg2-model-pls"
 version = "0.1.0"
 description = "Project to be submitted to ProteinGym2"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "typer>=0.15.2",
-    "loguru>=0.7.3",
+    "numpy>=2.2.5",
+    "scikit-learn>=1.6.1",
     "pg2-dataset[biopython]",
-    "fair-esm>=2.0.0",
-    "torch>=2.7.0",
-    "bio>=1.8.0",
-    "msgpack>=1.1.0",
     "polars[pyarrow]>=1.30.0",
 ]
 
 [project.scripts]
-pg2-model = "pg2_model_esm.main:app"
+pg2-model = "pg2_model_pls.main:app"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv.sources]
-pg2-dataset = { git = "https://github.com/ProteinGym2/pg2-dataset.git",  rev = "58c327e13bade1effe1312eb2b8d5445016a5a8f" }
+pg2-dataset = { git = "https://github.com/ProteinGym2/pg2-dataset.git", rev = "58c327e13bade1effe1312eb2b8d5445016a5a8f" }
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/pg2_model_esm"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = "test_*.py"
-python_functions = "test_*"
+packages = ["src/pg2_model_pls"]
 
 [tool.ruff]
 line-length = 88
