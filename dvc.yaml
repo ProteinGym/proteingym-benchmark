@@ -12,7 +12,7 @@ stages:
       - ${item.model.dockerfile}
       - src/pg2_benchmark/cli/model.py
     outs:
-      - data/supervise/output/${item.dataset.name}_${item.model.name}.csv
+      - data/supervise/output/${key}.csv
 
   supervise_metric:
     matrix: 
@@ -24,7 +24,7 @@ stages:
       - data/supervise/output/${item.dataset.name}_${item.model.name}.csv
       - src/pg2_benchmark/cli/metric.py
     outs:
-      - data/supervise/metric/${item.dataset.name}_${item.model.name}.csv
+      - data/supervise/metric/${key}.csv
 
 
   zero_shot_predict:
@@ -39,7 +39,7 @@ stages:
       - ${item.model.dockerfile}
       - src/pg2_benchmark/cli/model.py
     outs:
-      - data/zero_shot/output/${item.dataset.name}_${item.model.name}.csv
+      - data/zero_shot/output/${key}.csv
 
   zero_shot_metric:
     matrix: 
@@ -51,4 +51,4 @@ stages:
       - data/zero_shot/output/${item.dataset.name}_${item.model.name}.csv
       - src/pg2_benchmark/cli/metric.py
     outs:
-      - data/zero_shot/metric/${item.dataset.name}_${item.model.name}.csv 
+      - data/zero_shot/metric/${key}.csv 

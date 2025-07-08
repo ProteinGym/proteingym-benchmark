@@ -19,7 +19,9 @@ def predict(
     model_toml_file: str = typer.Option(help="Path to the model TOML file"),
     nogpu: bool = typer.Option(False, help="GPUs available"),
 ):
-    typer.echo(f"Loading {dataset_toml_file} and {model_toml_file}...")
+    typer.echo(
+        f"Loading {dataset_toml_file} and {model_toml_file}...", fg=typer.colors.GREEN
+    )
 
     manifest = Manifest.from_path(dataset_toml_file)
     dataset_name = manifest.name
@@ -33,7 +35,7 @@ def predict(
 
     df = dataset.assays.data_frame
 
-    typer.echo(f"Loaded {len(df)} records.")
+    typer.echo(f"Loaded {len(df)} records.", fg=typer.colors.GREEN)
 
     model_manifest = ModelManifest.from_path(model_toml_file)
 
@@ -46,7 +48,8 @@ def predict(
     model.eval()
 
     typer.echo(
-        f"Loaded the model from {location} with scoring strategy {scoring_strategy}."
+        f"Loaded the model from {location} with scoring strategy {scoring_strategy}.",
+        fg=typer.colors.GREEN,
     )
 
     if torch.cuda.is_available() and not nogpu:
@@ -119,12 +122,20 @@ def predict(
             )
 
         case _:
-            typer.echo(f"Error: Invalid scoring strategy: {scoring_strategy}", err=True)
+            typer.echo(
+                f"Error: Invalid scoring strategy: {scoring_strategy}",
+                err=True,
+                fg=typer.colors.RED,
+            )
 
     df.rename(columns={targets[0]: "test"}, inplace=True)
     df.to_csv(f"/output/{dataset_name}_{model_name}.csv", index=False)
 
-    typer.echo("Done.")
+    typer.echo(
+        f"Saved the metrics in CSV in output/{dataset_name}_{model_name}.csv",
+        fg=typer.colors.GREEN,
+    )
+    typer.echo("Done.", fg=typer.colors.GREEN)
 
 
 @app.command()

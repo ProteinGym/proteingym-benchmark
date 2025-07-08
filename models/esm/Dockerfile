@@ -1,6 +1,7 @@
 FROM python:3.12
 
-RUN apt-get update && apt-get install -y git
+RUN apt-get update && apt-get install -y --no-install-recommends \ 
+    git && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/program
 
@@ -15,7 +16,10 @@ RUN --mount=type=secret,id=git_auth \
     cat /run/secrets/git_auth > ~/.git-credentials && \
     chmod 600 ~/.git-credentials
 
-RUN uv sync
+# https://docs.astral.sh/uv/guides/integration/docker/#available-images
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+RUN uv sync --no-cache
 
 COPY ./src /opt/program/src
 
