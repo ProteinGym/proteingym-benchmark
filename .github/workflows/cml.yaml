@@ -32,12 +32,12 @@ jobs:
           # Run DVC repro
           echo "https://tintinrevient:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ./git-auth.txt
           ls .
-          uv run dvc repro
+          uv run dvc repro supervise_predict supervise_metric
           
           # Create report with metrics
           echo "## Training metrics" >> report.md
           echo '```csv' >> report.md
-          cat metric/neime_pls.csv >> report.md
+          cat ./data/supervise/metric/neime_pls.csv >> report.md
           echo '```' >> report.md
           
           # Send comment to PR
