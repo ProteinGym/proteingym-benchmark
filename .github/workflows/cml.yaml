@@ -27,7 +27,7 @@ jobs:
         run: |
           git config --global credential.helper store
           echo "https://tintinrevient:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ~/.git-credentials
-          uv sync --locked --all-extras --dev
+          uv sync
           
           # Run DVC repro
           uv run dvc repro

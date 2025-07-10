@@ -1701,7 +1701,7 @@ wheels = [
 [[package]]
 name = "pg2-dataset"
 version = "0.1.0"
-source = { git = "https://github.com/ProteinGym2/pg2-dataset.git?branch=main#3c9bc0a8d332e74b168346ff20aac88bb1505618" }
+source = { git = "https://github.com/ProteinGym2/pg2-dataset.git?rev=58c327e13bade1effe1312eb2b8d5445016a5a8f#58c327e13bade1effe1312eb2b8d5445016a5a8f" }
 dependencies = [
     { name = "cloudpathlib", extra = ["gs", "s3"] },
     { name = "dvc", extra = ["gs", "s3"] },
@@ -1709,6 +1709,12 @@ dependencies = [
     { name = "polars", extra = ["pyarrow"] },
     { name = "pydantic" },
     { name = "toml" },
+]
+
+[package.optional-dependencies]
+biopython = [
+    { name = "biopython" },
+    { name = "msgpack" },
 ]
 
 [[package]]
@@ -1720,7 +1726,7 @@ dependencies = [
     { name = "fair-esm" },
     { name = "loguru" },
     { name = "msgpack" },
-    { name = "pg2-dataset" },
+    { name = "pg2-dataset", extra = ["biopython"] },
     { name = "polars", extra = ["pyarrow"] },
     { name = "torch" },
     { name = "typer" },
@@ -1737,7 +1743,7 @@ requires-dist = [
     { name = "fair-esm", specifier = ">=2.0.0" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "msgpack", specifier = ">=1.1.0" },
-    { name = "pg2-dataset", git = "https://github.com/ProteinGym2/pg2-dataset.git?branch=main" },
+    { name = "pg2-dataset", extras = ["biopython"], git = "https://github.com/ProteinGym2/pg2-dataset.git?rev=58c327e13bade1effe1312eb2b8d5445016a5a8f" },
     { name = "polars", extras = ["pyarrow"], specifier = ">=1.30.0" },
     { name = "torch", specifier = ">=2.7.0" },
     { name = "typer", specifier = ">=0.15.2" },
