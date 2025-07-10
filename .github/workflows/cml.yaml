@@ -2,7 +2,7 @@ name: validate-my-model
 
 on:    
   pull_request:
-    branches: [ main, ci/*, test/ ]
+    branches: [ main, ci/*, ]
 
 jobs:
   cml:
@@ -31,10 +31,15 @@ jobs:
           DATASET_NAME=$(echo "${{ github.event.pull_request.body }}" | grep -o 'dataset-name: [^[:space:]]*' | cut -d' ' -f2)
           MODEL_INDEX=$(echo "${{ github.event.pull_request.body }}" | grep -o 'model-index: [^[:space:]]*' | cut -d' ' -f2)
           MODEL_NAME=$(echo "${{ github.event.pull_request.body }}" | grep -o 'model-name: [^[:space:]]*' | cut -d' ' -f2)
+
+          echo $DATASET_INDEX
+          echo $DATASET_NAME
+          echo $MODEL_INDEX
+          echo $MODEL_NAME
           
           # Run DVC repro
           echo "https://tintinrevient:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ./git-auth.txt
-          uv run dvc repro supervise_predict@$DATASET_INDEX-$MODEL_INDEX supervise_metric@DATASET_INDEX-$MODEL_INDEX
+          uv run dvc repro supervise_predict@$DATASET_INDEX-$MODEL_INDEX supervise_metric@$DATASET_INDEX-$MODEL_INDEX
           
           # Create report with metrics
           echo "## Training metrics" >> report.md
