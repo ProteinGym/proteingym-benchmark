@@ -44,6 +44,7 @@ jobs:
           MODEL_NAME=$(echo "${{ github.event.pull_request.body }}" | grep -o 'model-name: [^[:space:]]*' | cut -d' ' -f2)
         
           # Create report with metrics
+          cat ./data/supervise/metric/${DATASET_NAME}-${MODEL_NAME}.csv
           echo "## Training metrics" >> report.md
           echo '```csv' >> report.md
           cat ./data/supervise/metric/${DATASET_NAME}-${MODEL_NAME}.csv >> report.md
