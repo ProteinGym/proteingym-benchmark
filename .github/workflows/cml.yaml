@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
 
       - uses: iterative/setup-cml@v2
 
@@ -45,7 +46,7 @@ jobs:
           # Create report with metrics
           echo "## Training metrics" >> report.md
           echo '```csv' >> report.md
-          cat ./data/supervise/metric/${DATASET_NAME}_${MODEL_NAME}.csv >> report.md
+          cat ./data/supervise/metric/${DATASET_NAME}-${MODEL_NAME}.csv >> report.md
           echo '```' >> report.md
           
           # Send comment to PR
