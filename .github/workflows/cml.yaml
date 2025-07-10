@@ -1,0 +1,49 @@
+name: validate-model
+
+on:    
+  pull_request:
+    branches: main
+
+jobs:
+  cml:
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'model validation')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: iterative/setup-cml@v2
+
+      - uses: astral-sh/setup-uv@v1
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version-file: ".python-version"
+
+      - name: Run model validation
+        env:
+          repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          # Configure PAT to git clone the private repo: pg2-dataset
+          git config --global credential.helper store
+          echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ~/.git-credentials
+          uv sync
+
+          # Parse PR template
+          CATEGORY=$(echo "${{ github.event.pull_request.body }}" | grep -o 'category: [^[:space:]]*' | cut -d' ' -f2)
+          DATASET_INDEX=$(echo "${{ github.event.pull_request.body }}" | grep -o 'dataset-index: [^[:space:]]*' | cut -d' ' -f2)
+          DATASET_NAME=$(echo "${{ github.event.pull_request.body }}" | grep -o 'dataset-name: [^[:space:]]*' | cut -d' ' -f2)
+          MODEL_INDEX=$(echo "${{ github.event.pull_request.body }}" | grep -o 'model-index: [^[:space:]]*' | cut -d' ' -f2)
+          MODEL_NAME=$(echo "${{ github.event.pull_request.body }}" | grep -o 'model-name: [^[:space:]]*' | cut -d' ' -f2)
+          
+          # Run DVC repro
+          echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ./git-auth.txt
+          uv run dvc repro ${CATEGORY}_predict@${DATASET_INDEX}-${MODEL_INDEX} ${CATEGORY}_metric@${DATASET_INDEX}-${MODEL_INDEX}
+          
+          # Create report with metrics
+          echo '```csv' >> report.md
+          cat ./data/${CATEGORY}/metric/${DATASET_NAME}_${MODEL_NAME}.csv >> report.md
+          echo '```' >> report.md
+          
+          # Send comment to PR
+          echo "Send comment to PR"
+          cml comment create report.md
