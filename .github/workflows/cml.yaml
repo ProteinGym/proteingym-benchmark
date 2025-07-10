@@ -9,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
 
       - uses: iterative/setup-cml@v2
 
@@ -35,7 +34,7 @@ jobs:
           
           # Run DVC repro
           echo "https://tintinrevient:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ./git-auth.txt
-          uv run dvc repro supervise_predict@$DATASET_INDEX-$MODEL_INDEX supervise_metric@$DATASET_INDEX-$MODEL_INDEX
+          uv run dvc repro supervise_predict@${DATASET_INDEX}_${MODEL_INDEX} supervise_metric@$DATASET_INDEX-$MODEL_INDEX
           
           # Parse PR template
           DATASET_INDEX=$(echo "${{ github.event.pull_request.body }}" | grep -o 'dataset-index: [^[:space:]]*' | cut -d' ' -f2)
@@ -44,10 +43,9 @@ jobs:
           MODEL_NAME=$(echo "${{ github.event.pull_request.body }}" | grep -o 'model-name: [^[:space:]]*' | cut -d' ' -f2)
         
           # Create report with metrics
-          cat ./data/supervise/metric/${DATASET_NAME}-${MODEL_NAME}.csv
           echo "## Training metrics" >> report.md
           echo '```csv' >> report.md
-          cat ./data/supervise/metric/${DATASET_NAME}-${MODEL_NAME}.csv >> report.md
+          cat ./data/supervise/metric/${DATASET_NAME}_${MODEL_NAME}.csv >> report.md
           echo '```' >> report.md
           
           # Send comment to PR
