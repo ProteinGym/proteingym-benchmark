@@ -1,6 +1,6 @@
 # Model Validation
 
-- [x] dataset-index: dataset0
-- [x] dataset-name: neime
-- [x] model-index: model0
-- [x] model-name: pls
+- [ ] dataset-index: dataset0
+- [ ] dataset-name: neime
+- [ ] model-index: model0
+- [ ] model-name: pls
