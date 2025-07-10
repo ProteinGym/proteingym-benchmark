@@ -52,4 +52,5 @@ jobs:
           
           # Send comment to PR
           echo "Send comment to PR"
-          cml comment create report.md
+          # cml comment create report.md
+          cml comment create --log=debug report.md
