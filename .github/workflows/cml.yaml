@@ -1,11 +1,11 @@
 name: validate-my-model
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ main, ci/* ]
+    branches: [ ci/* ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   deploy-runner:
