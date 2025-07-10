@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [ ci/* ]
+    
   pull_request:
     branches: [ main, ci/* ]
 
@@ -28,16 +29,21 @@ jobs:
           git config --global credential.helper store
           echo "https://tintinrevient:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ~/.git-credentials
           uv sync
+
+          # Parse PR template
+          DATASET_INDEX=$(echo "${{ github.event.pull_request.body }}" | grep -o 'dataset-index: [^[:space:]]*' | cut -d' ' -f2)
+          DATASET_NAME=$(echo "${{ github.event.pull_request.body }}" | grep -o 'dataset-name: [^[:space:]]*' | cut -d' ' -f2)
+          MODEL_INDEX=$(echo "${{ github.event.pull_request.body }}" | grep -o 'model-index: [^[:space:]]*' | cut -d' ' -f2)
+          MODEL_NAME=$(echo "${{ github.event.pull_request.body }}" | grep -o 'model-name: [^[:space:]]*' | cut -d' ' -f2)
           
           # Run DVC repro
           echo "https://tintinrevient:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ./git-auth.txt
-          ls .
-          uv run dvc repro supervise_predict supervise_metric
+          uv run dvc repro supervise_predict@$DATASET_INDEX-$MODEL_INDEX supervise_metric@DATASET_INDEX-$MODEL_INDEX
           
           # Create report with metrics
           echo "## Training metrics" >> report.md
           echo '```csv' >> report.md
-          cat ./data/supervise/metric/neime_pls.csv >> report.md
+          cat ./data/supervise/metric/$DATASET_NAME_$MODEL_NAME.csv >> report.md
           echo '```' >> report.md
           
           # Send comment to PR
