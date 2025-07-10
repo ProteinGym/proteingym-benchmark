@@ -30,6 +30,7 @@ jobs:
           uv sync
           
           # Run DVC repro
+          echo "https://tintinrevient:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ~/git-auth.txt
           uv run dvc repro
           
           # Create report with metrics
