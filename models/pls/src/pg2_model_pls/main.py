@@ -70,8 +70,8 @@ def predict(
         }
     )
 
-    df.write_csv(f"/output/{dataset_name}_{model_name}.csv")
-    console.print(f"Saved the metrics in CSV in output/{dataset_name}_{model_name}.csv")
+    df.write_csv(f"/output/{dataset_name}-{model_name}.csv")
+    console.print(f"Saved the metrics in CSV in output/{dataset_name}-{model_name}.csv")
 
     console.print("Done.")
 
