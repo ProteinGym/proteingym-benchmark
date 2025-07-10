@@ -91,9 +91,9 @@ stages:
       size: 207
     - path: models/pls
       hash: md5
-      md5: 43acbdacc55f4f090dc08cab0875ae60.dir
-      size: 317830
-      nfiles: 13
+      md5: ece4621cec0586b6359128e13177b192.dir
+      size: 545890037
+      nfiles: 17723
     - path: src/pg2_benchmark/cli/model.py
       hash: md5
       md5: 57ebf06741759eb1d8842e2acd7ac8bf
@@ -101,16 +101,16 @@ stages:
     outs:
     - path: data/supervise/output/neime_pls.csv
       hash: md5
-      md5: e58586fbf151c926675eaec709170b13
-      size: 35015
+      md5: d33b3cf9ac1cc31b1a1c004393b5fb3c
+      size: 34968
   supervise_metric@dataset0-model0:
     cmd: uv run pg2-benchmark metric calc --output-path data/supervise/output/neime_pls.csv
       --metric-path data/supervise/metric/neime_pls.csv
     deps:
     - path: data/supervise/output/neime_pls.csv
       hash: md5
-      md5: e58586fbf151c926675eaec709170b13
-      size: 35015
+      md5: d33b3cf9ac1cc31b1a1c004393b5fb3c
+      size: 34968
     - path: src/pg2_benchmark/cli/metric.py
       hash: md5
       md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
@@ -118,8 +118,8 @@ stages:
     outs:
     - path: data/supervise/metric/neime_pls.csv
       hash: md5
-      md5: 1361f6e083405f5a020b423a351ebbbe
-      size: 1626
+      md5: 0f1ebecfc3f25b76c5db332ad40a6fa5
+      size: 1627
   zero_shot_predict@dataset0-model0:
     cmd: uv run pg2-benchmark model predict --dataset-manifest data/zero_shot/data/ranganathan.toml
       --model-manifest data/zero_shot/model/esm.toml --model-dockerfile-folder models/esm
