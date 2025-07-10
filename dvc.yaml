@@ -12,19 +12,19 @@ stages:
       - ${item.model.dockerfile}
       - src/pg2_benchmark/cli/model.py
     outs:
-      - data/supervise/output/${item.dataset.name}_${item.model.name}.csv
+      - data/supervise/output/${item.dataset.name}-${item.model.name}.csv
 
   supervise_metric:
     matrix: 
       dataset: ${supervise_datasets}
       model: ${supervise_models}
     
-    cmd: uv run pg2-benchmark metric calc --output-path data/supervise/output/${item.dataset.name}_${item.model.name}.csv --metric-path data/supervise/metric/${item.dataset.name}_${item.model.name}.csv
+    cmd: uv run pg2-benchmark metric calc --output-path data/supervise/output/${item.dataset.name}-${item.model.name}.csv --metric-path data/supervise/metric/${item.dataset.name}-${item.model.name}.csv
     deps:
-      - data/supervise/output/${item.dataset.name}_${item.model.name}.csv
+      - data/supervise/output/${item.dataset.name}-${item.model.name}.csv
       - src/pg2_benchmark/cli/metric.py
     outs:
-      - data/supervise/metric/${item.dataset.name}_${item.model.name}.csv
+      - data/supervise/metric/${item.dataset.name}-${item.model.name}.csv
 
 
   zero_shot_predict:
@@ -39,16 +39,16 @@ stages:
       - ${item.model.dockerfile}
       - src/pg2_benchmark/cli/model.py
     outs:
-      - data/zero_shot/output/${item.dataset.name}_${item.model.name}.csv
+      - data/zero_shot/output/${item.dataset.name}-${item.model.name}.csv
 
   zero_shot_metric:
     matrix: 
       dataset: ${zero_shot_datasets}
       model: ${zero_shot_models}
     
-    cmd: uv run pg2-benchmark metric calc --output-path data/zero_shot/output/${item.dataset.name}_${item.model.name}.csv --metric-path data/zero_shot/metric/${item.dataset.name}_${item.model.name}.csv
+    cmd: uv run pg2-benchmark metric calc --output-path data/zero_shot/output/${item.dataset.name}-${item.model.name}.csv --metric-path data/zero_shot/metric/${item.dataset.name}-${item.model.name}.csv
     deps:
-      - data/zero_shot/output/${item.dataset.name}_${item.model.name}.csv
+      - data/zero_shot/output/${item.dataset.name}-${item.model.name}.csv
       - src/pg2_benchmark/cli/metric.py
     outs:
-      - data/zero_shot/metric/${item.dataset.name}_${item.model.name}.csv 
+      - data/zero_shot/metric/${item.dataset.name}-${item.model.name}.csv 
