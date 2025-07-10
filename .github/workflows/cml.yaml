@@ -2,6 +2,10 @@ name: validate-my-model
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ ci/* ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   deploy-runner:
