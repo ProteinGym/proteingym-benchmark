@@ -2,7 +2,7 @@ name: validate-my-model
 
 on:
   push:
-    branches: [ main, feat/* ]
+    branches: [ main, ci/* ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
