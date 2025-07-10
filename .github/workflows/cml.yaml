@@ -2,7 +2,7 @@ name: validate-my-model
 
 on:    
   pull_request:
-    branches: [ main, ci/* ]
+    branches: [ main, ci/*, test/ ]
 
 jobs:
   cml:
