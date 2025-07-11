@@ -179,8 +179,8 @@ stages:
       size: 207
     - path: models/pls
       hash: md5
-      md5: 899d7558da093304a79cac2f7b6378a2.dir
-      size: 545878380
+      md5: cbb4c420871df37c7e9c01aa91a0ff5b.dir
+      size: 545889261
       nfiles: 17723
     - path: src/pg2_benchmark/cli/model.py
       hash: md5
@@ -189,16 +189,16 @@ stages:
     outs:
     - path: data/supervised/output/neime_pls.csv
       hash: md5
-      md5: 446e6731bc612b4ad573d8c8a8862f99
-      size: 35147
+      md5: 839f0b87c4f4ecbdee4de8375ffd43e7
+      size: 35000
   supervised_metric@dataset0-model0:
     cmd: uv run pg2-benchmark metric calc --output-path data/supervised/output/neime_pls.csv
       --metric-path data/supervised/metric/neime_pls.csv
     deps:
     - path: data/supervised/output/neime_pls.csv
       hash: md5
-      md5: 446e6731bc612b4ad573d8c8a8862f99
-      size: 35147
+      md5: 839f0b87c4f4ecbdee4de8375ffd43e7
+      size: 35000
     - path: src/pg2_benchmark/cli/metric.py
       hash: md5
       md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
@@ -206,5 +206,5 @@ stages:
     outs:
     - path: data/supervised/metric/neime_pls.csv
       hash: md5
-      md5: 5ab87c1ea2668faf3d6519e6ce4c2fc0
-      size: 1616
+      md5: a5600509a9db84e6b8fd4f96159862ae
+      size: 1625
