@@ -24,7 +24,7 @@ def predict(
 
     dataset_name = Manifest.from_path(dataset_toml_file).name
 
-    model_path = "/output/model.pkl"
+    model_path = "/model.pkl"
     model_name = ModelManifest.from_path(model_toml_file).name
 
     train_X, train_Y = load_x_and_y(
