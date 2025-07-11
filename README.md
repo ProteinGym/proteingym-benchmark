@@ -12,7 +12,7 @@ https://username:token@github.com
 
 You can benchmark for a group of supervised models:
 ```
-uv run dvc repro supervise_predict supervise_metric
+uv run dvc repro supervised_predict supervised_metric
 ```
 
 You can benchmark for a group of zero-shot models:
