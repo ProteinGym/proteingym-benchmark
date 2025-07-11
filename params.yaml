@@ -1,9 +1,9 @@
-supervise_datasets:
-  - path: data/supervise/data/neime.toml
+supervised_datasets:
+  - path: data/supervised/data/neime.toml
     name: neime
 
-supervise_models:
-  - path: data/supervise/model/pls.toml
+supervised_models:
+  - path: data/supervised/model/pls.toml
     dockerfile: models/pls
     name: pls
 
