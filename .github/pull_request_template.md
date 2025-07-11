@@ -7,7 +7,7 @@ Please check and update the following values for your own models:
 - [ ] model-name: pls
 
 > [!TIP]
-> `category` can be either `supervise` or `zero_shot`, which defines different games to benchmark. `category` is used in [params.yaml](../params.yaml) as prefix for datasets and models, and it is also used to configure which data are used in [data](../data) folder.
+> `category` can be either `supervised` or `zero_shot`, which defines different games to benchmark. `category` is used in [params.yaml](../params.yaml) as prefix for datasets and models, and it is also used to configure which data are used in [data](../data) folder.
 >
 > `model-index` comes in this format `model0` with 0 starting from the first model's `path` in [params.yaml](../params.yaml).
 >
