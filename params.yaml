@@ -1,6 +1,9 @@
-supervised_dummy_datasets:
-  - name: dummy
-    path: data/supervised/data/dummy/charge_ladder.toml
+supervised_charge_datasets:
+  - name: charge
+    path: data/supervised/data/charge/charge_ladder.toml
+  
+  - name: charge_extra
+    path: data/supervised/data/charge/charge_ladder_with_extra.toml
 
 supervised_datasets:
   - name: neime

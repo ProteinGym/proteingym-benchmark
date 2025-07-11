@@ -35,11 +35,11 @@ jobs:
           
           # Run DVC repro
           echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ./git-auth.txt
-          uv run dvc repro ${CATEGORY}_validate@dataset0-${MODEL_INDEX} ${CATEGORY}_metric@dataset0-${MODEL_INDEX}
+          uv run dvc repro ${CATEGORY}_validate@dataset0-${MODEL_INDEX}
           
           # Create report with metrics
           echo '```csv' >> report.md
-          cat ./data/${CATEGORY}/metric/dummy_${MODEL_NAME}.csv >> report.md
+          cat ./data/${CATEGORY}/metric/charge_${MODEL_NAME}.csv >> report.md
           echo '```' >> report.md
           
           # Send comment to PR

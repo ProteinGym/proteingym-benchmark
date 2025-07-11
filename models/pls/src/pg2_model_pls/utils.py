@@ -81,7 +81,6 @@ def encode(spit_X: list[Any], hyper_params: dict[str, Any]) -> np.ndarray:
         spit_X (list[Any]): List of protein sequences to encode. Each sequence should
             be a string or iterable of amino acid residues.
         hyper_params (dict[str, Any]): Dictionary containing encoding parameters:
-            - "sequence_length" (int): Expected length of each sequence
             - "aa_alphabet_length" (int): Number of amino acids in the alphabet
             - "aa_alphabet" (list or str): Ordered amino acid alphabet used for encoding
 
@@ -93,7 +92,6 @@ def encode(spit_X: list[Any], hyper_params: dict[str, Any]) -> np.ndarray:
     Example:
         >>> sequences = ["ACG", "AGC"]
         >>> params = {
-        ...     "sequence_length": 3,
         ...     "aa_alphabet_length": 20,
         ...     "aa_alphabet": "ACDEFGHIKLMNPQRSTVWY"
         ... }
@@ -107,10 +105,13 @@ def encode(spit_X: list[Any], hyper_params: dict[str, Any]) -> np.ndarray:
         - The output is flattened; each sequence becomes a 1D array of length
             sequence_length * aa_alphabet_length
     """
+
+    sequence_length = len(spit_X[0])
+
     encodings = np.empty(
         (
             len(spit_X),
-            hyper_params["sequence_length"] * hyper_params["aa_alphabet_length"],
+            sequence_length * hyper_params["aa_alphabet_length"],
         )
     )
 

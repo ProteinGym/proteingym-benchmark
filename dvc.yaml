@@ -2,17 +2,22 @@ stages:
 
   supervised_validate:
     matrix: 
-      dataset: ${supervised_dummy_datasets}
+      dataset: ${supervised_charge_datasets}
       model: ${supervised_models}
     
-    cmd: uv run pg2-benchmark model predict --dataset-manifest ${item.dataset.path} --model-manifest ${item.model.path} --model-dockerfile-folder ${item.model.dockerfile} --model-name ${item.model.name}
+    cmd: 
+      - uv run pg2-benchmark model predict --dataset-manifest ${item.dataset.path} --model-manifest ${item.model.path} --model-dockerfile-folder ${item.model.dockerfile} --model-name ${item.model.name}
+      - uv run pg2-benchmark metric calc --output-path data/supervised/output/${item.dataset.name}_${item.model.name}.csv --metric-path data/supervised/metric/${item.dataset.name}_${item.model.name}.csv
+
     deps:
       - ${item.dataset.path}
       - ${item.model.path}
       - ${item.model.dockerfile}
       - src/pg2_benchmark/cli/model.py
+      - src/pg2_benchmark/cli/metric.py
     outs:
       - data/supervised/output/${item.dataset.name}_${item.model.name}.csv
+      - data/supervised/metric/${item.dataset.name}_${item.model.name}.csv
 
   supervised_predict:
     matrix: 

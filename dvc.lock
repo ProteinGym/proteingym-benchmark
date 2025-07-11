@@ -175,12 +175,12 @@ stages:
       size: 266
     - path: data/supervised/model/pls.toml
       hash: md5
-      md5: 1ba832ce9f172fa817e884b71dfae23a
-      size: 207
+      md5: 751569f65bbbc4d796ddc02a70dce809
+      size: 185
     - path: models/pls
       hash: md5
-      md5: 899d7558da093304a79cac2f7b6378a2.dir
-      size: 545878380
+      md5: d477af7430ccef521f127712c4e460e9.dir
+      size: 545878286
       nfiles: 17723
     - path: src/pg2_benchmark/cli/model.py
       hash: md5
@@ -189,16 +189,16 @@ stages:
     outs:
     - path: data/supervised/output/neime_pls.csv
       hash: md5
-      md5: 95290a9342bd4939dd2363d07c958b11
-      size: 35159
+      md5: b682cf1d62caa0a6b711f71daaa74413
+      size: 34927
   supervised_metric@dataset0-model0:
     cmd: uv run pg2-benchmark metric calc --output-path data/supervised/output/neime_pls.csv
       --metric-path data/supervised/metric/neime_pls.csv
     deps:
     - path: data/supervised/output/neime_pls.csv
       hash: md5
-      md5: 95290a9342bd4939dd2363d07c958b11
-      size: 35159
+      md5: b682cf1d62caa0a6b711f71daaa74413
+      size: 34927
     - path: src/pg2_benchmark/cli/metric.py
       hash: md5
       md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
@@ -206,5 +206,43 @@ stages:
     outs:
     - path: data/supervised/metric/neime_pls.csv
       hash: md5
-      md5: 48ffab415581624c739fe5d78a5b7e9f
-      size: 1622
+      md5: 004bd9a6caa0354c578e2d67ef309434
+      size: 1569
+  supervised_validate@dataset0-model0:
+    cmd:
+    - uv run pg2-benchmark model predict --dataset-manifest data/supervised/data/charge/charge_ladder.toml
+      --model-manifest data/supervised/model/pls.toml --model-dockerfile-folder models/pls
+      --model-name pls
+    - uv run pg2-benchmark metric calc --output-path data/supervised/output/charge_pls.csv
+      --metric-path data/supervised/metric/charge_pls.csv
+    deps:
+    - path: data/supervised/data/charge/charge_ladder.toml
+      hash: md5
+      md5: 76c0d97d284cadba42a0887b3c14f31a
+      size: 200
+    - path: data/supervised/model/pls.toml
+      hash: md5
+      md5: 751569f65bbbc4d796ddc02a70dce809
+      size: 185
+    - path: models/pls
+      hash: md5
+      md5: d477af7430ccef521f127712c4e460e9.dir
+      size: 545878286
+      nfiles: 17723
+    - path: src/pg2_benchmark/cli/metric.py
+      hash: md5
+      md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
+      size: 774
+    - path: src/pg2_benchmark/cli/model.py
+      hash: md5
+      md5: 57ebf06741759eb1d8842e2acd7ac8bf
+      size: 1666
+    outs:
+    - path: data/supervised/metric/charge_pls.csv
+      hash: md5
+      md5: db9fe752a1b1351783046200b47bc0f9
+      size: 1457
+    - path: data/supervised/output/charge_pls.csv
+      hash: md5
+      md5: 69e3f3c7dfef428ceafacb8ffc0bb925
+      size: 13718
