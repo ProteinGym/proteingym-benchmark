@@ -2,7 +2,7 @@
 
 Please check and update the following values for your own models:
 
-- [ ] category: supervise
+- [ ] category: supervised
 - [ ] model-index: model0
 - [ ] model-name: pls
 
