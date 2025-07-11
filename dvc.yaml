@@ -1,9 +1,9 @@
 stages:
 
-  supervise_predict:
+  supervised_predict:
     matrix: 
-      dataset: ${supervise_datasets}
-      model: ${supervise_models}
+      dataset: ${supervised_datasets}
+      model: ${supervised_models}
     
     cmd: uv run pg2-benchmark model predict --dataset-manifest ${item.dataset.path} --model-manifest ${item.model.path} --model-dockerfile-folder ${item.model.dockerfile} --model-name ${item.model.name}
     deps:
@@ -12,19 +12,19 @@ stages:
       - ${item.model.dockerfile}
       - src/pg2_benchmark/cli/model.py
     outs:
-      - data/supervise/output/${item.dataset.name}_${item.model.name}.csv
+      - data/supervised/output/${item.dataset.name}_${item.model.name}.csv
 
-  supervise_metric:
+  supervised_metric:
     matrix: 
-      dataset: ${supervise_datasets}
-      model: ${supervise_models}
+      dataset: ${supervised_datasets}
+      model: ${supervised_models}
     
-    cmd: uv run pg2-benchmark metric calc --output-path data/supervise/output/${item.dataset.name}_${item.model.name}.csv --metric-path data/supervise/metric/${item.dataset.name}_${item.model.name}.csv
+    cmd: uv run pg2-benchmark metric calc --output-path data/supervised/output/${item.dataset.name}_${item.model.name}.csv --metric-path data/supervised/metric/${item.dataset.name}_${item.model.name}.csv
     deps:
-      - data/supervise/output/${item.dataset.name}_${item.model.name}.csv
+      - data/supervised/output/${item.dataset.name}_${item.model.name}.csv
       - src/pg2_benchmark/cli/metric.py
     outs:
-      - data/supervise/metric/${item.dataset.name}_${item.model.name}.csv
+      - data/supervised/metric/${item.dataset.name}_${item.model.name}.csv
 
 
   zero_shot_predict:
