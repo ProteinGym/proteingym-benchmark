@@ -1,15 +1,6 @@
-# /// script
-# requires-python = ">=3.12"
-# dependencies = [
-#     "numpy",
-#     "pandas",
-# ]
-# ///
-
 import random
 import re
 from collections import Counter
-from pathlib import Path
 from typing import Optional
 
 import numpy as np
@@ -134,17 +125,3 @@ def add_extra_features(df: pd.DataFrame, target: str):
     df["bar"] = bar
     df[target] = df[target] * np.array((df["bar"] == "a") * 2 - 1) - df["foo"] / 50
     return df
-
-
-def main():
-    ladder = charge_ladder_dataset(500, 100)
-    data_dir = Path("../data/supervise/data")
-
-    ladder.to_csv(data_dir / "charge_ladder.csv", index=False)
-    add_extra_features(ladder, "charge").to_csv(
-        data_dir / "charge_ladder_with_extra.csv", index=False
-    )
-
-
-if "__main__" in __name__:
-    main()
