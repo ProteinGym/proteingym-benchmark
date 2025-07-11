@@ -1,5 +1,19 @@
 stages:
 
+  supervised_validate:
+    matrix: 
+      dataset: ${supervised_dummy_datasets}
+      model: ${supervised_models}
+    
+    cmd: uv run pg2-benchmark model predict --dataset-manifest ${item.dataset.path} --model-manifest ${item.model.path} --model-dockerfile-folder ${item.model.dockerfile} --model-name ${item.model.name}
+    deps:
+      - ${item.dataset.path}
+      - ${item.model.path}
+      - ${item.model.dockerfile}
+      - src/pg2_benchmark/cli/model.py
+    outs:
+      - data/supervised/output/${item.dataset.name}_${item.model.name}.csv
+
   supervised_predict:
     matrix: 
       dataset: ${supervised_datasets}
