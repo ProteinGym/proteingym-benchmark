@@ -1,17 +1,25 @@
+supervised_charge_datasets:
+  - name: charge
+    path: data/supervised/data/charge/charge_ladder.toml
+  
+  - name: charge_extra
+    path: data/supervised/data/charge/charge_ladder_with_extra.toml
+
 supervised_datasets:
-  - path: data/supervised/data/neime.toml
-    name: neime
+  - name: neime
+    path: data/supervised/data/neime/neime.toml
 
 supervised_models:
-  - path: data/supervised/model/pls.toml
+  - name: pls
+    path: data/supervised/model/pls.toml
     dockerfile: models/pls
-    name: pls
+    
 
 zero_shot_datasets:
-  - path: data/zero_shot/data/ranganathan.toml
-    name: ranganathan
+  - name: ranganathan
+    path: data/zero_shot/data/ranganathan/ranganathan.toml
 
 zero_shot_models:
-  - path: data/zero_shot/model/esm.toml
+  - name: esm
+    path: data/zero_shot/model/esm.toml
     dockerfile: models/esm
-    name: esm
