@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [project.scripts]
-pg2-benchmark = "pg2_benchmark.main:app"
+pg2-benchmark = "pg2_benchmark.__main__:app"
 
 [build-system]
 requires = ["hatchling"]
