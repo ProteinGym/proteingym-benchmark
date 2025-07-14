@@ -27,5 +27,5 @@ uv run dvc repro zero_shot_predict zero_shot_metric
 
 You can generate dummy data by the following command:
 ```shell
-uv run pg2-benchmark dataset generate-dummy-data --n-rows 5 --seq-len 100 --data-dir data/supervised/data/
+uv run pg2-benchmark dataset generate-dummy-data data/supervised/data/ --n-rows 5 --sequence-length 100
 ```

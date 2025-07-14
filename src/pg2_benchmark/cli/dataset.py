@@ -1,4 +1,5 @@
 import typer
+from typing import Annotated
 from pathlib import Path
 from pg2_dataset.dataset import Dataset, Manifest
 from pg2_dataset.backends import Assays
@@ -30,15 +31,25 @@ def load_assays_from_path(
 
 @dataset_app.command()
 def generate_dummy_data(
-    n_rows: int = typer.Option(help="Number of rows to generate in a data frame"),
-    seq_len: int = typer.Option(help="Length of sequence for the sequence column"),
-    data_dir: str = typer.Option(help="Directory to the dummy dataset folder"),
+    data_file: Annotated[
+        Path,
+        typer.Argument(
+            exists=True,
+            file_okay=False,
+            dir_okay=True,
+            writable=True,
+            help="Directory to the dummy dataset folder",
+        ),
+    ],
+    n_rows: Annotated[
+        int, typer.Option(help="Number of rows to generate in a data frame")
+    ] = 500,
+    sequence_length: Annotated[
+        int, typer.Option(help="Length of sequence for the sequence column")
+    ] = 100,
 ) -> None:
-    ladder = charge_ladder_dataset(n_rows, seq_len)
+    ladder = charge_ladder_dataset(n_rows, sequence_length)
 
-    data_dir = Path(data_dir)
-
-    ladder.to_csv(data_dir / "charge_ladder.csv", index=False)
-    add_extra_features(ladder, "charge").to_csv(
-        data_dir / "charge_ladder_with_extra.csv", index=False
+    ladder.pipe(add_extra_features, target="charge").to_csv(
+        data_file / "charge_ladder.csv", index=False
     )
