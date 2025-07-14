@@ -1,4 +1,4 @@
-name = "charge"
+name = "charge_ladder_with_extra"
 
 [assays_meta]
 file_path = "/data/charge_ladder_with_extra.csv"
