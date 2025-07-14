@@ -9,7 +9,7 @@ dependencies = [
     "numpy~=2.2.5",
     "scikit-learn~=1.7.0",
     "pg2-dataset[biopython]",
-    "polars[pyarrow~=1.31.0",
+    "polars[pyarrow]~=1.31.0",
 ]
 
 [project.scripts]
