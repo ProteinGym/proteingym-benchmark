@@ -1,13 +1,15 @@
 name: validate-model
 
 on:    
+  workflow_dispatch:
   pull_request:
     branches: main
+  
 
 jobs:
   cml:
     runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.labels.*.name, 'model validation')
+
     steps:
       - uses: actions/checkout@v4
 
@@ -27,20 +29,22 @@ jobs:
           git config --global credential.helper store
           echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ~/.git-credentials
           uv sync
-
-          # Parse PR template
-          CATEGORY=$(echo "${{ github.event.pull_request.body }}" | grep -o 'category: [^[:space:]]*' | cut -d' ' -f2)
-          MODEL_INDEX=$(echo "${{ github.event.pull_request.body }}" | grep -o 'model-index: [^[:space:]]*' | cut -d' ' -f2)
-          MODEL_NAME=$(echo "${{ github.event.pull_request.body }}" | grep -o 'model-name: [^[:space:]]*' | cut -d' ' -f2)
-          
+     
           # Run DVC repro
           echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ./git-auth.txt
-          uv run dvc repro ${CATEGORY}_validate@dataset0-${MODEL_INDEX}
+          uv run dvc repro supervised_validate zero_shot_predict zero_shot_metric
           
           # Create report with metrics
-          echo '✅ The model has passed validation based on the charge ladder dataset!' >> report.md
+          # Pick one supervised model
+          echo "✅ Supervised models have all passed validation."
           echo '```csv' >> report.md
-          cat ./data/${CATEGORY}/metric/charge_${MODEL_NAME}.csv >> report.md
+          cat ./data/supervised/metric/charge_pls.csv >> report.md
+          echo '```' >> report.md
+
+          # Pick one zero-shot model
+          echo "✅ Zero-shot models have all passed validation."
+          echo '```csv' >> report.md
+          cat ./data/zero_shot/metric/ranganathan_esm.csv >> report.md
           echo '```' >> report.md
           
           # Send comment to PR
