@@ -5,15 +5,15 @@ description = "Project to be submitted to ProteinGym2"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "typer>=0.15.2",
-    "numpy>=2.2.5",
-    "scikit-learn>=1.6.1",
+    "typer~=0.16.0",
+    "numpy~=2.2.5",
+    "scikit-learn~=1.7.0",
     "pg2-dataset[biopython]",
-    "polars[pyarrow]>=1.30.0",
+    "polars[pyarrow~=1.31.0",
 ]
 
 [project.scripts]
-pg2-model = "pg2_model_pls.main:app"
+pg2-model = "pg2_model_pls.__main__:app"
 
 [build-system]
 requires = ["hatchling"]
@@ -30,5 +30,5 @@ line-length = 88
 
 [dependency-groups]
 dev = [
-    "pytest>=8.3.5",
+    "pytest~=8.4.1",
 ]
