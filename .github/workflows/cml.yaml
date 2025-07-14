@@ -38,6 +38,7 @@ jobs:
           uv run dvc repro ${CATEGORY}_validate@dataset0-${MODEL_INDEX}
           
           # Create report with metrics
+          echo '✅ The model ${MODEL_NAME} has passed validation based on the charge ladder dataset!' >> report.md
           echo '```csv' >> report.md
           cat ./data/${CATEGORY}/metric/charge_${MODEL_NAME}.csv >> report.md
           echo '```' >> report.md
