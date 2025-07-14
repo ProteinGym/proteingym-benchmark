@@ -1,11 +1,10 @@
-supervised_charge_datasets:
+supervised_datasets:
   - name: charge
     path: data/supervised/data/charge/charge_ladder.toml
   
   - name: charge_extra
     path: data/supervised/data/charge/charge_ladder_with_extra.toml
-
-supervised_datasets:
+  
   - name: neime
     path: data/supervised/data/neime/neime.toml
 
