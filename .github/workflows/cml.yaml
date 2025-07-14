@@ -36,13 +36,13 @@ jobs:
           
           # Create report with metrics
           # Pick one supervised model
-          echo "✅ Supervised models have all passed validation."
+          echo "✅ Supervised models have all passed validation." >> report.md
           echo '```csv' >> report.md
           cat ./data/supervised/metric/charge_ladder_pls.csv >> report.md
           echo '```' >> report.md
 
           # Pick one zero-shot model
-          echo "✅ Zero-shot models have all passed validation."
+          echo "✅ Zero-shot models have all passed validation." >> report.md
           echo '```csv' >> report.md
           cat ./data/zero_shot/metric/ranganathan_esm.csv >> report.md
           echo '```' >> report.md
