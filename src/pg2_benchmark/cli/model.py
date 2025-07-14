@@ -26,6 +26,7 @@ def predict(
         tags=[f"{model_name}:latest"],
         secrets="id=git_auth,src=git-auth.txt",
         load=True,
+        cache=False,
     )
 
     console.print(f"{docker.image.list()}")

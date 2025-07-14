@@ -1,6 +1,6 @@
 supervised_datasets:
   - name: charge_ladder
-    path: data/supervised/data/charge/charge_ladder.toml
+    path: data/supervised/data/dummy/charge_ladder.toml
   
   - name: neime
     path: data/supervised/data/neime/neime.toml
