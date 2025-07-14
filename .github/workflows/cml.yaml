@@ -38,7 +38,7 @@ jobs:
           # Pick one supervised model
           echo "✅ Supervised models have all passed validation."
           echo '```csv' >> report.md
-          cat ./data/supervised/metric/charge_pls.csv >> report.md
+          cat ./data/supervised/metric/charge_ladder_pls.csv >> report.md
           echo '```' >> report.md
 
           # Pick one zero-shot model
