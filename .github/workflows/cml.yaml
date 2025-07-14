@@ -32,7 +32,7 @@ jobs:
      
           # Run DVC repro
           echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ./git-auth.txt
-          uv run dvc repro supervised_validate zero_shot_predict zero_shot_metric
+          uv run dvc repro
           
           # Create report with metrics
           # Pick one supervised model

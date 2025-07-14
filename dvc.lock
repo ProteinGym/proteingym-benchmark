@@ -44,3 +44,41 @@ stages:
       hash: md5
       md5: 48fa008aefa2493c92ff7eaff9ad5aef
       size: 1612
+  supervised_validate@dataset0-model0:
+    cmd:
+    - uv run pg2-benchmark model predict --dataset-manifest data/supervised/data/charge/charge_ladder.toml
+      --model-manifest data/supervised/model/pls.toml --model-dockerfile-folder models/pls
+      --model-name pls
+    - uv run pg2-benchmark metric calc --output-path data/supervised/output/charge_pls.csv
+      --metric-path data/supervised/metric/charge_pls.csv
+    deps:
+    - path: data/supervised/data/charge/charge_ladder.toml
+      hash: md5
+      md5: 76c0d97d284cadba42a0887b3c14f31a
+      size: 200
+    - path: data/supervised/model/pls.toml
+      hash: md5
+      md5: 751569f65bbbc4d796ddc02a70dce809
+      size: 185
+    - path: models/pls
+      hash: md5
+      md5: 74c2d0b3e574721e11c4b22037b719d8.dir
+      size: 545889182
+      nfiles: 17723
+    - path: src/pg2_benchmark/cli/metric.py
+      hash: md5
+      md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
+      size: 774
+    - path: src/pg2_benchmark/cli/model.py
+      hash: md5
+      md5: 57ebf06741759eb1d8842e2acd7ac8bf
+      size: 1666
+    outs:
+    - path: data/supervised/metric/charge_pls.csv
+      hash: md5
+      md5: 410dee44b97f3b0f951e75068fcf3ac0
+      size: 1457
+    - path: data/supervised/output/charge_pls.csv
+      hash: md5
+      md5: d0f517efe2d147a0a3cae3d09879e2b0
+      size: 13726
