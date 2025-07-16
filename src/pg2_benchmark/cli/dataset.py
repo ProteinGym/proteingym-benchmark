@@ -38,7 +38,7 @@ def generate_dummy_data(
             help="Dummy dataset file",
         ),
     ],
-    *
+    *,
     n_rows: Annotated[
         int, typer.Option(help="Number of rows to generate in a data frame")
     ] = 500,
