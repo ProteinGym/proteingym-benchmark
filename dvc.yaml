@@ -1,5 +1,4 @@
 stages:
-
   supervised_predict:
     matrix: 
       dataset: ${supervised_datasets}

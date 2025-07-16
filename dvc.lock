@@ -1,147 +1,153 @@
 schema: '2.0'
 stages:
-  predict:
-    cmd: uv run pg2-benchmark model predict --dataset-manifest data/supervise/dataset.toml
-      --model-manifest data/supervise/model.toml
-    deps:
-    - path: data/supervise/dataset.toml
-      hash: md5
-      md5: 5f09c70955cd4a42d1d4543ef3f45e10
-      size: 407
-    - path: data/supervise/model.toml
-      hash: md5
-      md5: e332e14d3323147c55b6623e18bd292d
-      size: 300
-    - path: src/pg2_benchmark/cli/model.py
-      hash: md5
-      md5: aa03d4963c9981637ade5e91f5ee2440
-      size: 1913
-    outs:
-    - path: data/supervise/output.csv
-      hash: md5
-      md5: 1b5fa3adc0211caf6fcb4624adb6b588
-      size: 34931
-  metric:
-    cmd: uv run pg2-benchmark metric calculate --output-path data/supervise/output.csv
-      --metric-path data/supervise/metric.csv
-    deps:
-    - path: data/supervise/output.csv
-      hash: md5
-      md5: 1b5fa3adc0211caf6fcb4624adb6b588
-      size: 34931
-    - path: src/pg2_benchmark/cli/metric.py
-      hash: md5
-      md5: 017eb564f8442d911e4abe257f74f2f8
-      size: 779
-    outs:
-    - path: data/supervise/metric.csv
-      hash: md5
-      md5: 891bbf118ef76a867740e70dcc94cb6c
-      size: 1624
-  predict@dataset0-model0:
-    cmd: uv run pg2-benchmark model predict --dataset-manifest data/supervise/dataset/d1.toml
-      --model-manifest data/supervise/model/m1.toml
-    deps:
-    - path: data/supervise/dataset/d1.toml
-      hash: md5
-      md5: 5f09c70955cd4a42d1d4543ef3f45e10
-      size: 407
-    - path: data/supervise/model/m1.toml
-      hash: md5
-      md5: e332e14d3323147c55b6623e18bd292d
-      size: 300
-    - path: src/pg2_benchmark/cli/model.py
-      hash: md5
-      md5: 616cbf192285bf9a92ca54a443f03908
-      size: 1952
-    outs:
-    - path: data/supervise/output/d1_m1.csv
-      hash: md5
-      md5: c2efe589e3a1402ba3a39c088d260001
-      size: 35064
-  metric@dataset0-model0:
-    cmd: uv run pg2-benchmark metric calculate --output-path data/supervise/output/d1_m1.csv
-      --metric-path data/supervise/metric/d1_m1.csv
-    deps:
-    - path: data/supervise/output/d1_m1.csv
-      hash: md5
-      md5: c2efe589e3a1402ba3a39c088d260001
-      size: 35064
-    - path: src/pg2_benchmark/cli/metric.py
-      hash: md5
-      md5: 017eb564f8442d911e4abe257f74f2f8
-      size: 779
-    outs:
-    - path: data/supervise/metric/d1_m1.csv
-      hash: md5
-      md5: d68fd57939cae32951f7766afd595323
-      size: 1620
-  supervise_predict@dataset0-model0:
-    cmd: uv run pg2-benchmark model predict --dataset-manifest data/supervise/data/neime.toml
-      --model-manifest data/supervise/model/pls.toml --model-dockerfile-folder models/pls
+  supervised_predict@dataset0-model0:
+    cmd: uv run pg2-benchmark model predict --dataset-manifest data/supervised/data/dummy/charge_ladder.toml
+      --model-manifest data/supervised/model/pls.toml --model-dockerfile-folder models/pls
       --model-name pls
     deps:
-    - path: data/supervise/data/neime.toml
+    - path: data/supervised/data/dummy/charge_ladder.toml
       hash: md5
-      md5: 394178d3ffeda14fdad7a77c88d4c831
-      size: 266
-    - path: data/supervise/model/pls.toml
-      hash: md5
-      md5: 1ba832ce9f172fa817e884b71dfae23a
+      md5: 7a63f4476d780d01a1d91c1dd966940f
       size: 207
+    - path: data/supervised/model/pls.toml
+      hash: md5
+      md5: 751569f65bbbc4d796ddc02a70dce809
+      size: 185
     - path: models/pls
       hash: md5
-      md5: 43acbdacc55f4f090dc08cab0875ae60.dir
-      size: 317830
-      nfiles: 13
+      md5: 74c2d0b3e574721e11c4b22037b719d8.dir
+      size: 545889182
+      nfiles: 17723
     - path: src/pg2_benchmark/cli/model.py
       hash: md5
-      md5: 57ebf06741759eb1d8842e2acd7ac8bf
-      size: 1666
+      md5: 7b69bd48d88f96c7e759334208c24226
+      size: 1687
     outs:
-    - path: data/supervise/output/neime_pls.csv
+    - path: data/supervised/output/charge_ladder_pls.csv
       hash: md5
-      md5: e58586fbf151c926675eaec709170b13
-      size: 35015
-  supervise_metric@dataset0-model0:
-    cmd: uv run pg2-benchmark metric calc --output-path data/supervise/output/neime_pls.csv
-      --metric-path data/supervise/metric/neime_pls.csv
+      md5: 27338dea2640f7d3e0bdb6d81124c289
+      size: 13746
+  supervised_metric@dataset0-model0:
+    cmd: uv run pg2-benchmark metric calc --output-path data/supervised/output/charge_ladder_pls.csv
+      --metric-path data/supervised/metric/charge_ladder_pls.csv
     deps:
-    - path: data/supervise/output/neime_pls.csv
+    - path: data/supervised/output/charge_ladder_pls.csv
       hash: md5
-      md5: e58586fbf151c926675eaec709170b13
-      size: 35015
+      md5: 27338dea2640f7d3e0bdb6d81124c289
+      size: 13746
     - path: src/pg2_benchmark/cli/metric.py
       hash: md5
       md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
       size: 774
     outs:
-    - path: data/supervise/metric/neime_pls.csv
+    - path: data/supervised/metric/charge_ladder_pls.csv
       hash: md5
-      md5: 1361f6e083405f5a020b423a351ebbbe
-      size: 1626
+      md5: b3740e164e0386621442662afd60447a
+      size: 1457
+  supervised_validate@dataset0-model0:
+    cmd:
+    - uv run pg2-benchmark model predict --dataset-manifest data/supervised/data/charge/charge_ladder.toml
+      --model-manifest data/supervised/model/pls.toml --model-dockerfile-folder models/pls
+      --model-name pls
+    - uv run pg2-benchmark metric calc --output-path data/supervised/output/charge_pls.csv
+      --metric-path data/supervised/metric/charge_pls.csv
+    deps:
+    - path: data/supervised/data/charge/charge_ladder.toml
+      hash: md5
+      md5: 76c0d97d284cadba42a0887b3c14f31a
+      size: 200
+    - path: data/supervised/model/pls.toml
+      hash: md5
+      md5: 751569f65bbbc4d796ddc02a70dce809
+      size: 185
+    - path: models/pls
+      hash: md5
+      md5: 74c2d0b3e574721e11c4b22037b719d8.dir
+      size: 545889182
+      nfiles: 17723
+    - path: src/pg2_benchmark/cli/metric.py
+      hash: md5
+      md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
+      size: 774
+    - path: src/pg2_benchmark/cli/model.py
+      hash: md5
+      md5: 57ebf06741759eb1d8842e2acd7ac8bf
+      size: 1666
+    outs:
+    - path: data/supervised/metric/charge_pls.csv
+      hash: md5
+      md5: 410dee44b97f3b0f951e75068fcf3ac0
+      size: 1457
+    - path: data/supervised/output/charge_pls.csv
+      hash: md5
+      md5: d0f517efe2d147a0a3cae3d09879e2b0
+      size: 13726
+  supervised_predict@dataset1-model0:
+    cmd: uv run pg2-benchmark model predict --dataset-manifest data/supervised/data/neime/neime.toml
+      --model-manifest data/supervised/model/pls.toml --model-dockerfile-folder models/pls
+      --model-name pls
+    deps:
+    - path: data/supervised/data/neime/neime.toml
+      hash: md5
+      md5: 394178d3ffeda14fdad7a77c88d4c831
+      size: 266
+    - path: data/supervised/model/pls.toml
+      hash: md5
+      md5: 751569f65bbbc4d796ddc02a70dce809
+      size: 185
+    - path: models/pls
+      hash: md5
+      md5: 74c2d0b3e574721e11c4b22037b719d8.dir
+      size: 545889182
+      nfiles: 17723
+    - path: src/pg2_benchmark/cli/model.py
+      hash: md5
+      md5: 7b69bd48d88f96c7e759334208c24226
+      size: 1687
+    outs:
+    - path: data/supervised/output/neime_pls.csv
+      hash: md5
+      md5: 802837dd62069ee661a145bb5bc0020f
+      size: 35033
+  supervised_metric@dataset1-model0:
+    cmd: uv run pg2-benchmark metric calc --output-path data/supervised/output/neime_pls.csv
+      --metric-path data/supervised/metric/neime_pls.csv
+    deps:
+    - path: data/supervised/output/neime_pls.csv
+      hash: md5
+      md5: 802837dd62069ee661a145bb5bc0020f
+      size: 35033
+    - path: src/pg2_benchmark/cli/metric.py
+      hash: md5
+      md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
+      size: 774
+    outs:
+    - path: data/supervised/metric/neime_pls.csv
+      hash: md5
+      md5: b1e479b2bc80dbc77f188031cf55566e
+      size: 1624
   zero_shot_predict@dataset0-model0:
-    cmd: uv run pg2-benchmark model predict --dataset-manifest data/zero_shot/data/ranganathan.toml
+    cmd: uv run pg2-benchmark model predict --dataset-manifest data/zero_shot/data/ranganathan/ranganathan.toml
       --model-manifest data/zero_shot/model/esm.toml --model-dockerfile-folder models/esm
       --model-name esm
     deps:
-    - path: data/zero_shot/data/ranganathan.toml
+    - path: data/zero_shot/data/ranganathan/ranganathan.toml
       hash: md5
       md5: ec8bc8dfa7b6415a9b70a417994e306d
       size: 986
     - path: data/zero_shot/model/esm.toml
       hash: md5
-      md5: 4bc22345e83be6c9ff13a25f0514e126
-      size: 114
+      md5: 64b3f9c9ca8ca6553bc695a1fba4d974
+      size: 111
     - path: models/esm
       hash: md5
-      md5: c2bbabe20519aa091fd96f7846424e78.dir
-      size: 776637251
-      nfiles: 29291
+      md5: 9add25757ed5085322c240cf1a84f97c.dir
+      size: 831052070
+      nfiles: 30597
     - path: src/pg2_benchmark/cli/model.py
       hash: md5
-      md5: 57ebf06741759eb1d8842e2acd7ac8bf
-      size: 1666
+      md5: 7b69bd48d88f96c7e759334208c24226
+      size: 1687
     outs:
     - path: data/zero_shot/output/ranganathan_esm.csv
       hash: md5
@@ -164,47 +170,3 @@ stages:
       hash: md5
       md5: 4969ac651d461ac62496caf718afadfa
       size: 1588
-  supervised_predict@dataset0-model0:
-    cmd: uv run pg2-benchmark model predict --dataset-manifest data/supervised/data/neime.toml
-      --model-manifest data/supervised/model/pls.toml --model-dockerfile-folder models/pls
-      --model-name pls
-    deps:
-    - path: data/supervised/data/neime.toml
-      hash: md5
-      md5: 394178d3ffeda14fdad7a77c88d4c831
-      size: 266
-    - path: data/supervised/model/pls.toml
-      hash: md5
-      md5: 1ba832ce9f172fa817e884b71dfae23a
-      size: 207
-    - path: models/pls
-      hash: md5
-      md5: cbb4c420871df37c7e9c01aa91a0ff5b.dir
-      size: 545889261
-      nfiles: 17723
-    - path: src/pg2_benchmark/cli/model.py
-      hash: md5
-      md5: 57ebf06741759eb1d8842e2acd7ac8bf
-      size: 1666
-    outs:
-    - path: data/supervised/output/neime_pls.csv
-      hash: md5
-      md5: 839f0b87c4f4ecbdee4de8375ffd43e7
-      size: 35000
-  supervised_metric@dataset0-model0:
-    cmd: uv run pg2-benchmark metric calc --output-path data/supervised/output/neime_pls.csv
-      --metric-path data/supervised/metric/neime_pls.csv
-    deps:
-    - path: data/supervised/output/neime_pls.csv
-      hash: md5
-      md5: 839f0b87c4f4ecbdee4de8375ffd43e7
-      size: 35000
-    - path: src/pg2_benchmark/cli/metric.py
-      hash: md5
-      md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
-      size: 774
-    outs:
-    - path: data/supervised/metric/neime_pls.csv
-      hash: md5
-      md5: a5600509a9db84e6b8fd4f96159862ae
-      size: 1625
