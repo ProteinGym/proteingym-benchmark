@@ -34,11 +34,8 @@ def generate_dummy_data(
     data_file: Annotated[
         Path,
         typer.Argument(
-            exists=True,
-            file_okay=False,
-            dir_okay=True,
-            writable=True,
-            help="Directory to the dummy dataset folder",
+            exists=False,
+            help="Dummy dataset file",
         ),
     ],
     *
@@ -52,5 +49,5 @@ def generate_dummy_data(
     ladder = charge_ladder_dataset(n_rows, sequence_length)
 
     ladder.pipe(add_extra_features, target="charge").to_csv(
-        data_file / "charge_ladder.csv", index=False
+        data_file, index=False
     )
