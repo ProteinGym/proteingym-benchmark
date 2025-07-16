@@ -113,6 +113,10 @@ def charge_ladder_dataset(n_rows: int = 200, seq_len: int = 20) -> pd.DataFrame:
     sequences = [
         charge_mutations(parent, random.randint(0, seq_len)) for _ in range(n_rows)
     ]
+
+    # Deduplicate sequences
+    sequences = list(set(sequences))
+
     charge = [peptide_charge(seq) for seq in sequences]
     return pd.DataFrame({"sequence": sequences, "charge": charge})
 
