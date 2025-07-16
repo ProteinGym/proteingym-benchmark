@@ -41,6 +41,7 @@ def generate_dummy_data(
             help="Directory to the dummy dataset folder",
         ),
     ],
+    *
     n_rows: Annotated[
         int, typer.Option(help="Number of rows to generate in a data frame")
     ] = 500,
