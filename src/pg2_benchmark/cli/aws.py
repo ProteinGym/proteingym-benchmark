@@ -1,5 +1,4 @@
 import typer
-from typing import Annotated
 from rich.console import Console
 import boto3
 from datetime import datetime
@@ -13,22 +12,16 @@ err_console = Console(stderr=True)
 
 @aws_app.command()
 def create_training_job(
-    model_name: Annotated[str, typer.Option(help="Unique model name")],
-    region_name: Annotated[str, typer.Option(help="AWS region name")],
-    role_name: Annotated[str, typer.Option(help="AWS SageMaker role name")],
-    ecr_repository_uri: Annotated[str, typer.Option(help="AWS ECR repository URI")],
-    s3_training_data_bucket: Annotated[
-        str, typer.Option(help="S3 training data bucket")
-    ],
-    s3_output_bucket: Annotated[str, typer.Option(help="S3 output bucket")],
-    instance_type: Annotated[str, typer.Option(help="EC2 instance type")],
-    volume_size: Annotated[int, typer.Option(help="EC2 volume size in Gigabytes")],
-    dataset_toml_file: Annotated[
-        str, typer.Option(help="Dataset TOML file as hyperparamters")
-    ],
-    model_toml_file: Annotated[
-        str, typer.Option(help="Model TOML file as hyperparamters")
-    ],
+    model_name: str = typer.Option(help="Unique model name"),
+    region_name: str = typer.Option(help="AWS region name"),
+    role_name: str = typer.Option(help="AWS SageMaker role name"),
+    ecr_repository_uri: str = typer.Option(help="AWS ECR repository URI"),
+    s3_training_data_bucket: str = typer.Option(help="S3 training data bucket"),
+    s3_output_bucket: str = typer.Option(help="S3 output bucket"),
+    instance_type: str = typer.Option(help="EC2 instance type"),
+    volume_size: int = typer.Option(help="EC2 volume size in Gigabytes"),
+    dataset_toml_file: str = typer.Option(help="Dataset TOML file as hyperparamters"),
+    model_toml_file: str = typer.Option(help="Model TOML file as hyperparamters"),
 ):
     """Create and start SageMaker training job"""
 
@@ -86,12 +79,10 @@ def create_training_job(
 
 @aws_app.command()
 def monitor_training_job(
-    region_name: Annotated[str, typer.Option(help="AWS region name")],
-    job_name: Annotated[str, typer.Option(help="AWS SageMaker training job name")],
-    poll_interval: Annotated[
-        int, typer.Option(default=30, help="Poll interval in seconds")
-    ],
-    timeout: Annotated[int, typer.Option(default=3600, help="Timeout in seconds")],
+    region_name: str = typer.Option(help="AWS region name"),
+    job_name: str = typer.Option(help="AWS SageMaker training job name"),
+    poll_interval: int = typer.Option(default=30, help="Poll interval in seconds"),
+    timeout: int = typer.Option(default=3600, help="Timeout in seconds"),
 ):
     """Monitor SageMaker training job until completion"""
 

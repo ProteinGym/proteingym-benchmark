@@ -1,6 +1,6 @@
 import torch
 import typer
-from typing import Annotated, Tuple
+from typing import Tuple
 from rich.console import Console
 from pg2_dataset.dataset import Manifest
 from tqdm import tqdm
@@ -64,13 +64,11 @@ def _configure_container_paths(
 
 @app.command()
 def train(
-    dataset_toml_file: Annotated[
-        str, typer.Option(defaul="", help="Path to the dataset TOML file")
-    ],
-    model_toml_file: Annotated[
-        str, typer.Option(defaul="", help="Path to the model TOML file")
-    ],
-    nogpu: Annotated[bool, typer.Option(defaul=False, help="GPUs available or not")],
+    dataset_toml_file: str = typer.Option(
+        defaul="", help="Path to the dataset TOML file"
+    ),
+    model_toml_file: str = typer.Option(defaul="", help="Path to the model TOML file"),
+    nogpu: bool = typer.Option(defaul=False, help="GPUs available or not"),
 ):
     output_path, dataset_toml_file, model_toml_file = _configure_container_paths(
         dataset_toml_file=dataset_toml_file,
