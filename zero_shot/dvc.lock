@@ -53,16 +53,16 @@ stages:
     deps:
     - path: ../src/pg2_benchmark/cli/aws.py
       hash: md5
-      md5: a98d7884862d0fc772f072382b8b4b43
-      size: 4528
+      md5: 1d7595d66d39c65be47e41f105528d29
+      size: 5015
     - path: logs/role_create_complete.txt
       hash: md5
-      md5: 1346255f2987294695ee6c5e9c508fec
+      md5: 4041df01e9c028d94ebdd36c3b11bafc
       size: 56
     outs:
     - path: logs/create_job_ranganathan_esm.txt
       hash: md5
-      md5: f4f3cac3fb8ddf80c811ffedb9dea395
+      md5: 59ac1080c2fd5a6d5da36dcdf554ac15
       size: 20
   calculate_metric@dataset0-model0:
     cmd: uv run pg2-benchmark metric calc --output-path output/local/ranganathan_esm.csv
@@ -117,13 +117,13 @@ stages:
     deps:
     - path: ../models/esm
       hash: md5
-      md5: 4e274734c26b899fe32446ec77f5a64e.dir
-      size: 831072236
+      md5: 0f7b918c7c10b618555a6a5ba6fa8c9d.dir
+      size: 831072293
       nfiles: 30600
     outs:
     - path: logs/ecr_push_complete.txt
       hash: md5
-      md5: f1b93de5a40e4c937ce52a48da824ed3
+      md5: eaa8ad5813acc55ddb4ae2874070c912
       size: 52
     - path: logs/image_uri.txt
       hash: md5
@@ -142,7 +142,7 @@ stages:
     deps:
     - path: logs/ecr_push_complete.txt
       hash: md5
-      md5: 916c2a1cba491b38f3baf4598c8313af
+      md5: eaa8ad5813acc55ddb4ae2874070c912
       size: 52
     - path: logs/image_uri.txt
       hash: md5
@@ -150,12 +150,12 @@ stages:
       size: 57
     - path: logs/s3_upload_complete.txt
       hash: md5
-      md5: 64189d02b7dc183bc6dd7417257561c8
+      md5: 8cc0846d0716ffee1fef8c6d4b826cbf
       size: 50
     outs:
     - path: logs/role_create_complete.txt
       hash: md5
-      md5: 1346255f2987294695ee6c5e9c508fec
+      md5: fc417e803edb56a6a212310983a919dc
       size: 56
   monitor_training_job@dataset0-model0:
     cmd: "uv run pg2-benchmark aws monitor-training-job --region-name eu-north-1 --job-name
@@ -163,14 +163,14 @@ stages:
     deps:
     - path: ../src/pg2_benchmark/cli/aws.py
       hash: md5
-      md5: a98d7884862d0fc772f072382b8b4b43
-      size: 4528
+      md5: 1d7595d66d39c65be47e41f105528d29
+      size: 5015
     - path: logs/create_job_ranganathan_esm.txt
       hash: md5
-      md5: f4f3cac3fb8ddf80c811ffedb9dea395
+      md5: 59ac1080c2fd5a6d5da36dcdf554ac15
       size: 20
     outs:
     - path: logs/monitor_job_ranganathan_esm.txt
       hash: md5
-      md5: f7fa0247cec8dd7956dc6040d04898a7
+      md5: ab3fa6c234b8fabc96bf8e5a2e20df32
       size: 261

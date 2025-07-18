@@ -9,6 +9,7 @@ vars:
       volume_size: 5
 
   - local:
+      git_cache_bust: 1
       data_dir: data
       model_dir: model
       output_dir: output/aws
@@ -47,7 +48,7 @@ stages:
     cmd:
       - aws ecr describe-repositories --repository-names ${item.model.name} --region ${aws.region_name} >/dev/null 2>&1 || aws ecr create-repository --repository-name ${item.model.name} --region ${aws.region_name} >/dev/null
       - aws ecr get-login-password --region ${aws.region_name} | docker login --username AWS --password-stdin ${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com
-      - docker buildx build --platform linux/amd64,linux/arm64 --secret id=git_auth,src=git-auth.txt -t ${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}:latest ${item.model.dockerfile} --no-cache --push
+      - docker buildx build --build-arg GIT_CACHE_BUST=${local.git_cache_bust} --platform linux/amd64,linux/arm64 --secret id=git_auth,src=git-auth.txt -t ${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}:latest ${item.model.dockerfile} --push
       - echo "ECR push completed at $(date)" > logs/ecr_push_complete.txt
       - echo "${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}:latest" > logs/image_uri.txt
     deps:
@@ -125,7 +126,7 @@ stages:
       model: ${models}
     
     cmd:
-      - aws s3 cp s3://${aws.s3_output_bucket}/$(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)/${local.output_dir}/model.tar.gz ${local.output_dir}/
+      - aws s3 cp s3://${aws.s3_output_bucket}/$(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)/output/model.tar.gz ${local.output_dir}/
       - tar -xzf ${local.output_dir}/model.tar.gz -C ${local.output_dir}/
       - rm ${local.output_dir}/model.tar.gz
       - uv run pg2-benchmark metric calc --output-path ${local.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric-path ${local.metric_dir}/${item.dataset.name}_${item.model.name}.csv
