@@ -11,8 +11,8 @@ vars:
   - local:
       data_dir: data
       model_dir: model
-      output_dir: output
-      metric_dir: metric
+      output_dir: output/aws
+      metric_dir: metric/aws
   
   - datasets:
     - name: ranganathan
