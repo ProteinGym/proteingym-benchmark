@@ -65,10 +65,10 @@ def _configure_container_paths(
 @app.command()
 def train(
     dataset_toml_file: str = typer.Option(
-        defaul="", help="Path to the dataset TOML file"
+        default="", help="Path to the dataset TOML file"
     ),
-    model_toml_file: str = typer.Option(defaul="", help="Path to the model TOML file"),
-    nogpu: bool = typer.Option(defaul=False, help="GPUs available or not"),
+    model_toml_file: str = typer.Option(default="", help="Path to the model TOML file"),
+    nogpu: bool = typer.Option(default=False, help="GPUs available or not"),
 ):
     output_path, dataset_toml_file, model_toml_file = _configure_container_paths(
         dataset_toml_file=dataset_toml_file,
