@@ -4,7 +4,7 @@ from pg2_dataset.dataset import Manifest
 from pg2_dataset.splits.abstract_split_strategy import TrainTestValid
 from pg2_model_pls.manifest import Manifest as ModelManifest
 from pg2_model_pls.utils import load_x_and_y, train_model, predict_model
-from typing import Tuple
+from typing import Annotated, Tuple
 import json
 import toml
 import typer
@@ -61,10 +61,12 @@ def _configure_container_paths(
 
 @app.command()
 def train(
-    dataset_toml_file: str = typer.Option(
-        default="", help="Path to the dataset TOML file"
-    ),
-    model_toml_file: str = typer.Option(default="", help="Path to the model TOML file"),
+    dataset_toml_file: Annotated[
+        str, typer.Option(defaul="", help="Path to the dataset TOML file")
+    ],
+    model_toml_file: Annotated[
+        str, typer.Option(defaul="", help="Path to the model TOML file")
+    ],
 ):
     output_path, dataset_toml_file, model_toml_file = _configure_container_paths(
         dataset_toml_file=dataset_toml_file,

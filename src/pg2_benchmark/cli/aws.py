@@ -1,4 +1,5 @@
 import typer
+from typing import Annotated
 from rich.console import Console
 import boto3
 from datetime import datetime
@@ -12,16 +13,22 @@ err_console = Console(stderr=True)
 
 @aws_app.command()
 def create_training_job(
-    model_name: str = typer.Option(),
-    region_name: str = typer.Option(),
-    role_name: str = typer.Option(),
-    ecr_repository_uri: str = typer.Option(),
-    s3_training_data_bucket: str = typer.Option(),
-    s3_output_bucket: str = typer.Option(),
-    instance_type: str = typer.Option(),
-    volume_size: int = typer.Option(),
-    dataset_toml_file: str = typer.Option(),
-    model_toml_file: str = typer.Option(),
+    model_name: Annotated[str, typer.Option(help="Unique model name")],
+    region_name: Annotated[str, typer.Option(help="AWS region name")],
+    role_name: Annotated[str, typer.Option(help="AWS SageMaker role name")],
+    ecr_repository_uri: Annotated[str, typer.Option(help="AWS ECR repository URI")],
+    s3_training_data_bucket: Annotated[
+        str, typer.Option(help="S3 training data bucket")
+    ],
+    s3_output_bucket: Annotated[str, typer.Option(help="S3 output bucket")],
+    instance_type: Annotated[str, typer.Option(help="EC2 instance type")],
+    volume_size: Annotated[int, typer.Option(help="EC2 volume size in Gigabytes")],
+    dataset_toml_file: Annotated[
+        str, typer.Option(help="Dataset TOML file as hyperparamters")
+    ],
+    model_toml_file: Annotated[
+        str, typer.Option(help="Model TOML file as hyperparamters")
+    ],
 ):
     """Create and start SageMaker training job"""
 
