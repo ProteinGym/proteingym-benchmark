@@ -86,10 +86,12 @@ def create_training_job(
 
 @aws_app.command()
 def monitor_training_job(
-    region_name: str = typer.Option(),
-    job_name: str = typer.Option(),
-    poll_interval: int = typer.Option(default=30),
-    timeout: int = typer.Option(default=3600),
+    region_name: Annotated[str, typer.Option(help="AWS region name")],
+    job_name: Annotated[str, typer.Option(help="AWS SageMaker training job name")],
+    poll_interval: Annotated[
+        int, typer.Option(default=30, help="Poll interval in seconds")
+    ],
+    timeout: Annotated[int, typer.Option(default=3600, help="Timeout in seconds")],
 ):
     """Monitor SageMaker training job until completion"""
 
