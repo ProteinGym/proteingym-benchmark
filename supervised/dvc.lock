@@ -188,8 +188,8 @@ stages:
     deps:
     - path: data/
       hash: md5
-      md5: 4637b1eecc8fd53bf635ae6399fefafa.dir
-      size: 239276
+      md5: 4c049aee14d085d26d1aed6c8e4c56ae.dir
+      size: 239288
       nfiles: 5
     - path: model/
       hash: md5
@@ -199,7 +199,7 @@ stages:
     outs:
     - path: logs/s3_upload_complete.txt
       hash: md5
-      md5: cea8e055d7eddd57f5b08cb32d1c3c41
+      md5: 432159d9f4f49d294aaadef767ff9b1d
       size: 50
   deploy_to_ecr@model0:
     cmd:
@@ -216,13 +216,13 @@ stages:
     deps:
     - path: ../models/pls
       hash: md5
-      md5: 148ae045ee007a2b04a376e83d4eab6d.dir
-      size: 545915371
+      md5: 9ce3341b7a39835ac9ad2c32d41b4325.dir
+      size: 545915420
       nfiles: 17727
     outs:
     - path: logs/ecr_push_complete.txt
       hash: md5
-      md5: 206c59689fcc60b653f1d04bd62132d7
+      md5: f480d0ea904b5e5756c5b2fd981d48ac
       size: 52
     - path: logs/image_uri.txt
       hash: md5
@@ -241,7 +241,7 @@ stages:
     deps:
     - path: logs/ecr_push_complete.txt
       hash: md5
-      md5: 206c59689fcc60b653f1d04bd62132d7
+      md5: f480d0ea904b5e5756c5b2fd981d48ac
       size: 52
     - path: logs/image_uri.txt
       hash: md5
@@ -249,12 +249,12 @@ stages:
       size: 57
     - path: logs/s3_upload_complete.txt
       hash: md5
-      md5: cea8e055d7eddd57f5b08cb32d1c3c41
+      md5: 432159d9f4f49d294aaadef767ff9b1d
       size: 50
     outs:
     - path: logs/role_create_complete.txt
       hash: md5
-      md5: 6079059f86f1821e5e46863a63d030c2
+      md5: 38e0bfb32b0a1af1ceeba9e9fe0c9be0
       size: 56
   create_training_job@dataset0-model0:
     cmd: "uv run pg2-benchmark aws create-training-job --model-name pls --region-name
@@ -269,12 +269,12 @@ stages:
       size: 4947
     - path: logs/role_create_complete.txt
       hash: md5
-      md5: 6079059f86f1821e5e46863a63d030c2
+      md5: 38e0bfb32b0a1af1ceeba9e9fe0c9be0
       size: 56
     outs:
     - path: logs/create_job_charge_ladder_pls.txt
       hash: md5
-      md5: 7bd348a5ab2b935538cea9f95efd5d06
+      md5: faf2cb6836ad31b93e7a1e9277cc5587
       size: 20
   create_training_job@dataset1-model0:
     cmd: "uv run pg2-benchmark aws create-training-job --model-name pls --region-name
@@ -289,12 +289,12 @@ stages:
       size: 4947
     - path: logs/role_create_complete.txt
       hash: md5
-      md5: 6079059f86f1821e5e46863a63d030c2
+      md5: 38e0bfb32b0a1af1ceeba9e9fe0c9be0
       size: 56
     outs:
     - path: logs/create_job_neime_pls.txt
       hash: md5
-      md5: d06aeee418dc3d4c27d2c21c48046de6
+      md5: 7b1ebf9a53e0ac78c5c5f06ffecc5870
       size: 20
   monitor_training_job@dataset0-model0:
     cmd: "uv run pg2-benchmark aws monitor-training-job --region-name eu-north-1 --job-name
@@ -306,13 +306,13 @@ stages:
       size: 4947
     - path: logs/create_job_charge_ladder_pls.txt
       hash: md5
-      md5: 7bd348a5ab2b935538cea9f95efd5d06
+      md5: faf2cb6836ad31b93e7a1e9277cc5587
       size: 20
     outs:
     - path: logs/monitor_job_charge_ladder_pls.txt
       hash: md5
-      md5: 6e3913bc3e188c7e872f41d30b8a95b1
-      size: 201
+      md5: 9bac0e2a0f6dc6e91fcf7bdb460a0646
+      size: 245
   monitor_training_job@dataset1-model0:
     cmd: "uv run pg2-benchmark aws monitor-training-job --region-name eu-north-1 --job-name
       $(cat logs/create_job_neime_pls.txt) > logs/monitor_job_neime_pls.txt\n"
@@ -323,10 +323,46 @@ stages:
       size: 4947
     - path: logs/create_job_neime_pls.txt
       hash: md5
-      md5: d06aeee418dc3d4c27d2c21c48046de6
+      md5: 7b1ebf9a53e0ac78c5c5f06ffecc5870
       size: 20
     outs:
     - path: logs/monitor_job_neime_pls.txt
       hash: md5
-      md5: d6bad5938e87ed6367b20b5f18b25b24
-      size: 115
+      md5: 255f396bb1af64d6600e30ed403ddb5b
+      size: 158
+  calculate_metric@dataset0-model0:
+    cmd:
+    - aws s3 cp s3://pg2-benchmark-output/$(cat logs/create_job_charge_ladder_pls.txt)/output/model.tar.gz
+      output/aws/
+    - tar -xzf output/aws/model.tar.gz -C output/aws/
+    - rm output/aws/model.tar.gz
+    - uv run pg2-benchmark metric calc --output-path output/aws/charge_ladder_pls.csv
+      --metric-path metric/aws/charge_ladder_pls.csv
+    deps:
+    - path: logs/monitor_job_charge_ladder_pls.txt
+      hash: md5
+      md5: 9bac0e2a0f6dc6e91fcf7bdb460a0646
+      size: 245
+    outs:
+    - path: metric/aws/charge_ladder_pls.csv
+      hash: md5
+      md5: bb5ab36f6cd5cb6c8ae03ffa1162b7a7
+      size: 1457
+  calculate_metric@dataset1-model0:
+    cmd:
+    - aws s3 cp s3://pg2-benchmark-output/$(cat logs/create_job_neime_pls.txt)/output/model.tar.gz
+      output/aws/
+    - tar -xzf output/aws/model.tar.gz -C output/aws/
+    - rm output/aws/model.tar.gz
+    - uv run pg2-benchmark metric calc --output-path output/aws/neime_pls.csv --metric-path
+      metric/aws/neime_pls.csv
+    deps:
+    - path: logs/monitor_job_neime_pls.txt
+      hash: md5
+      md5: 255f396bb1af64d6600e30ed403ddb5b
+      size: 158
+    outs:
+    - path: metric/aws/neime_pls.csv
+      hash: md5
+      md5: c4e952371018aa22e3d74507c0d33301
+      size: 1620

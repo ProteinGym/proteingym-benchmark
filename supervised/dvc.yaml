@@ -1,7 +1,7 @@
 vars:  
   - aws:
-      account_id: "644482713970"
-      region_name: "eu-north-1"
+      account_id: "<your-account-id>"
+      region_name: "<your-region-name>"
       role_name: "pg2-benchmark-sagemaker-role"
       s3_output_bucket: "pg2-benchmark-output"
       s3_training_data_bucket: "pg2-benchmark-training-data"
