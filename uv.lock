@@ -1413,6 +1413,7 @@ name = "pg2-benchmark"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "boto3" },
     { name = "dvc" },
     { name = "pg2-dataset", extra = ["biopython"] },
     { name = "pycm" },
@@ -1428,6 +1429,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "boto3", specifier = ">=1.38.27" },
     { name = "dvc", specifier = ">=3.59.2" },
     { name = "pg2-dataset", extras = ["biopython"], git = "https://github.com/ProteinGym2/pg2-dataset.git?rev=58c327e13bade1effe1312eb2b8d5445016a5a8f" },
     { name = "pycm", specifier = ">=4.3" },
