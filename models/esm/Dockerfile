@@ -1,7 +1,11 @@
 FROM python:3.12-slim-bookworm
 
-RUN apt-get update && apt-get install -y --no-install-recommends \ 
-    git && rm -rf /var/lib/apt/lists/*
+# Fix GPG signature issues
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/program
 
