@@ -24,6 +24,6 @@ RUN --mount=type=secret,id=git_auth \
 
 RUN uv sync --no-cache
 
-COPY ./src /opt/program/src
+COPY ./src ./src
 
 ENTRYPOINT ["uv", "run", "pg2-model"]
