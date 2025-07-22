@@ -9,7 +9,7 @@ vars:
       dockerfile: ../models/esm
 
 stages:
-  zero_shot_predict:
+  predict:
     matrix: 
       dataset: ${datasets}
       model: ${models}
@@ -24,7 +24,7 @@ stages:
       - output/${item.dataset.name}_${item.model.name}.csv:
           cache: true
 
-  zero_shot_metric:
+  calc_metric:
     matrix: 
       dataset: ${datasets}
       model: ${models}

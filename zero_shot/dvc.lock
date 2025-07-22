@@ -44,3 +44,47 @@ stages:
       hash: md5
       md5: f38bb057ff25591c67c5985a58af8d1f
       size: 1588
+  predict@dataset0-model0:
+    cmd: uv run pg2-benchmark model predict --dataset-manifest data/ranganathan/ranganathan.toml
+      --model-manifest model/esm.toml --model-dockerfile-folder ../models/esm --model-name
+      esm
+    deps:
+    - path: ../models/esm
+      hash: md5
+      md5: 72affc31a799609278cf98508f95be9f.dir
+      size: 831070514
+      nfiles: 30600
+    - path: ../src/pg2_benchmark/cli/model.py
+      hash: md5
+      md5: 7b69bd48d88f96c7e759334208c24226
+      size: 1687
+    - path: data/ranganathan/ranganathan.toml
+      hash: md5
+      md5: ec8bc8dfa7b6415a9b70a417994e306d
+      size: 986
+    - path: model/esm.toml
+      hash: md5
+      md5: 64b3f9c9ca8ca6553bc695a1fba4d974
+      size: 111
+    outs:
+    - path: output/ranganathan_esm.csv
+      hash: md5
+      md5: 39b2dea9bd44e696936e6b3e4f1a4a4c
+      size: 195883
+  calc_metric@dataset0-model0:
+    cmd: uv run pg2-benchmark metric calc --output-path output/ranganathan_esm.csv
+      --metric-path metric/ranganathan_esm.csv
+    deps:
+    - path: ../src/pg2_benchmark/cli/metric.py
+      hash: md5
+      md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
+      size: 774
+    - path: output/ranganathan_esm.csv
+      hash: md5
+      md5: 39b2dea9bd44e696936e6b3e4f1a4a4c
+      size: 195883
+    outs:
+    - path: metric/ranganathan_esm.csv
+      hash: md5
+      md5: f38bb057ff25591c67c5985a58af8d1f
+      size: 1588
