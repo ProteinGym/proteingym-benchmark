@@ -1,5 +1,6 @@
 import torch
 import typer
+from pathlib import Path
 from typing import Tuple
 from rich.console import Console
 from pg2_dataset.dataset import Manifest
@@ -19,10 +20,10 @@ app = typer.Typer(
 err_console = Console(stderr=True)
 console = Console()
 
-prefix = "/opt/ml"
-training_data_path = f"{prefix}/input/data/training"
-params_path = f"{prefix}/input/config/hyperparameters.json"
-model_path = "/model.pkl"
+prefix = Path("/opt/ml")
+training_data_path = prefix / "input" / "data" / "training"
+params_path = prefix / "input" / "config" / "hyperparameters.json"
+model_path = Path("/model.pkl")
 
 
 def _configure_container_paths(
@@ -33,33 +34,31 @@ def _configure_container_paths(
             "Configuring the paths to where SageMaker mounts interesting things in the container."
         )
 
-        output_path = f"{prefix}/model"
+        output_path = prefix / "model"
 
         with open(params_path, "r") as f:
             training_params = json.load(f)
 
-        dataset_toml_file = (
-            f"{training_data_path}/{training_params.get('dataset_toml_file')}"
+        dataset_toml_file = training_data_path / training_params.get(
+            "dataset_toml_file"
         )
-        model_toml_file = (
-            f"{training_data_path}/{training_params.get('model_toml_file')}"
-        )
+        model_toml_file = training_data_path / training_params.get("model_toml_file")
 
         with open(dataset_toml_file, "r") as f:
             data = toml.load(f)
 
-        data["assays_meta"]["file_path"] = (
-            f"{training_data_path}/{data['assays_meta']['file_path']}"
+        data["assays_meta"]["file_path"] = str(
+            training_data_path / data["assays_meta"]["file_path"]
         )
 
         with open(dataset_toml_file, "w") as f:
             toml.dump(data, f)
 
-        return output_path, dataset_toml_file, model_toml_file
+        return str(output_path), str(dataset_toml_file), str(model_toml_file)
 
     else:
-        output_path = "/output"
-        return output_path, dataset_toml_file, model_toml_file
+        output_path = Path("/output")
+        return str(output_path), str(dataset_toml_file), str(model_toml_file)
 
 
 @app.command()
