@@ -2,7 +2,7 @@ import typer
 from pg2_benchmark.cli.dataset import dataset_app
 from pg2_benchmark.cli.model import model_app
 from pg2_benchmark.cli.metric import metric_app
-
+from pg2_benchmark.cli.aws import aws_app
 
 app = typer.Typer(
     name="benchmark",
@@ -13,6 +13,7 @@ app = typer.Typer(
 app.add_typer(dataset_app, name="dataset", help="Dataset operations")
 app.add_typer(model_app, name="model", help="Model operations")
 app.add_typer(metric_app, name="metric", help="Metric operations")
+app.add_typer(aws_app, name="aws", help="AWS operations")
 
 
 @app.command()

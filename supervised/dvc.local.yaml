@@ -1,0 +1,41 @@
+vars:
+  - datasets:
+    - name: charge_ladder
+      path: data/dummy/charge_ladder.toml
+  
+    - name: neime
+      path: data/neime/neime.toml
+
+  - models:
+    - name: pls
+      path: model/pls.toml
+      dockerfile: ../models/pls
+
+stages:
+  predict:
+    matrix: 
+      dataset: ${datasets}
+      model: ${models}
+    
+    cmd: uv run pg2-benchmark model predict --dataset-manifest ${item.dataset.path} --model-manifest ${item.model.path} --model-dockerfile-folder ${item.model.dockerfile} --model-name ${item.model.name}
+    deps:
+      - ${item.dataset.path}
+      - ${item.model.path}
+      - ${item.model.dockerfile}
+      - ../src/pg2_benchmark/cli/model.py
+    outs:
+      - output/${item.dataset.name}_${item.model.name}.csv:
+          cache: true
+
+  calc_metric:
+    matrix: 
+      dataset: ${datasets}
+      model: ${models}
+    
+    cmd: uv run pg2-benchmark metric calc --output-path output/${item.dataset.name}_${item.model.name}.csv --metric-path metric/${item.dataset.name}_${item.model.name}.csv
+    deps:
+      - output/${item.dataset.name}_${item.model.name}.csv
+      - ../src/pg2_benchmark/cli/metric.py
+    outs:
+      - metric/${item.dataset.name}_${item.model.name}.csv:
+          cache: true

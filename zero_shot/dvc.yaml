@@ -1,4 +1,19 @@
-vars:
+vars:  
+  - aws:
+      region_name: "eu-north-1"
+      role_name: "pg2-benchmark-sagemaker-role"
+      s3_output_bucket: "pg2-benchmark-output"
+      s3_training_data_bucket: "pg2-benchmark-training-data"
+      instance_type: "ml.m5.xlarge"
+      volume_size: 5
+
+  - local:
+      git_cache_bust: 1
+      data_dir: data
+      model_dir: model
+      output_dir: output/aws
+      metric_dir: metric/aws
+  
   - datasets:
     - name: ranganathan
       path: data/ranganathan/ranganathan.toml
@@ -9,30 +24,111 @@ vars:
       dockerfile: ../models/esm
 
 stages:
-  predict:
-    matrix: 
-      dataset: ${datasets}
-      model: ${models}
-    
-    cmd: uv run pg2-benchmark model predict --dataset-manifest ${item.dataset.path} --model-manifest ${item.model.path} --model-dockerfile-folder ${item.model.dockerfile} --model-name ${item.model.name}
+  upload_to_s3:
+    cmd:
+      - aws s3 mb s3://${aws.s3_training_data_bucket} --region ${aws.region_name} || true
+      - aws s3 mb s3://${aws.s3_output_bucket} --region ${aws.region_name} || true
+      - aws s3 cp ${local.data_dir}/ s3://${aws.s3_training_data_bucket}/${local.data_dir}/ --recursive --exclude ".*" --exclude "*/.*"
+      - aws s3 cp ${local.model_dir}/ s3://${aws.s3_training_data_bucket}/${local.model_dir}/ --recursive --exclude ".*" --exclude "*/.*"
+      - echo "Upload completed at $(date)" > logs/s3_upload_complete.txt
     deps:
-      - ${item.dataset.path}
-      - ${item.model.path}
-      - ${item.model.dockerfile}
-      - ../src/pg2_benchmark/cli/model.py
+      - ${local.data_dir}/
+      - ${local.model_dir}/
     outs:
-      - output/${item.dataset.name}_${item.model.name}.csv:
+      - logs/s3_upload_complete.txt:
+          cache: true
+  
+  deploy_to_ecr:
+    matrix:
+      model: ${models}
+    cmd:
+      - aws ecr describe-repositories --repository-names ${item.model.name} --region ${aws.region_name} >/dev/null 2>&1 || aws ecr create-repository --repository-name ${item.model.name} --region ${aws.region_name} >/dev/null
+      - aws ecr get-login-password --region ${aws.region_name} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${aws.region_name}.amazonaws.com
+      - docker buildx build --build-arg GIT_CACHE_BUST=${local.git_cache_bust} --platform linux/amd64,linux/arm64 --secret id=git_auth,src=git-auth.txt -t ${AWS_ACCOUNT_ID}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}:latest ${item.model.dockerfile} --push
+      - echo "ECR push completed at $(date)" > logs/ecr_push_complete.txt
+      - echo "${AWS_ACCOUNT_ID}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}:latest" > logs/image_uri.txt
+    deps:
+      - ${item.model.dockerfile}
+    outs:
+      - logs/ecr_push_complete.txt:
+          cache: true
+      - logs/image_uri.txt:
+          cache: true
+  
+  create_role:
+    cmd:
+      - aws iam get-role --role-name ${aws.role_name} >/dev/null 2>&1 || aws iam create-role --role-name ${aws.role_name} --assume-role-policy-document file://trust-policy.json >/dev/null
+      - aws iam attach-role-policy --role-name ${aws.role_name} --policy-arn arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+      - aws iam attach-role-policy --role-name ${aws.role_name} --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
+      - echo "SageMaker role created at $(date)" > logs/role_create_complete.txt
+    deps:
+      - logs/s3_upload_complete.txt
+      - logs/ecr_push_complete.txt
+      - logs/image_uri.txt
+    outs:
+      - logs/role_create_complete.txt:
           cache: true
 
-  calc_metric:
+
+  create_training_job:
     matrix: 
       dataset: ${datasets}
       model: ${models}
     
-    cmd: uv run pg2-benchmark metric calc --output-path output/${item.dataset.name}_${item.model.name}.csv --metric-path metric/${item.dataset.name}_${item.model.name}.csv
+    cmd: >
+      uv run pg2-benchmark aws create-training-job
+      --model-name ${item.model.name}
+      --region-name ${aws.region_name}
+      --role-name ${aws.role_name}
+      --ecr-repository-uri ${AWS_ACCOUNT_ID}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}
+      --s3-training-data-bucket ${aws.s3_training_data_bucket}
+      --s3-output-bucket ${aws.s3_output_bucket}
+      --instance-type ${aws.instance_type}
+      --volume-size ${aws.volume_size}
+      --dataset-toml-file ${item.dataset.path}
+      --model-toml-file ${item.model.path}
+      > logs/create_job_${item.dataset.name}_${item.model.name}.txt
+
     deps:
-      - output/${item.dataset.name}_${item.model.name}.csv
-      - ../src/pg2_benchmark/cli/metric.py
+      - ../src/pg2_benchmark/cli/aws.py
+      - logs/role_create_complete.txt
+    
     outs:
-      - metric/${item.dataset.name}_${item.model.name}.csv:
+      - logs/create_job_${item.dataset.name}_${item.model.name}.txt:
+          cache: true
+  
+  monitor_training_job:
+    matrix: 
+      dataset: ${datasets}
+      model: ${models}
+    
+    cmd: >
+      uv run pg2-benchmark aws monitor-training-job
+      --region-name ${aws.region_name}
+      --job-name $(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)
+      > logs/monitor_job_${item.dataset.name}_${item.model.name}.txt
+    
+    deps:
+      - ../src/pg2_benchmark/cli/aws.py
+      - logs/create_job_${item.dataset.name}_${item.model.name}.txt
+    
+    outs:
+     - logs/monitor_job_${item.dataset.name}_${item.model.name}.txt:
+          cache: true
+
+  calculate_metric:
+    matrix: 
+      dataset: ${datasets}
+      model: ${models}
+    
+    cmd:
+      - aws s3 cp s3://${aws.s3_output_bucket}/$(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)/output/model.tar.gz ${local.output_dir}/
+      - tar -xzf ${local.output_dir}/model.tar.gz -C ${local.output_dir}/
+      - rm ${local.output_dir}/model.tar.gz
+      - uv run pg2-benchmark metric calc --output-path ${local.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric-path ${local.metric_dir}/${item.dataset.name}_${item.model.name}.csv
+
+    deps:
+      - logs/monitor_job_${item.dataset.name}_${item.model.name}.txt
+    outs:
+      - ${local.metric_dir}/${item.dataset.name}_${item.model.name}.csv:
           cache: true
