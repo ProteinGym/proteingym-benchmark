@@ -1,5 +1,6 @@
 vars:  
   - aws:
+      account_id: "644482713970"
       region_name: "eu-north-1"
       role_name: "pg2-benchmark-sagemaker-role"
       s3_output_bucket: "pg2-benchmark-output"
@@ -43,10 +44,10 @@ stages:
       model: ${models}
     cmd:
       - aws ecr describe-repositories --repository-names ${item.model.name} --region ${aws.region_name} >/dev/null 2>&1 || aws ecr create-repository --repository-name ${item.model.name} --region ${aws.region_name} >/dev/null
-      - aws ecr get-login-password --region ${aws.region_name} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${aws.region_name}.amazonaws.com
-      - docker buildx build --build-arg GIT_CACHE_BUST=${local.git_cache_bust} --platform linux/amd64,linux/arm64 --secret id=git_auth,src=git-auth.txt -t ${AWS_ACCOUNT_ID}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}:latest ${item.model.dockerfile} --push
+      - aws ecr get-login-password --region ${aws.region_name} | docker login --username AWS --password-stdin ${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com
+      - docker buildx build --build-arg GIT_CACHE_BUST=${local.git_cache_bust} --platform linux/amd64,linux/arm64 --secret id=git_auth,src=git-auth.txt -t ${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}:latest ${item.model.dockerfile} --push
       - echo "ECR push completed at $(date)" > logs/ecr_push_complete.txt
-      - echo "${AWS_ACCOUNT_ID}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}:latest" > logs/image_uri.txt
+      - echo "${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}:latest" > logs/image_uri.txt
     deps:
       - ${item.model.dockerfile}
     outs:
@@ -80,7 +81,7 @@ stages:
       --model-name ${item.model.name}
       --region-name ${aws.region_name}
       --role-name ${aws.role_name}
-      --ecr-repository-uri ${AWS_ACCOUNT_ID}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}
+      --ecr-repository-uri ${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}
       --s3-training-data-bucket ${aws.s3_training_data_bucket}
       --s3-output-bucket ${aws.s3_output_bucket}
       --instance-type ${aws.instance_type}
