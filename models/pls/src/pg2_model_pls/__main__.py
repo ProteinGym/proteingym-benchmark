@@ -44,8 +44,8 @@ def _configure_container_paths(
         with open(dataset_toml_file, "r") as f:
             data = toml.load(f)
 
-        data["assays_meta"]["file_path"] = str(
-            training_data_path / data["assays_meta"]["file_path"]
+        data["assays_meta"]["file_path"] = (
+            f"{training_data_path}{data['assays_meta']['file_path']}"
         )
 
         with open(dataset_toml_file, "w") as f:
