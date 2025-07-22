@@ -1416,7 +1416,6 @@ dependencies = [
     { name = "dvc" },
     { name = "pg2-dataset", extra = ["biopython"] },
     { name = "pycm" },
-    { name = "python-on-whales" },
     { name = "scipy" },
     { name = "typer" },
 ]
@@ -1431,7 +1430,6 @@ requires-dist = [
     { name = "dvc", specifier = ">=3.59.2" },
     { name = "pg2-dataset", extras = ["biopython"], git = "https://github.com/ProteinGym2/pg2-dataset.git?rev=58c327e13bade1effe1312eb2b8d5445016a5a8f" },
     { name = "pycm", specifier = ">=4.3" },
-    { name = "python-on-whales", specifier = ">=0.76.1" },
     { name = "scipy", specifier = ">=1.15.3" },
     { name = "typer", specifier = ">=0.15.2" },
 ]
@@ -1821,19 +1819,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/66/c0/0c8b6ad9f17a802ee498c46e004a0eb49bc148f2fd230864601a86dcf6db/python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3", size = 342432, upload_time = "2024-03-01T18:36:20.211Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427", size = 229892, upload_time = "2024-03-01T18:36:18.57Z" },
-]
-
-[[package]]
-name = "python-on-whales"
-version = "0.76.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pydantic" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/74/e2/134c6d34206ef1fd30ebd45bda22f13cd9db20447e9773e24d454542a00c/python_on_whales-0.76.1.tar.gz", hash = "sha256:6ac4ea947a0466402a857a31ce3340b50be8a6f1f7e6075f74fbef410b4914cd", size = 111288, upload_time = "2025-03-27T11:16:07.364Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/8c/01/0a2c4c5bdc50d4fd5813243b34580a81c90f6ad4df1fa095850629063134/python_on_whales-0.76.1-py3-none-any.whl", hash = "sha256:7a930ae25e9f07fd2bd3fb2f22c714a62105f7464f985ab342eeebc71c02c22c", size = 115366, upload_time = "2025-03-27T11:16:05.881Z" },
 ]
 
 [[package]]
