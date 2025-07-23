@@ -14,10 +14,10 @@ err_console = Console(stderr=True)
 def create_training_job(
     model_name: str = typer.Option(help="Unique model name"),
     region_name: str = typer.Option(help="AWS region name"),
-    role_name: str = typer.Option(help="AWS SageMaker role name"),
+    sagemaker_role_name: str = typer.Option(help="AWS SageMaker role name"),
     ecr_repository_uri: str = typer.Option(help="AWS ECR repository URI"),
-    s3_training_data_bucket: str = typer.Option(help="S3 training data bucket"),
-    s3_output_bucket: str = typer.Option(help="S3 output bucket"),
+    s3_training_data_prefix: str = typer.Option(help="S3 training data prefix"),
+    s3_output_prefix: str = typer.Option(help="S3 output prefix"),
     instance_type: str = typer.Option(help="EC2 instance type"),
     volume_size: int = typer.Option(help="EC2 volume size in Gigabytes"),
     dataset_toml_file: str = typer.Option(help="Dataset TOML file as hyperparamters"),
@@ -33,7 +33,7 @@ def create_training_job(
     # Get SageMaker role
     iam = boto3.client("iam")
 
-    response = iam.get_role(RoleName=role_name)
+    response = iam.get_role(RoleName=sagemaker_role_name)
 
     # Prepare training job parameters
     training_job_params = {
@@ -51,7 +51,7 @@ def create_training_job(
             "TrainingImage": ecr_repository_uri,
             "TrainingInputMode": "File",
         },
-        "OutputDataConfig": {"S3OutputPath": f"s3://{s3_output_bucket}"},
+        "OutputDataConfig": {"S3OutputPath": f"s3://{s3_output_prefix}"},
         "StoppingCondition": {
             "MaxRuntimeInSeconds": 86400  # 24 hours
         },
@@ -63,7 +63,7 @@ def create_training_job(
                 "DataSource": {
                     "S3DataSource": {
                         "S3DataType": "S3Prefix",
-                        "S3Uri": f"s3://{s3_training_data_bucket}",
+                        "S3Uri": f"s3://{s3_training_data_prefix}",
                         "S3DataDistributionType": "FullyReplicated",
                     }
                 },

@@ -90,12 +90,10 @@ stages:
       size: 1588
   upload_to_s3:
     cmd:
-    - aws s3 mb s3://pg2-benchmark-training-data --region eu-north-1 || true
-    - aws s3 mb s3://pg2-benchmark-output --region eu-north-1 || true
-    - aws s3 cp data/ s3://pg2-benchmark-training-data/data/ --recursive --exclude
-      ".*" --exclude "*/.*"
-    - aws s3 cp model/ s3://pg2-benchmark-training-data/model/ --recursive --exclude
-      ".*" --exclude "*/.*"
+    - aws s3 cp data/ s3://mango-pe/pg2-benchmark-training-data/data/ --recursive
+      --exclude ".*" --exclude "*/.*"
+    - aws s3 cp model/ s3://mango-pe/pg2-benchmark-training-data/model/ --recursive
+      --exclude ".*" --exclude "*/.*"
     - echo "Upload completed at $(date)" > logs/s3_upload_complete.txt
     deps:
     - path: data/
@@ -111,20 +109,19 @@ stages:
     outs:
     - path: logs/s3_upload_complete.txt
       hash: md5
-      md5: a1a378be5887fd4066d4e33b2cf7514d
+      md5: 4edb85c09c76bcf5b4521002cb492776
       size: 50
   deploy_to_ecr@model0:
     cmd:
-    - aws ecr describe-repositories --repository-names esm --region eu-north-1 >/dev/null
-      2>&1 || aws ecr create-repository --repository-name esm --region eu-north-1
-      >/dev/null
-    - aws ecr get-login-password --region eu-north-1 | docker login --username AWS
-      --password-stdin 644482713970.dkr.ecr.eu-north-1.amazonaws.com
+    - aws ecr describe-repositories --repository-names esm --region us-east-1 >/dev/null
+      2>&1 || aws ecr create-repository --repository-name esm --region us-east-1 >/dev/null
+    - aws ecr get-login-password --region us-east-1 | docker login --username AWS
+      --password-stdin 938398057556.dkr.ecr.us-east-1.amazonaws.com
     - docker buildx build --build-arg GIT_CACHE_BUST=1 --platform linux/amd64,linux/arm64
-      --secret id=git_auth,src=git-auth.txt -t 644482713970.dkr.ecr.eu-north-1.amazonaws.com/esm:latest
+      --secret id=git_auth,src=git-auth.txt -t 938398057556.dkr.ecr.us-east-1.amazonaws.com/esm:latest
       ../models/esm --push
     - echo "ECR push completed at $(date)" > logs/ecr_push_complete.txt
-    - echo "644482713970.dkr.ecr.eu-north-1.amazonaws.com/esm:latest" > logs/image_uri.txt
+    - echo "938398057556.dkr.ecr.us-east-1.amazonaws.com/esm:latest" > logs/image_uri.txt
     deps:
     - path: ../models/esm
       hash: md5
@@ -134,12 +131,12 @@ stages:
     outs:
     - path: logs/ecr_push_complete.txt
       hash: md5
-      md5: a81ded117627fd6c20e4d532ea7f999d
+      md5: 0b887b0e94ad4cd3bb43210837ac0476
       size: 52
     - path: logs/image_uri.txt
       hash: md5
-      md5: c5a510e7369665b7532a8afbce6ea0bb
-      size: 57
+      md5: 84aa521e204015326fa020971afb4fe5
+      size: 56
   create_role:
     cmd:
     - aws iam get-role --role-name pg2-benchmark-sagemaker-role >/dev/null 2>&1 ||
@@ -170,44 +167,53 @@ stages:
       size: 56
   create_training_job@dataset0-model0:
     cmd: "uv run pg2-benchmark aws create-training-job --model-name esm --region-name
-      eu-north-1 --role-name pg2-benchmark-sagemaker-role --ecr-repository-uri 644482713970.dkr.ecr.eu-north-1.amazonaws.com/esm
-      --s3-training-data-bucket pg2-benchmark-training-data --s3-output-bucket pg2-benchmark-output
-      --instance-type ml.m5.xlarge --volume-size 5 --dataset-toml-file data/ranganathan/ranganathan.toml
-      --model-toml-file model/esm.toml > logs/create_job_ranganathan_esm.txt\n"
+      us-east-1 --sagemaker-role-name rnd-dev-sagemakerexecutionrole  --ecr-repository-uri
+      938398057556.dkr.ecr.us-east-1.amazonaws.com/esm --s3-training-data-prefix mango-pe/pg2-benchmark-training-data
+      --s3-output-prefix mango-pe/pg2-benchmark-output --instance-type ml.m5.xlarge
+      --volume-size 5 --dataset-toml-file data/ranganathan/ranganathan.toml --model-toml-file
+      model/esm.toml > logs/create_job_ranganathan_esm.txt\n"
     deps:
     - path: ../src/pg2_benchmark/cli/aws.py
       hash: md5
-      md5: 3e0fa06bed7b7df41b8b1524ecc439a6
-      size: 4947
-    - path: logs/role_create_complete.txt
+      md5: 73c644bad8c7bdf688d6e6c521ff9c8c
+      size: 4967
+    - path: logs/ecr_push_complete.txt
       hash: md5
-      md5: 469e5283ef35cd26b05d4cda9578244c
+      md5: 0b887b0e94ad4cd3bb43210837ac0476
+      size: 52
+    - path: logs/image_uri.txt
+      hash: md5
+      md5: 84aa521e204015326fa020971afb4fe5
       size: 56
+    - path: logs/s3_upload_complete.txt
+      hash: md5
+      md5: 4edb85c09c76bcf5b4521002cb492776
+      size: 50
     outs:
     - path: logs/create_job_ranganathan_esm.txt
       hash: md5
-      md5: d4d5fa2d8fbecba203bdbae452dd4444
+      md5: 1a37e0281c3b800317263fecbb9e886e
       size: 20
   monitor_training_job@dataset0-model0:
-    cmd: "uv run pg2-benchmark aws monitor-training-job --region-name eu-north-1 --job-name
+    cmd: "uv run pg2-benchmark aws monitor-training-job --region-name us-east-1 --job-name
       $(cat logs/create_job_ranganathan_esm.txt) > logs/monitor_job_ranganathan_esm.txt\n"
     deps:
     - path: ../src/pg2_benchmark/cli/aws.py
       hash: md5
-      md5: 3e0fa06bed7b7df41b8b1524ecc439a6
-      size: 4947
+      md5: 73c644bad8c7bdf688d6e6c521ff9c8c
+      size: 4967
     - path: logs/create_job_ranganathan_esm.txt
       hash: md5
-      md5: d4d5fa2d8fbecba203bdbae452dd4444
+      md5: 1a37e0281c3b800317263fecbb9e886e
       size: 20
     outs:
     - path: logs/monitor_job_ranganathan_esm.txt
       hash: md5
-      md5: 238d96846e3bab3497596d31b911d744
-      size: 335
+      md5: 03382b78c1dbd232429b8a6919abc6b8
+      size: 365
   calculate_metric@dataset0-model0:
     cmd:
-    - aws s3 cp s3://pg2-benchmark-output/$(cat logs/create_job_ranganathan_esm.txt)/output/model.tar.gz
+    - aws s3 cp s3://mango-pe/pg2-benchmark-output/$(cat logs/create_job_ranganathan_esm.txt)/output/model.tar.gz
       output/aws/
     - tar -xzf output/aws/model.tar.gz -C output/aws/
     - rm output/aws/model.tar.gz
@@ -216,8 +222,8 @@ stages:
     deps:
     - path: logs/monitor_job_ranganathan_esm.txt
       hash: md5
-      md5: 238d96846e3bab3497596d31b911d744
-      size: 335
+      md5: 03382b78c1dbd232429b8a6919abc6b8
+      size: 365
     outs:
     - path: metric/aws/ranganathan_esm.csv
       hash: md5

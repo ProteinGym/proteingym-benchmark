@@ -1,10 +1,10 @@
 vars:  
   - aws:
       account_id: "<your-account-id>"
-      region_name: "<your-region-name>"
-      role_name: "pg2-benchmark-sagemaker-role"
-      s3_output_bucket: "pg2-benchmark-output"
-      s3_training_data_bucket: "pg2-benchmark-training-data"
+      region_name: "us-east-1"
+      sagemaker_role_name: "rnd-dev-sagemakerexecutionrole "
+      s3_output_prefix: "mango-pe/pg2-benchmark-output"
+      s3_training_data_prefix: "mango-pe/pg2-benchmark-training-data"
       instance_type: "ml.m5.xlarge"
       volume_size: 5
 
@@ -27,10 +27,8 @@ vars:
 stages:
   upload_to_s3:
     cmd:
-      - aws s3 mb s3://${aws.s3_training_data_bucket} --region ${aws.region_name} || true
-      - aws s3 mb s3://${aws.s3_output_bucket} --region ${aws.region_name} || true
-      - aws s3 cp ${local.data_dir}/ s3://${aws.s3_training_data_bucket}/${local.data_dir}/ --recursive --exclude ".*" --exclude "*/.*"
-      - aws s3 cp ${local.model_dir}/ s3://${aws.s3_training_data_bucket}/${local.model_dir}/ --recursive --exclude ".*" --exclude "*/.*"
+      - aws s3 cp ${local.data_dir}/ s3://${aws.s3_training_data_prefix}/${local.data_dir}/ --recursive --exclude ".*" --exclude "*/.*"
+      - aws s3 cp ${local.model_dir}/ s3://${aws.s3_training_data_prefix}/${local.model_dir}/ --recursive --exclude ".*" --exclude "*/.*"
       - echo "Upload completed at $(date)" > logs/s3_upload_complete.txt
     deps:
       - ${local.data_dir}/
@@ -55,21 +53,6 @@ stages:
           cache: true
       - logs/image_uri.txt:
           cache: true
-  
-  create_role:
-    cmd:
-      - aws iam get-role --role-name ${aws.role_name} >/dev/null 2>&1 || aws iam create-role --role-name ${aws.role_name} --assume-role-policy-document file://trust-policy.json >/dev/null
-      - aws iam attach-role-policy --role-name ${aws.role_name} --policy-arn arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
-      - aws iam attach-role-policy --role-name ${aws.role_name} --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
-      - echo "SageMaker role created at $(date)" > logs/role_create_complete.txt
-    deps:
-      - logs/s3_upload_complete.txt
-      - logs/ecr_push_complete.txt
-      - logs/image_uri.txt
-    outs:
-      - logs/role_create_complete.txt:
-          cache: true
-
 
   create_training_job:
     matrix: 
@@ -80,10 +63,10 @@ stages:
       uv run pg2-benchmark aws create-training-job
       --model-name ${item.model.name}
       --region-name ${aws.region_name}
-      --role-name ${aws.role_name}
+      --sagemaker-role-name ${aws.sagemaker_role_name}
       --ecr-repository-uri ${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}
-      --s3-training-data-bucket ${aws.s3_training_data_bucket}
-      --s3-output-bucket ${aws.s3_output_bucket}
+      --s3-training-data-prefix ${aws.s3_training_data_prefix}
+      --s3-output-prefix ${aws.s3_output_prefix}
       --instance-type ${aws.instance_type}
       --volume-size ${aws.volume_size}
       --dataset-toml-file ${item.dataset.path}
@@ -92,7 +75,9 @@ stages:
 
     deps:
       - ../src/pg2_benchmark/cli/aws.py
-      - logs/role_create_complete.txt
+      - logs/s3_upload_complete.txt
+      - logs/ecr_push_complete.txt
+      - logs/image_uri.txt
     
     outs:
       - logs/create_job_${item.dataset.name}_${item.model.name}.txt:
@@ -123,7 +108,7 @@ stages:
       model: ${models}
     
     cmd:
-      - aws s3 cp s3://${aws.s3_output_bucket}/$(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)/output/model.tar.gz ${local.output_dir}/
+      - aws s3 cp s3://${aws.s3_output_prefix}/$(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)/output/model.tar.gz ${local.output_dir}/
       - tar -xzf ${local.output_dir}/model.tar.gz -C ${local.output_dir}/
       - rm ${local.output_dir}/model.tar.gz
       - uv run pg2-benchmark metric calc --output-path ${local.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric-path ${local.metric_dir}/${item.dataset.name}_${item.model.name}.csv
