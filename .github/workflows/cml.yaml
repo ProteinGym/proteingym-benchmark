@@ -31,7 +31,8 @@ jobs:
           uv sync
      
           # Run DVC repro
-          echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ./git-auth.txt
+          echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > supervised/git-auth.txt
+          echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > zero_shot/git-auth.txt
           uv run dvc repro supervised/dvc.yaml
           uv run dvc repro zero_shot/dvc.yaml
           
