@@ -1,0 +1,117 @@
+vars:  
+  - params.yaml
+
+  - local:
+      git_cache_bust: 1
+      datasets_dir: ../datasets
+      models_dir: ../models
+      output_dir: output/aws
+      metric_dir: metric/aws
+  
+  - datasets:
+    - name: charge_ladder
+      aws_path: datasets/dummy/charge_ladder.toml
+  
+    - name: neime
+      aws_path: datasets/neime/neime.toml
+
+  - models:
+    - name: pls
+      aws_path: models/pls/pls.toml
+      dockerfile: ../models/pls
+
+stages:
+  
+  upload_to_s3:
+    cmd:
+      - aws s3 cp ${local.datasets_dir}/ s3://${aws.s3_training_data_prefix}/${aws.datasets_dir}/ --recursive --exclude ".*" --exclude "*/.*"
+      - aws s3 cp ${local.models_dir}/ s3://${aws.s3_training_data_prefix}/${aws.models_dir}/ --recursive --exclude ".*" --exclude "*/.*"
+      - echo "Upload completed at $(date)" > logs/s3_upload_complete.txt
+    deps:
+      - ${local.datasets_dir}/
+      - ${local.models_dir}/
+    outs:
+      - logs/s3_upload_complete.txt:
+          cache: true
+  
+  deploy_to_ecr:
+    matrix:
+      model: ${models}
+    cmd:
+      - aws ecr describe-repositories --repository-names ${item.model.name} --region ${aws.region_name} >/dev/null 2>&1 || aws ecr create-repository --repository-name ${item.model.name} --region ${aws.region_name} >/dev/null
+      - aws ecr get-login-password --region ${aws.region_name} | docker login --username AWS --password-stdin ${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com
+      - docker buildx build --build-arg GIT_CACHE_BUST=${local.git_cache_bust} --platform linux/amd64,linux/arm64 --secret id=git_auth,src=git-auth.txt -t ${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}:latest ${item.model.dockerfile} --push
+      - echo "ECR push completed at $(date)" > logs/ecr_push_complete.txt
+      - echo "${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}:latest" > logs/image_uri.txt
+    deps:
+      - ${item.model.dockerfile}
+    outs:
+      - logs/ecr_push_complete.txt:
+          cache: true
+      - logs/image_uri.txt:
+          cache: true
+
+  create_training_job:
+    matrix: 
+      dataset: ${datasets}
+      model: ${models}
+    
+    cmd: >
+      uv run pg2-benchmark aws create-training-job
+      --model-name ${item.model.name}
+      --region-name ${aws.region_name}
+      --sagemaker-role-name ${aws.sagemaker_role_name}
+      --ecr-repository-uri ${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}
+      --s3-training-data-prefix ${aws.s3_training_data_prefix}
+      --s3-output-prefix ${aws.s3_output_prefix}
+      --instance-type ${aws.instance_type}
+      --volume-size ${aws.volume_size}
+      --dataset-toml-file ${item.dataset.aws_path}
+      --model-toml-file ${item.model.aws_path}
+      > logs/create_job_${item.dataset.name}_${item.model.name}.txt
+
+    deps:
+      - ../src/pg2_benchmark/cli/aws.py
+      - logs/s3_upload_complete.txt
+      - logs/ecr_push_complete.txt
+      - logs/image_uri.txt
+    
+    outs:
+      - logs/create_job_${item.dataset.name}_${item.model.name}.txt:
+          cache: true
+  
+  monitor_training_job:
+    matrix: 
+      dataset: ${datasets}
+      model: ${models}
+    
+    cmd: >
+      uv run pg2-benchmark aws monitor-training-job
+      --region-name ${aws.region_name}
+      --job-name $(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)
+      > logs/monitor_job_${item.dataset.name}_${item.model.name}.txt
+    
+    deps:
+      - ../src/pg2_benchmark/cli/aws.py
+      - logs/create_job_${item.dataset.name}_${item.model.name}.txt
+    
+    outs:
+     - logs/monitor_job_${item.dataset.name}_${item.model.name}.txt:
+          cache: true
+
+  calculate_metric:
+    matrix: 
+      dataset: ${datasets}
+      model: ${models}
+    
+    cmd:
+      - aws s3 cp s3://${aws.s3_output_prefix}/$(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)/output/model.tar.gz ${local.output_dir}/
+      - tar -xzf ${local.output_dir}/model.tar.gz -C ${local.output_dir}/
+      - rm ${local.output_dir}/model.tar.gz
+      - uv run pg2-benchmark metric calc --output-path ${local.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric-path ${local.metric_dir}/${item.dataset.name}_${item.model.name}.csv
+
+    deps:
+      - logs/monitor_job_${item.dataset.name}_${item.model.name}.txt
+    outs:
+      - ${local.metric_dir}/${item.dataset.name}_${item.model.name}.csv:
+          cache: true
