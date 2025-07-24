@@ -1,116 +1,5 @@
 schema: '2.0'
 stages:
-  zero_shot_predict@dataset0-model0:
-    cmd: uv run pg2-benchmark model predict --dataset-manifest data/ranganathan/ranganathan.toml
-      --model-manifest model/esm.toml --model-dockerfile-folder ../models/esm --model-name
-      esm
-    deps:
-    - path: ../models/esm
-      hash: md5
-      md5: 72affc31a799609278cf98508f95be9f.dir
-      size: 831070514
-      nfiles: 30600
-    - path: ../src/pg2_benchmark/cli/model.py
-      hash: md5
-      md5: 7b69bd48d88f96c7e759334208c24226
-      size: 1687
-    - path: data/ranganathan/ranganathan.toml
-      hash: md5
-      md5: ec8bc8dfa7b6415a9b70a417994e306d
-      size: 986
-    - path: model/esm.toml
-      hash: md5
-      md5: 64b3f9c9ca8ca6553bc695a1fba4d974
-      size: 111
-    outs:
-    - path: output/ranganathan_esm.csv
-      hash: md5
-      md5: 39b2dea9bd44e696936e6b3e4f1a4a4c
-      size: 195883
-  zero_shot_metric@dataset0-model0:
-    cmd: uv run pg2-benchmark metric calc --output-path output/ranganathan_esm.csv
-      --metric-path metric/ranganathan_esm.csv
-    deps:
-    - path: ../src/pg2_benchmark/cli/metric.py
-      hash: md5
-      md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
-      size: 774
-    - path: output/ranganathan_esm.csv
-      hash: md5
-      md5: 39b2dea9bd44e696936e6b3e4f1a4a4c
-      size: 195883
-    outs:
-    - path: metric/ranganathan_esm.csv
-      hash: md5
-      md5: f38bb057ff25591c67c5985a58af8d1f
-      size: 1588
-  predict@dataset0-model0:
-    cmd: uv run pg2-benchmark model predict --type zero_shot --dataset-manifest ../datasets/ranganathan/ranganathan.toml
-      --model-manifest ../models/esm/esm.toml --model-dockerfile-folder ../models/esm
-      --model-name esm
-    deps:
-    - path: ../datasets/ranganathan/ranganathan.toml
-      hash: md5
-      md5: 33d54ccb8c88dedf8f11f37a45a99d60
-      size: 999
-    - path: ../models/esm
-      hash: md5
-      md5: ce6c810186fdcf8c7307c14b47370446.dir
-      size: 831070625
-      nfiles: 30601
-    - path: ../models/esm/esm.toml
-      hash: md5
-      md5: 64b3f9c9ca8ca6553bc695a1fba4d974
-      size: 111
-    - path: ../src/pg2_benchmark/cli/model.py
-      hash: md5
-      md5: 5a9ca1b8490290e72ff87b8ac0cb42c6
-      size: 1818
-    outs:
-    - path: output/ranganathan_esm.csv
-      hash: md5
-      md5: 39b2dea9bd44e696936e6b3e4f1a4a4c
-      size: 195883
-  calc_metric@dataset0-model0:
-    cmd: uv run pg2-benchmark metric calc --output-path output/ranganathan_esm.csv
-      --metric-path metric/ranganathan_esm.csv
-    deps:
-    - path: ../src/pg2_benchmark/cli/metric.py
-      hash: md5
-      md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
-      size: 774
-    - path: output/ranganathan_esm.csv
-      hash: md5
-      md5: 39b2dea9bd44e696936e6b3e4f1a4a4c
-      size: 195883
-    outs:
-    - path: metric/ranganathan_esm.csv
-      hash: md5
-      md5: 4969ac651d461ac62496caf718afadfa
-      size: 1588
-  upload_to_s3:
-    cmd:
-    - aws s3 cp ../datasets/ s3://mango-pe/pg2-benchmark-training-data/../datasets/
-      --recursive --exclude ".*" --exclude "*/.*"
-    - aws s3 cp ../models/ s3://mango-pe/pg2-benchmark-training-data/../models/ --recursive
-      --exclude ".*" --exclude "*/.*"
-    - echo "Upload completed at $(date)" > logs/s3_upload_complete.txt
-    deps:
-    - path: ../datasets/
-      hash: md5
-      md5: 8b3f02ebdb28b465a1ff95c6998d6f91.dir
-      size: 1974932
-      nfiles: 7
-    - path: ../models/
-      hash: md5
-      md5: 7b5477d60a5803918f113d6a7d2e1fc2.dir
-      size: 1376994070
-      nfiles: 48330
-    outs:
-    - path: logs/s3_upload_complete.txt
-      hash: md5
-      md5: c5e57e970ef4f452f8090113b278626d
-      size: 50
   deploy_to_ecr@model0:
     cmd:
     - aws ecr describe-repositories --repository-names esm --region us-east-1 >/dev/null
@@ -125,46 +14,41 @@ stages:
     deps:
     - path: ../models/esm
       hash: md5
-      md5: b48eaa500e94a6a7265645251b8f9b39.dir
-      size: 831072317
+      md5: 246ce0fcde27791b3acd65bf2805702e.dir
+      size: 831072316
       nfiles: 30601
     outs:
     - path: logs/ecr_push_complete.txt
       hash: md5
-      md5: 985168e0ceeda86a74715796610f8f70
+      md5: 7eee607d832ef4b4103e7955493dbe55
       size: 52
     - path: logs/image_uri.txt
       hash: md5
       md5: 84aa521e204015326fa020971afb4fe5
       size: 56
-  create_role:
+  upload_to_s3:
     cmd:
-    - aws iam get-role --role-name pg2-benchmark-sagemaker-role >/dev/null 2>&1 ||
-      aws iam create-role --role-name pg2-benchmark-sagemaker-role --assume-role-policy-document
-      file://trust-policy.json >/dev/null
-    - aws iam attach-role-policy --role-name pg2-benchmark-sagemaker-role --policy-arn
-      arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
-    - aws iam attach-role-policy --role-name pg2-benchmark-sagemaker-role --policy-arn
-      arn:aws:iam::aws:policy/AmazonS3FullAccess
-    - echo "SageMaker role created at $(date)" > logs/role_create_complete.txt
+    - aws s3 cp ../datasets/ s3://mango-pe/pg2-benchmark-training-data/../datasets/
+      --recursive --exclude ".*" --exclude "*/.*"
+    - aws s3 cp ../models/ s3://mango-pe/pg2-benchmark-training-data/../models/ --recursive
+      --exclude ".*" --exclude "*/.*"
+    - echo "Upload completed at $(date)" > logs/s3_upload_complete.txt
     deps:
-    - path: logs/ecr_push_complete.txt
+    - path: ../datasets/
       hash: md5
-      md5: a81ded117627fd6c20e4d532ea7f999d
-      size: 52
-    - path: logs/image_uri.txt
+      md5: a286aab2332f01703fcb5a807b625473.dir
+      size: 1974944
+      nfiles: 7
+    - path: ../models/
       hash: md5
-      md5: c5a510e7369665b7532a8afbce6ea0bb
-      size: 57
+      md5: 15e5490b4678f98910eb0d9adb10e133.dir
+      size: 1376994068
+      nfiles: 48330
+    outs:
     - path: logs/s3_upload_complete.txt
       hash: md5
-      md5: a1a378be5887fd4066d4e33b2cf7514d
+      md5: ed9aaf1bb63ee770683efb9932bbe32c
       size: 50
-    outs:
-    - path: logs/role_create_complete.txt
-      hash: md5
-      md5: 469e5283ef35cd26b05d4cda9578244c
-      size: 56
   create_training_job@dataset0-model0:
     cmd: "uv run pg2-benchmark aws create-training-job --model-name esm --region-name
       us-east-1 --sagemaker-role-name rnd-dev-sagemakerexecutionrole  --ecr-repository-uri
@@ -179,7 +63,7 @@ stages:
       size: 4967
     - path: logs/ecr_push_complete.txt
       hash: md5
-      md5: 985168e0ceeda86a74715796610f8f70
+      md5: 7eee607d832ef4b4103e7955493dbe55
       size: 52
     - path: logs/image_uri.txt
       hash: md5
@@ -187,12 +71,12 @@ stages:
       size: 56
     - path: logs/s3_upload_complete.txt
       hash: md5
-      md5: c5e57e970ef4f452f8090113b278626d
+      md5: ed9aaf1bb63ee770683efb9932bbe32c
       size: 50
     outs:
     - path: logs/create_job_ranganathan_esm.txt
       hash: md5
-      md5: e7dfa28061008b567a5789ab1778abe9
+      md5: 51216c2f693ca490d49128994a589595
       size: 20
   monitor_training_job@dataset0-model0:
     cmd: "uv run pg2-benchmark aws monitor-training-job --region-name us-east-1 --job-name
@@ -204,28 +88,10 @@ stages:
       size: 4967
     - path: logs/create_job_ranganathan_esm.txt
       hash: md5
-      md5: e7dfa28061008b567a5789ab1778abe9
+      md5: 51216c2f693ca490d49128994a589595
       size: 20
     outs:
     - path: logs/monitor_job_ranganathan_esm.txt
       hash: md5
-      md5: 325e70d401dc3f81a6fe8025b2e64c5f
-      size: 335
-  calculate_metric@dataset0-model0:
-    cmd:
-    - aws s3 cp s3://mango-pe/pg2-benchmark-output/$(cat logs/create_job_ranganathan_esm.txt)/output/model.tar.gz
-      output/aws/
-    - tar -xzf output/aws/model.tar.gz -C output/aws/
-    - rm output/aws/model.tar.gz
-    - uv run pg2-benchmark metric calc --output-path output/aws/ranganathan_esm.csv
-      --metric-path metric/aws/ranganathan_esm.csv
-    deps:
-    - path: logs/monitor_job_ranganathan_esm.txt
-      hash: md5
-      md5: 325e70d401dc3f81a6fe8025b2e64c5f
-      size: 335
-    outs:
-    - path: metric/aws/ranganathan_esm.csv
-      hash: md5
-      md5: 593748e41a369649106260764a45f8ae
-      size: 1515
+      md5: 4bf26dc9f4ace61f035e548a8993ec01
+      size: 365

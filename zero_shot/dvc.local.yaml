@@ -1,39 +1,42 @@
 vars:
-  - type: zero_shot
 
   - local:
-      git_cache_bust: 1
       datasets_dir: ../datasets
       models_dir: ../models
       output_dir: output/local
       metric_dir: metric/local
-
+  
   - datasets:
     - name: ranganathan
+      container_path: /datasets/ranganathan/ranganathan.toml
       local_path: ../datasets/ranganathan/ranganathan.toml
 
   - models:
     - name: esm
+      container_path: /models/esm/esm.toml
       local_path: ../models/esm/esm.toml
       dockerfile: ../models/esm
 
 stages:
-  predict:
+  create_training_job:
     matrix: 
       dataset: ${datasets}
       model: ${models}
     
-    cmd: uv run pg2-benchmark model predict --type ${type} --dataset-manifest ${item.dataset.local_path} --model-manifest ${item.model.local_path} --model-dockerfile-folder ${item.model.dockerfile} --model-name ${item.model.name}
+    cmd: 
+      - docker build --secret id=git_auth,src=git-auth.txt -t ${item.model.name}:latest ${item.model.dockerfile} --no-cache
+      - docker run --rm -v $(realpath ${local.datasets_dir}):/datasets -v $(realpath ${local.models_dir}):/models -v $(realpath ${local.output_dir}):/output ${item.model.name}:latest train --dataset-toml-file ${item.dataset.container_path} --model-toml-file ${item.model.container_path}
+      - docker image prune -a -f
+
     deps:
       - ${item.dataset.local_path}
       - ${item.model.local_path}
       - ${item.model.dockerfile}
-      - ../src/pg2_benchmark/cli/model.py
     outs:
       - ${local.output_dir}/${item.dataset.name}_${item.model.name}.csv:
           cache: true
 
-  calc_metric:
+  calculate_metric:
     matrix: 
       dataset: ${datasets}
       model: ${models}
@@ -41,7 +44,6 @@ stages:
     cmd: uv run pg2-benchmark metric calc --output-path ${local.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric-path ${local.metric_dir}/${item.dataset.name}_${item.model.name}.csv
     deps:
       - ${local.output_dir}/${item.dataset.name}_${item.model.name}.csv
-      - ../src/pg2_benchmark/cli/metric.py
     outs:
       - ${local.metric_dir}/${item.dataset.name}_${item.model.name}.csv:
           cache: true
