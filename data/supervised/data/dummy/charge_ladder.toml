@@ -2,8 +2,10 @@ name = "charge_ladder"
 
 [assays_meta]
 file_path = "/data/charge_ladder.csv"
-columns = ["sequence", "charge"]
+columns = ["sequence", "charge", "foo", "bar"]
 sequence_feature = "sequence"
 split_strategy = "RandomSplitStrategy"
 
 [assays_meta.assays.charge]
+features = ["foo", "bar"]
+
