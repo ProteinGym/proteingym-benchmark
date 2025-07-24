@@ -1,7 +1,7 @@
 name = "charge_ladder"
 
 [assays_meta]
-file_path = "/data/charge_ladder.csv"
+file_path = "/datasets/dummy/charge_ladder.csv"
 columns = ["sequence", "charge", "foo", "bar"]
 sequence_feature = "sequence"
 split_strategy = "RandomSplitStrategy"

@@ -1,4 +1,5 @@
 vars:
+
   - local:
       datasets_dir: ../datasets
       models_dir: ../models
@@ -7,10 +8,12 @@ vars:
   
   - datasets:
     - name: ranganathan
+      container_path: /datasets/ranganathan/ranganathan.toml
       local_path: ../datasets/ranganathan/ranganathan.toml
 
   - models:
     - name: esm
+      container_path: /models/esm/esm.toml
       local_path: ../models/esm/esm.toml
       dockerfile: ../models/esm
 
@@ -22,8 +25,9 @@ stages:
     
     cmd: 
       - docker build --secret id=git_auth,src=git-auth.txt -t ${item.model.name}:latest ${item.model.dockerfile} --no-cache
-      - docker run --rm -v $(realpath ${local.datasets_dir}):/data -v $(realpath ${local.models_dir}):/model -v $(realpath ${local.output_dir}):/output ${item.model.name}:latest train --dataset-toml-file /${item.dataset.local_path} --model-toml-file /${item.model.local_path}
+      - docker run --rm -v $(realpath ${local.datasets_dir}):/datasets -v $(realpath ${local.models_dir}):/models -v $(realpath ${local.output_dir}):/output ${item.model.name}:latest train --dataset-toml-file ${item.dataset.container_path} --model-toml-file ${item.model.container_path}
       - docker image prune -a -f
+
     deps:
       - ${item.dataset.local_path}
       - ${item.model.local_path}

@@ -31,21 +31,22 @@ jobs:
           uv sync
      
           # Run DVC repro
-          echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ./git-auth.txt
-          cd supervised && dvc repro && cd ..
-          cd zero_shot && dvc repro && cd ..
+          echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > supervised/git-auth.txt
+          echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > zero_shot/git-auth.txt
+          uv run dvc repro supervised/dvc.yaml
+          uv run dvc repro zero_shot/dvc.yaml
           
           # Create report with metrics
           # Pick one supervised model
           echo "✅ Supervised models have all passed validation." >> report.md
           echo '```csv' >> report.md
-          cat ./data/supervised/metric/charge_ladder_pls.csv >> report.md
+          cat ./supervised/metric/charge_ladder_pls.csv >> report.md
           echo '```' >> report.md
 
           # Pick one zero-shot model
           echo "✅ Zero-shot models have all passed validation." >> report.md
           echo '```csv' >> report.md
-          cat ./data/zero_shot/metric/ranganathan_esm.csv >> report.md
+          cat ./zero_shot/metric/ranganathan_esm.csv >> report.md
           echo '```' >> report.md
           
           # Send comment to PR

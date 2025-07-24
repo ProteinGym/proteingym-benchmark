@@ -18,7 +18,7 @@ console = Console()
 
 
 @app.command()
-def predict(
+def train(
     dataset_toml_file: str = typer.Option(help="Path to the dataset TOML file"),
     model_toml_file: str = typer.Option(help="Path to the model TOML file"),
     nogpu: bool = typer.Option(False, help="GPUs available"),
