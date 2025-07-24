@@ -1,7 +1,7 @@
 name = "neime"
 
 [assays_meta]
-file_path = "/data/A0A1I9GEU1_NEIME_Kennouche_2019.csv"
+file_path = "/data/neime/A0A1I9GEU1_NEIME_Kennouche_2019.csv"
 columns = ["mutated_sequence", "mutant", "DMS_score", "DMS_score_bin"]
 sequence_feature = "mutated_sequence"
 split_strategy = "RandomSplitStrategy"
