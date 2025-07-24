@@ -1,38 +1,31 @@
 vars:  
-  - aws:
-      account_id: "<your-account-id>"
-      region_name: "us-east-1"
-      sagemaker_role_name: "rnd-dev-sagemakerexecutionrole "
-      s3_output_prefix: "mango-pe/pg2-benchmark-output"
-      s3_training_data_prefix: "mango-pe/pg2-benchmark-training-data"
-      instance_type: "ml.m5.xlarge"
-      volume_size: 5
+  - params.yaml
 
   - local:
       git_cache_bust: 1
-      data_dir: data
-      model_dir: model
+      datasets_dir: ../datasets
+      models_dir: ../models
       output_dir: output/aws
       metric_dir: metric/aws
   
   - datasets:
     - name: ranganathan
-      path: data/ranganathan/ranganathan.toml
+      aws_path: datasets/ranganathan/ranganathan.toml
 
   - models:
     - name: esm
-      path: model/esm.toml
+      aws_path: models/esm/esm.toml
       dockerfile: ../models/esm
 
 stages:
   upload_to_s3:
     cmd:
-      - aws s3 cp ${local.data_dir}/ s3://${aws.s3_training_data_prefix}/${local.data_dir}/ --recursive --exclude ".*" --exclude "*/.*"
-      - aws s3 cp ${local.model_dir}/ s3://${aws.s3_training_data_prefix}/${local.model_dir}/ --recursive --exclude ".*" --exclude "*/.*"
+      - aws s3 cp ${local.datasets_dir}/ s3://${aws.s3_training_data_prefix}/${local.datasets_dir}/ --recursive --exclude ".*" --exclude "*/.*"
+      - aws s3 cp ${local.models_dir}/ s3://${aws.s3_training_data_prefix}/${local.models_dir}/ --recursive --exclude ".*" --exclude "*/.*"
       - echo "Upload completed at $(date)" > logs/s3_upload_complete.txt
     deps:
-      - ${local.data_dir}/
-      - ${local.model_dir}/
+      - ${local.datasets_dir}/
+      - ${local.models_dir}/
     outs:
       - logs/s3_upload_complete.txt:
           cache: true
@@ -69,8 +62,8 @@ stages:
       --s3-output-prefix ${aws.s3_output_prefix}
       --instance-type ${aws.instance_type}
       --volume-size ${aws.volume_size}
-      --dataset-toml-file ${item.dataset.path}
-      --model-toml-file ${item.model.path}
+      --dataset-toml-file ${item.dataset.aws_path}
+      --model-toml-file ${item.model.aws_path}
       > logs/create_job_${item.dataset.name}_${item.model.name}.txt
 
     deps:

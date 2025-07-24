@@ -1,265 +1,61 @@
 schema: '2.0'
 stages:
-  supervised_predict@dataset0-model0:
-    cmd: uv run pg2-benchmark model predict --dataset-manifest data/dummy/charge_ladder.toml
-      --model-manifest model/pls.toml --model-dockerfile-folder ../models/pls --model-name
-      pls
-    deps:
-    - path: ../models/pls
-      hash: md5
-      md5: b344899594d54b6493151eca1b7a55cc.dir
-      size: 545913774
-      nfiles: 17727
-    - path: ../src/pg2_benchmark/cli/model.py
-      hash: md5
-      md5: 7b69bd48d88f96c7e759334208c24226
-      size: 1687
-    - path: data/dummy/charge_ladder.toml
-      hash: md5
-      md5: 4c4119e8f92050f97396da01c5ba5fba
-      size: 248
-    - path: model/pls.toml
-      hash: md5
-      md5: 751569f65bbbc4d796ddc02a70dce809
-      size: 185
-    outs:
-    - path: output/charge_ladder_pls.csv
-      hash: md5
-      md5: 5f067b476869f7742deceb58d82b219e
-      size: 13805
-  supervised_predict@dataset1-model0:
-    cmd: uv run pg2-benchmark model predict --dataset-manifest data/neime/neime.toml
-      --model-manifest model/pls.toml --model-dockerfile-folder ../models/pls --model-name
-      pls
-    deps:
-    - path: ../models/pls
-      hash: md5
-      md5: b344899594d54b6493151eca1b7a55cc.dir
-      size: 545913774
-      nfiles: 17727
-    - path: ../src/pg2_benchmark/cli/model.py
-      hash: md5
-      md5: 7b69bd48d88f96c7e759334208c24226
-      size: 1687
-    - path: data/neime/neime.toml
-      hash: md5
-      md5: 394178d3ffeda14fdad7a77c88d4c831
-      size: 266
-    - path: model/pls.toml
-      hash: md5
-      md5: 751569f65bbbc4d796ddc02a70dce809
-      size: 185
-    outs:
-    - path: output/neime_pls.csv
-      hash: md5
-      md5: 6a5f0421990b0cd46074054fd2a803fc
-      size: 35085
-  supervised_metric@dataset0-model0:
-    cmd: uv run pg2-benchmark metric calc --output-path output/charge_ladder_pls.csv
-      --metric-path metric/charge_ladder_pls.csv
-    deps:
-    - path: ../src/pg2_benchmark/cli/metric.py
-      hash: md5
-      md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
-      size: 774
-    - path: output/charge_ladder_pls.csv
-      hash: md5
-      md5: 5f067b476869f7742deceb58d82b219e
-      size: 13805
-    outs:
-    - path: metric/charge_ladder_pls.csv
-      hash: md5
-      md5: b7b16f18e4d001b6070412b5466b7dc9
-      size: 1456
-  supervised_metric@dataset1-model0:
-    cmd: uv run pg2-benchmark metric calc --output-path output/neime_pls.csv --metric-path
-      metric/neime_pls.csv
-    deps:
-    - path: ../src/pg2_benchmark/cli/metric.py
-      hash: md5
-      md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
-      size: 774
-    - path: output/neime_pls.csv
-      hash: md5
-      md5: 6a5f0421990b0cd46074054fd2a803fc
-      size: 35085
-    outs:
-    - path: metric/neime_pls.csv
-      hash: md5
-      md5: a92f7c0b6a9d4199edf4fc33812129dc
-      size: 1619
-  predict@dataset0-model0:
-    cmd: uv run pg2-benchmark model predict --type supervised --dataset-manifest ../datasets/dummy/charge_ladder.toml
-      --model-manifest ../models/pls/pls.toml --model-dockerfile-folder ../models/pls
-      --model-name pls
-    deps:
-    - path: ../datasets/dummy/charge_ladder.toml
-      hash: md5
-      md5: 0ac8a36fd5384cae016926f82c82d8a9
-      size: 254
-    - path: ../models/pls
-      hash: md5
-      md5: fd3c48e3ccb7ab3152d2c50e1204bc8a.dir
-      size: 545913959
-      nfiles: 17728
-    - path: ../models/pls/pls.toml
-      hash: md5
-      md5: 751569f65bbbc4d796ddc02a70dce809
-      size: 185
-    - path: ../src/pg2_benchmark/cli/model.py
-      hash: md5
-      md5: 5a9ca1b8490290e72ff87b8ac0cb42c6
-      size: 1818
-    outs:
-    - path: output/charge_ladder_pls.csv
-      hash: md5
-      md5: 9458c189d156ee6bf1859f72a50dfda6
-      size: 13754
-  predict@dataset1-model0:
-    cmd: uv run pg2-benchmark model predict --type supervised --dataset-manifest ../datasets/neime/neime.toml
-      --model-manifest ../models/pls/pls.toml --model-dockerfile-folder ../models/pls
-      --model-name pls
-    deps:
-    - path: ../datasets/neime/neime.toml
-      hash: md5
-      md5: b3cc878ed9f51abf478bfcd63af0bc0c
-      size: 272
-    - path: ../models/pls
-      hash: md5
-      md5: fd3c48e3ccb7ab3152d2c50e1204bc8a.dir
-      size: 545913959
-      nfiles: 17728
-    - path: ../models/pls/pls.toml
-      hash: md5
-      md5: 751569f65bbbc4d796ddc02a70dce809
-      size: 185
-    - path: ../src/pg2_benchmark/cli/model.py
-      hash: md5
-      md5: 5a9ca1b8490290e72ff87b8ac0cb42c6
-      size: 1818
-    outs:
-    - path: output/neime_pls.csv
-      hash: md5
-      md5: a2a050e899526619f1e3e845aba57eab
-      size: 34937
-  calc_metric@dataset0-model0:
-    cmd: uv run pg2-benchmark metric calc --output-path output/charge_ladder_pls.csv
-      --metric-path metric/charge_ladder_pls.csv
-    deps:
-    - path: ../src/pg2_benchmark/cli/metric.py
-      hash: md5
-      md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
-      size: 774
-    - path: output/charge_ladder_pls.csv
-      hash: md5
-      md5: 9458c189d156ee6bf1859f72a50dfda6
-      size: 13754
-    outs:
-    - path: metric/charge_ladder_pls.csv
-      hash: md5
-      md5: 63e9f5c5804aaa678c15c4286745a5a9
-      size: 1457
-  calc_metric@dataset1-model0:
-    cmd: uv run pg2-benchmark metric calc --output-path output/neime_pls.csv --metric-path
-      metric/neime_pls.csv
-    deps:
-    - path: ../src/pg2_benchmark/cli/metric.py
-      hash: md5
-      md5: 2f2a5d08badb89c5d507fa9e2e5bbe2d
-      size: 774
-    - path: output/neime_pls.csv
-      hash: md5
-      md5: a2a050e899526619f1e3e845aba57eab
-      size: 34937
-    outs:
-    - path: metric/neime_pls.csv
-      hash: md5
-      md5: 5f56ad9b26b9a027ccaa7ee9b00549e8
-      size: 1619
   upload_to_s3:
     cmd:
-    - aws s3 cp data/ s3://mango-pe/pg2-benchmark-training-data/data/ --recursive
+    - aws s3 cp ../datasets/ s3://mango-pe/pg2-benchmark-training-data/datasets/ --recursive
       --exclude ".*" --exclude "*/.*"
-    - aws s3 cp model/ s3://mango-pe/pg2-benchmark-training-data/model/ --recursive
+    - aws s3 cp ../models/ s3://mango-pe/pg2-benchmark-training-data/models/ --recursive
       --exclude ".*" --exclude "*/.*"
     - echo "Upload completed at $(date)" > logs/s3_upload_complete.txt
     deps:
-    - path: data/
+    - path: ../datasets/
       hash: md5
-      md5: 4c049aee14d085d26d1aed6c8e4c56ae.dir
-      size: 239288
-      nfiles: 5
-    - path: model/
+      md5: 8b3f02ebdb28b465a1ff95c6998d6f91.dir
+      size: 1974932
+      nfiles: 7
+    - path: ../models/
       hash: md5
-      md5: b271d5385e717be29cd6221c4069c854.dir
-      size: 185
-      nfiles: 1
+      md5: 7b5477d60a5803918f113d6a7d2e1fc2.dir
+      size: 1376994070
+      nfiles: 48330
     outs:
     - path: logs/s3_upload_complete.txt
       hash: md5
-      md5: 82859e696a8cca9599163ba1d98d6b1b
+      md5: 3a1508f789f0712cda508cb31f508946
       size: 50
   deploy_to_ecr@model0:
     cmd:
     - aws ecr describe-repositories --repository-names pls --region us-east-1 >/dev/null
       2>&1 || aws ecr create-repository --repository-name pls --region us-east-1 >/dev/null
     - aws ecr get-login-password --region us-east-1 | docker login --username AWS
-      --password-stdin 938398057556.dkr.ecr.us-east-1.amazonaws.com
+      --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com
     - docker buildx build --build-arg GIT_CACHE_BUST=1 --platform linux/amd64,linux/arm64
-      --secret id=git_auth,src=git-auth.txt -t 938398057556.dkr.ecr.us-east-1.amazonaws.com/pls:latest
+      --secret id=git_auth,src=git-auth.txt -t ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/pls:latest
       ../models/pls --push
     - echo "ECR push completed at $(date)" > logs/ecr_push_complete.txt
-    - echo "938398057556.dkr.ecr.us-east-1.amazonaws.com/pls:latest" > logs/image_uri.txt
+    - echo "${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/pls:latest" > logs/image_uri.txt
     deps:
     - path: ../models/pls
       hash: md5
-      md5: 9ce3341b7a39835ac9ad2c32d41b4325.dir
-      size: 545915420
-      nfiles: 17727
+      md5: e464de9717c37b1342f07553f1e2a510.dir
+      size: 545915605
+      nfiles: 17728
     outs:
     - path: logs/ecr_push_complete.txt
       hash: md5
-      md5: 05779daff4de27ec5cc4bb3f6ece5446
+      md5: db3faa2e50591be32e97496a0995224e
       size: 52
     - path: logs/image_uri.txt
       hash: md5
       md5: 764fdb00245735eff50661b2da0d51a1
-      size: 56
-  create_role:
-    cmd:
-    - aws iam get-role --role-name pg2-benchmark-sagemaker-role >/dev/null 2>&1 ||
-      aws iam create-role --role-name pg2-benchmark-sagemaker-role --assume-role-policy-document
-      file://trust-policy.json >/dev/null
-    - aws iam attach-role-policy --role-name pg2-benchmark-sagemaker-role --policy-arn
-      arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
-    - aws iam attach-role-policy --role-name pg2-benchmark-sagemaker-role --policy-arn
-      arn:aws:iam::aws:policy/AmazonS3FullAccess
-    - echo "SageMaker role created at $(date)" > logs/role_create_complete.txt
-    deps:
-    - path: logs/ecr_push_complete.txt
-      hash: md5
-      md5: f480d0ea904b5e5756c5b2fd981d48ac
-      size: 52
-    - path: logs/image_uri.txt
-      hash: md5
-      md5: 1ea9949a94d349ac802f9b749fa4496d
-      size: 57
-    - path: logs/s3_upload_complete.txt
-      hash: md5
-      md5: 432159d9f4f49d294aaadef767ff9b1d
-      size: 50
-    outs:
-    - path: logs/role_create_complete.txt
-      hash: md5
-      md5: 38e0bfb32b0a1af1ceeba9e9fe0c9be0
       size: 56
   create_training_job@dataset0-model0:
     cmd: "uv run pg2-benchmark aws create-training-job --model-name pls --region-name
       us-east-1 --sagemaker-role-name rnd-dev-sagemakerexecutionrole  --ecr-repository-uri
-      938398057556.dkr.ecr.us-east-1.amazonaws.com/pls --s3-training-data-prefix mango-pe/pg2-benchmark-training-data
-      --s3-output-prefix mango-pe/pg2-benchmark-output --instance-type ml.m5.xlarge
-      --volume-size 5 --dataset-toml-file data/dummy/charge_ladder.toml --model-toml-file
-      model/pls.toml > logs/create_job_charge_ladder_pls.txt\n"
+      ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/pls --s3-training-data-prefix
+      mango-pe/pg2-benchmark-training-data --s3-output-prefix mango-pe/pg2-benchmark-output
+      --instance-type ml.m5.xlarge --volume-size 5 --dataset-toml-file datasets/dummy/charge_ladder.toml
+      --model-toml-file models/pls/pls.toml > logs/create_job_charge_ladder_pls.txt\n"
     deps:
     - path: ../src/pg2_benchmark/cli/aws.py
       hash: md5
@@ -267,7 +63,7 @@ stages:
       size: 4967
     - path: logs/ecr_push_complete.txt
       hash: md5
-      md5: 05779daff4de27ec5cc4bb3f6ece5446
+      md5: db3faa2e50591be32e97496a0995224e
       size: 52
     - path: logs/image_uri.txt
       hash: md5
@@ -275,20 +71,20 @@ stages:
       size: 56
     - path: logs/s3_upload_complete.txt
       hash: md5
-      md5: 82859e696a8cca9599163ba1d98d6b1b
+      md5: 3a1508f789f0712cda508cb31f508946
       size: 50
     outs:
     - path: logs/create_job_charge_ladder_pls.txt
       hash: md5
-      md5: af3e3112bdc22041ff7fe694034320dd
+      md5: 6201c7d1927ed876fd780b35792659a7
       size: 20
   create_training_job@dataset1-model0:
     cmd: "uv run pg2-benchmark aws create-training-job --model-name pls --region-name
       us-east-1 --sagemaker-role-name rnd-dev-sagemakerexecutionrole  --ecr-repository-uri
-      938398057556.dkr.ecr.us-east-1.amazonaws.com/pls --s3-training-data-prefix mango-pe/pg2-benchmark-training-data
-      --s3-output-prefix mango-pe/pg2-benchmark-output --instance-type ml.m5.xlarge
-      --volume-size 5 --dataset-toml-file data/neime/neime.toml --model-toml-file
-      model/pls.toml > logs/create_job_neime_pls.txt\n"
+      ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/pls --s3-training-data-prefix
+      mango-pe/pg2-benchmark-training-data --s3-output-prefix mango-pe/pg2-benchmark-output
+      --instance-type ml.m5.xlarge --volume-size 5 --dataset-toml-file datasets/neime/neime.toml
+      --model-toml-file models/pls/pls.toml > logs/create_job_neime_pls.txt\n"
     deps:
     - path: ../src/pg2_benchmark/cli/aws.py
       hash: md5
@@ -296,7 +92,7 @@ stages:
       size: 4967
     - path: logs/ecr_push_complete.txt
       hash: md5
-      md5: 05779daff4de27ec5cc4bb3f6ece5446
+      md5: db3faa2e50591be32e97496a0995224e
       size: 52
     - path: logs/image_uri.txt
       hash: md5
@@ -304,12 +100,12 @@ stages:
       size: 56
     - path: logs/s3_upload_complete.txt
       hash: md5
-      md5: 82859e696a8cca9599163ba1d98d6b1b
+      md5: 3a1508f789f0712cda508cb31f508946
       size: 50
     outs:
     - path: logs/create_job_neime_pls.txt
       hash: md5
-      md5: 24ac1d9a2ab8a02b7a9f36c70e4c28dd
+      md5: ba3f4e18db35a89873573359839ce72a
       size: 20
   monitor_training_job@dataset0-model0:
     cmd: "uv run pg2-benchmark aws monitor-training-job --region-name us-east-1 --job-name
@@ -321,12 +117,12 @@ stages:
       size: 4967
     - path: logs/create_job_charge_ladder_pls.txt
       hash: md5
-      md5: af3e3112bdc22041ff7fe694034320dd
+      md5: 6201c7d1927ed876fd780b35792659a7
       size: 20
     outs:
     - path: logs/monitor_job_charge_ladder_pls.txt
       hash: md5
-      md5: aec02d6bb975b9bbb65629f0ebbe010d
+      md5: e1b39d4eaa587c88c5e6c1847dd63537
       size: 245
   monitor_training_job@dataset1-model0:
     cmd: "uv run pg2-benchmark aws monitor-training-job --region-name us-east-1 --job-name
@@ -338,12 +134,12 @@ stages:
       size: 4967
     - path: logs/create_job_neime_pls.txt
       hash: md5
-      md5: 24ac1d9a2ab8a02b7a9f36c70e4c28dd
+      md5: ba3f4e18db35a89873573359839ce72a
       size: 20
     outs:
     - path: logs/monitor_job_neime_pls.txt
       hash: md5
-      md5: a113f868e84577ed2c627458ef38f9ed
+      md5: 2a3667b65975e336c0cb350ed807ad73
       size: 158
   calculate_metric@dataset0-model0:
     cmd:
@@ -356,12 +152,12 @@ stages:
     deps:
     - path: logs/monitor_job_charge_ladder_pls.txt
       hash: md5
-      md5: aec02d6bb975b9bbb65629f0ebbe010d
+      md5: e1b39d4eaa587c88c5e6c1847dd63537
       size: 245
     outs:
     - path: metric/aws/charge_ladder_pls.csv
       hash: md5
-      md5: 96af8f67e60dc9cf3b675d0cea83ee9b
+      md5: acddedd1fd41ba3cd426d3e9bac6e810
       size: 1457
   calculate_metric@dataset1-model0:
     cmd:
@@ -374,10 +170,10 @@ stages:
     deps:
     - path: logs/monitor_job_neime_pls.txt
       hash: md5
-      md5: a113f868e84577ed2c627458ef38f9ed
+      md5: 2a3667b65975e336c0cb350ed807ad73
       size: 158
     outs:
     - path: metric/aws/neime_pls.csv
       hash: md5
-      md5: 1c035dccaf4638d2b4a452370f6c0428
-      size: 1625
+      md5: a7546d2e3c858142abb953e7457a2a07
+      size: 1616

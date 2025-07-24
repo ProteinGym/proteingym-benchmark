@@ -1,12 +1,20 @@
 vars:
   - type: zero_shot
+
+  - local:
+      git_cache_bust: 1
+      datasets_dir: ../datasets
+      models_dir: ../models
+      output_dir: output/local
+      metric_dir: metric/local
+
   - datasets:
     - name: ranganathan
-      path: ../datasets/ranganathan/ranganathan.toml
+      local_path: ../datasets/ranganathan/ranganathan.toml
 
   - models:
     - name: esm
-      path: ../models/esm/esm.toml
+      local_path: ../models/esm/esm.toml
       dockerfile: ../models/esm
 
 stages:
@@ -15,14 +23,14 @@ stages:
       dataset: ${datasets}
       model: ${models}
     
-    cmd: uv run pg2-benchmark model predict --type ${type} --dataset-manifest ${item.dataset.path} --model-manifest ${item.model.path} --model-dockerfile-folder ${item.model.dockerfile} --model-name ${item.model.name}
+    cmd: uv run pg2-benchmark model predict --type ${type} --dataset-manifest ${item.dataset.local_path} --model-manifest ${item.model.local_path} --model-dockerfile-folder ${item.model.dockerfile} --model-name ${item.model.name}
     deps:
-      - ${item.dataset.path}
-      - ${item.model.path}
+      - ${item.dataset.local_path}
+      - ${item.model.local_path}
       - ${item.model.dockerfile}
       - ../src/pg2_benchmark/cli/model.py
     outs:
-      - output/${item.dataset.name}_${item.model.name}.csv:
+      - ${local.output_dir}/${item.dataset.name}_${item.model.name}.csv:
           cache: true
 
   calc_metric:
@@ -30,10 +38,10 @@ stages:
       dataset: ${datasets}
       model: ${models}
     
-    cmd: uv run pg2-benchmark metric calc --output-path output/${item.dataset.name}_${item.model.name}.csv --metric-path metric/${item.dataset.name}_${item.model.name}.csv
+    cmd: uv run pg2-benchmark metric calc --output-path ${local.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric-path ${local.metric_dir}/${item.dataset.name}_${item.model.name}.csv
     deps:
-      - output/${item.dataset.name}_${item.model.name}.csv
+      - ${local.output_dir}/${item.dataset.name}_${item.model.name}.csv
       - ../src/pg2_benchmark/cli/metric.py
     outs:
-      - metric/${item.dataset.name}_${item.model.name}.csv:
+      - ${local.metric_dir}/${item.dataset.name}_${item.model.name}.csv:
           cache: true
