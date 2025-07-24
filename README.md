@@ -51,10 +51,10 @@ The difference of the AWS environment is that:
 * You need to use SageMaker training job to either train or score a model.
 
 > [!IMPORTANT]
-> In order to use the AWS environment, you need to set up your AWS profile, following the below steps:
+> In order to use the AWS environment, you need to set up your AWS profile with the below steps:
 > 1. Execute `aws configure sso`.
-> 2. Fill in the required fields, especially: "Default client Region" is "us-east-1", "Profile name" is "iff_dev".
-> 3. Update `dvc.yaml` in each game for the first variable at the top: "account_id" to the correct account name. You can find it by executing `cat ~/.aws/config`.
+> 2. Fill in the required fields, especially: "Default client Region" is "us-east-1".
+> 3. You can find your account ID and profile by executing `cat ~/.aws/config`, then run `dvc repro` with environment variables in each game like: `AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro`
 
 ## Generate dummy data
 
