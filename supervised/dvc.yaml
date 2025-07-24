@@ -1,14 +1,15 @@
 vars:
+  - type: supervised
   - datasets:
     - name: charge_ladder
-      path: data/dummy/charge_ladder.toml
+      path: ../datasets/dummy/charge_ladder.toml
   
     - name: neime
-      path: data/neime/neime.toml
+      path: ../datasets/neime/neime.toml
 
   - models:
     - name: pls
-      path: model/pls.toml
+      path: ../models/pls/pls.toml
       dockerfile: ../models/pls
 
 stages:
@@ -17,7 +18,7 @@ stages:
       dataset: ${datasets}
       model: ${models}
     
-    cmd: uv run pg2-benchmark model predict --dataset-manifest ${item.dataset.path} --model-manifest ${item.model.path} --model-dockerfile-folder ${item.model.dockerfile} --model-name ${item.model.name}
+    cmd: uv run pg2-benchmark model predict --type ${type} --dataset-manifest ${item.dataset.path} --model-manifest ${item.model.path} --model-dockerfile-folder ${item.model.dockerfile} --model-name ${item.model.name}
     deps:
       - ${item.dataset.path}
       - ${item.model.path}

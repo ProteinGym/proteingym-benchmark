@@ -32,8 +32,8 @@ jobs:
      
           # Run DVC repro
           echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ./git-auth.txt
-          cd supervised && dvc repro && cd ..
-          cd zero_shot && dvc repro && cd ..
+          dvc repro supervised/dvc.yaml
+          dvc repro zero_shot/dvc.yaml
           
           # Create report with metrics
           # Pick one supervised model

@@ -1,11 +1,12 @@
 vars:
+  - type: zero_shot
   - datasets:
     - name: ranganathan
-      path: data/ranganathan/ranganathan.toml
+      path: ../datasets/ranganathan/ranganathan.toml
 
   - models:
     - name: esm
-      path: model/esm.toml
+      path: ../models/esm/esm.toml
       dockerfile: ../models/esm
 
 stages:
@@ -14,7 +15,7 @@ stages:
       dataset: ${datasets}
       model: ${models}
     
-    cmd: uv run pg2-benchmark model predict --dataset-manifest ${item.dataset.path} --model-manifest ${item.model.path} --model-dockerfile-folder ${item.model.dockerfile} --model-name ${item.model.name}
+    cmd: uv run pg2-benchmark model predict --type ${type} --dataset-manifest ${item.dataset.path} --model-manifest ${item.model.path} --model-dockerfile-folder ${item.model.dockerfile} --model-name ${item.model.name}
     deps:
       - ${item.dataset.path}
       - ${item.model.path}
