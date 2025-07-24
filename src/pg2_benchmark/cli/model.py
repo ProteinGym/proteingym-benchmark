@@ -11,6 +11,7 @@ console = Console()
 
 @model_app.command()
 def predict(
+    type: str = typer.Option(help="Type of benchmarking game"),
     dataset_manifest: str = typer.Option(help="Path to the dataset TOML file"),
     model_manifest: str = typer.Option(help="Path to the model TOML file"),
     model_dockerfile_folder: str = typer.Option(
@@ -35,15 +36,18 @@ def predict(
     docker.run(
         image=f"{model_name}:latest",
         volumes=[
-            (f"{Path(dataset_manifest).parent.resolve()}", "/data"),
+            (f"{Path(dataset_manifest).parent.parent.resolve()}", "/data"),
             (f"{Path(model_manifest).parent.resolve()}", "/model"),
-            (f"{Path(model_manifest).parent.parent.resolve()}/output", "/output"),
+            (
+                f"{Path(model_manifest).parent.parent.parent.resolve()}/{type}/output",
+                "/output",
+            ),
         ],
         remove=True,
         command=[
             "predict",
             "--dataset-toml-file",
-            f"/data/{str(Path(dataset_manifest).name)}",
+            f"/data/{str(Path(dataset_manifest).relative_to(Path(dataset_manifest).parent.parent))}",
             "--model-toml-file",
             f"/model/{str(Path(model_manifest).name)}",
         ],
