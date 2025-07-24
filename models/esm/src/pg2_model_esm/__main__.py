@@ -1,14 +1,11 @@
 import torch
 import typer
-from typing import Tuple
 from rich.console import Console
 from pg2_dataset.dataset import Manifest
 from tqdm import tqdm
 from esm import pretrained
 from pg2_model_esm.utils import compute_pppl, label_row
 from pg2_model_esm.manifest import Manifest as ModelManifest
-import toml
-import json
 
 
 app = typer.Typer(
@@ -19,62 +16,13 @@ app = typer.Typer(
 err_console = Console(stderr=True)
 console = Console()
 
-prefix = "/opt/ml"
-training_data_path = f"{prefix}/input/data/training"
-params_path = f"{prefix}/input/config/hyperparameters.json"
-model_path = "/model.pkl"
-
-
-def _configure_container_paths(
-    dataset_toml_file: str, model_toml_file: str
-) -> Tuple[str, str, str]:
-    if not dataset_toml_file and not model_toml_file:
-        typer.echo(
-            "Configuring the paths to where SageMaker mounts interesting things in the container."
-        )
-
-        output_path = f"{prefix}/model"
-
-        with open(params_path, "r") as f:
-            training_params = json.load(f)
-
-        dataset_toml_file = (
-            f"{training_data_path}/{training_params.get('dataset_toml_file')}"
-        )
-        model_toml_file = (
-            f"{training_data_path}/{training_params.get('model_toml_file')}"
-        )
-
-        with open(dataset_toml_file, "r") as f:
-            data = toml.load(f)
-
-        data["assays_meta"]["file_path"] = (
-            f"{training_data_path}/{data['assays_meta']['file_path']}"
-        )
-
-        with open(dataset_toml_file, "w") as f:
-            toml.dump(data, f)
-
-        return output_path, dataset_toml_file, model_toml_file
-
-    else:
-        output_path = "/output"
-        return output_path, dataset_toml_file, model_toml_file
-
 
 @app.command()
-def train(
-    dataset_toml_file: str = typer.Option(
-        default="", help="Path to the dataset TOML file"
-    ),
-    model_toml_file: str = typer.Option(default="", help="Path to the model TOML file"),
-    nogpu: bool = typer.Option(default=False, help="GPUs available or not"),
+def predict(
+    dataset_toml_file: str = typer.Option(help="Path to the dataset TOML file"),
+    model_toml_file: str = typer.Option(help="Path to the model TOML file"),
+    nogpu: bool = typer.Option(False, help="GPUs available"),
 ):
-    output_path, dataset_toml_file, model_toml_file = _configure_container_paths(
-        dataset_toml_file=dataset_toml_file,
-        model_toml_file=model_toml_file,
-    )
-
     console.print(f"Loading {dataset_toml_file} and {model_toml_file}...")
 
     manifest = Manifest.from_path(dataset_toml_file)
@@ -178,11 +126,9 @@ def train(
             err_console.print(f"Error: Invalid scoring strategy: {scoring_strategy}")
 
     df.rename(columns={targets[0]: "test"}, inplace=True)
-    df.to_csv(f"/{output_path}/{dataset_name}_{model_name}.csv", index=False)
+    df.to_csv(f"/output/{dataset_name}_{model_name}.csv", index=False)
 
-    console.print(
-        f"Saved the metrics in CSV in {output_path}/{dataset_name}_{model_name}.csv"
-    )
+    console.print(f"Saved the metrics in CSV in output/{dataset_name}_{model_name}.csv")
     console.print("Done.")
 
 

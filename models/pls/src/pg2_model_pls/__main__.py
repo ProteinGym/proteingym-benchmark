@@ -4,9 +4,7 @@ from pg2_dataset.dataset import Manifest
 from pg2_dataset.splits.abstract_split_strategy import TrainTestValid
 from pg2_model_pls.manifest import Manifest as ModelManifest
 from pg2_model_pls.utils import load_x_and_y, train_model, predict_model
-from typing import Tuple
-import json
-import toml
+
 import typer
 
 app = typer.Typer(
@@ -16,65 +14,17 @@ app = typer.Typer(
 
 console = Console()
 
-prefix = "/opt/ml"
-training_data_path = f"{prefix}/input/data/training"
-params_path = f"{prefix}/input/config/hyperparameters.json"
-model_path = "/model.pkl"
-
-
-def _configure_container_paths(
-    dataset_toml_file: str, model_toml_file: str
-) -> Tuple[str, str, str]:
-    if not dataset_toml_file and not model_toml_file:
-        typer.echo(
-            "Configuring the paths to where SageMaker mounts interesting things in the container."
-        )
-
-        output_path = f"{prefix}/model"
-
-        with open(params_path, "r") as f:
-            training_params = json.load(f)
-
-        dataset_toml_file = (
-            f"{training_data_path}/{training_params.get('dataset_toml_file')}"
-        )
-        model_toml_file = (
-            f"{training_data_path}/{training_params.get('model_toml_file')}"
-        )
-
-        with open(dataset_toml_file, "r") as f:
-            data = toml.load(f)
-
-        data["assays_meta"]["file_path"] = (
-            f"{training_data_path}/{data['assays_meta']['file_path']}"
-        )
-
-        with open(dataset_toml_file, "w") as f:
-            toml.dump(data, f)
-
-        return output_path, dataset_toml_file, model_toml_file
-
-    else:
-        output_path = "/output"
-        return output_path, dataset_toml_file, model_toml_file
-
 
 @app.command()
-def train(
-    dataset_toml_file: str = typer.Option(
-        default="", help="Path to the dataset TOML file"
-    ),
-    model_toml_file: str = typer.Option(default="", help="Path to the model TOML file"),
+def predict(
+    dataset_toml_file: str = typer.Option(help="Path to the dataset TOML file"),
+    model_toml_file: str = typer.Option(help="Path to the model TOML file"),
 ):
-    output_path, dataset_toml_file, model_toml_file = _configure_container_paths(
-        dataset_toml_file=dataset_toml_file,
-        model_toml_file=model_toml_file,
-    )
-
     console.print(f"Loading {dataset_toml_file} and {model_toml_file}...")
 
     dataset_name = Manifest.from_path(dataset_toml_file).name
 
+    model_path = "/model.pkl"
     model_name = ModelManifest.from_path(model_toml_file).name
 
     train_X, train_Y = load_x_and_y(
@@ -120,10 +70,8 @@ def train(
         }
     )
 
-    df.write_csv(f"/{output_path}/{dataset_name}_{model_name}.csv")
-    console.print(
-        f"Saved the metrics in CSV in {output_path}/{dataset_name}_{model_name}.csv"
-    )
+    df.write_csv(f"/output/{dataset_name}_{model_name}.csv")
+    console.print(f"Saved the metrics in CSV in output/{dataset_name}_{model_name}.csv")
 
     console.print("Done.")
 
