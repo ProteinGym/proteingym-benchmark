@@ -95,3 +95,21 @@ stages:
       hash: md5
       md5: 4bf26dc9f4ace61f035e548a8993ec01
       size: 365
+  calculate_metric@dataset0-model0:
+    cmd:
+    - aws s3 cp s3://mango-pe/pg2-benchmark-output/$(cat logs/create_job_ranganathan_esm.txt)/output/model.tar.gz
+      output/aws/
+    - tar -xzf output/aws/model.tar.gz -C output/aws/
+    - rm output/aws/model.tar.gz
+    - uv run pg2-benchmark metric calc --output-path output/aws/ranganathan_esm.csv
+      --metric-path metric/aws/ranganathan_esm.csv
+    deps:
+    - path: logs/monitor_job_ranganathan_esm.txt
+      hash: md5
+      md5: 4bf26dc9f4ace61f035e548a8993ec01
+      size: 365
+    outs:
+    - path: metric/aws/ranganathan_esm.csv
+      hash: md5
+      md5: 593748e41a369649106260764a45f8ae
+      size: 1515
