@@ -40,13 +40,13 @@ jobs:
           # Pick one supervised model
           echo "✅ Supervised models have all passed validation." >> report.md
           echo '```csv' >> report.md
-          cat ./supervised/metric/charge_ladder_pls.csv >> report.md
+          cat ./supervised/metric/local/charge_ladder_pls.csv >> report.md
           echo '```' >> report.md
 
           # Pick one zero-shot model
           echo "✅ Zero-shot models have all passed validation." >> report.md
           echo '```csv' >> report.md
-          cat ./zero_shot/metric/ranganathan_esm.csv >> report.md
+          cat ./zero_shot/metric/local/ranganathan_esm.csv >> report.md
           echo '```' >> report.md
           
           # Send comment to PR
