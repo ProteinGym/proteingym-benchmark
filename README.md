@@ -31,14 +31,14 @@ for dataset in datasets:
 
 You can benchmark for a group of supervised models:
 ```shell
-cd supervised && dvc repo
+cd supervised && dvc repro
 ```
 
 ### Zero-shot
 
 You can benchmark for a group of zero-shot models:
 ```shell
-cd zero_shot && dvc repo
+cd zero_shot && dvc repro
 ```
 
 ## Generate dummy data
