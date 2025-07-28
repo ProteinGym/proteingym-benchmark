@@ -1,15 +1,12 @@
 import torch
 import typer
 from pathlib import Path
-from typing import Tuple
 from rich.console import Console
-from pg2_dataset.dataset import Manifest
+from pg2_dataset.dataset import Dataset
 from tqdm import tqdm
 from esm import pretrained
 from pg2_model_esm.utils import compute_pppl, label_row
-from pg2_model_esm.manifest import Manifest as ModelManifest
-import toml
-import json
+from pg2_model_esm.manifest import Manifest
 
 
 app = typer.Typer(
@@ -21,64 +18,30 @@ err_console = Console(stderr=True)
 console = Console()
 
 prefix = Path("/opt/ml")
-training_data_path = prefix / "input" / "data" / "training"
+training_data_path = prefix / "input" / "data" / "training" / "dataset.zip"
+manifest_path = prefix / "input" / "data" / "manifest" / "manifest.toml"
 params_path = prefix / "input" / "config" / "hyperparameters.json"
+output_path = prefix / "model"
+
 model_path = Path("/model.pkl")
-
-
-def _configure_container_paths(
-    dataset_toml_file: str, model_toml_file: str
-) -> Tuple[str, str, str]:
-    if not dataset_toml_file and not model_toml_file:
-        typer.echo(
-            "Configuring the paths to where SageMaker mounts interesting things in the container."
-        )
-
-        output_path = prefix / "model"
-
-        with open(params_path, "r") as f:
-            training_params = json.load(f)
-
-        dataset_toml_file = training_data_path / training_params.get(
-            "dataset_toml_file"
-        )
-        model_toml_file = training_data_path / training_params.get("model_toml_file")
-
-        with open(dataset_toml_file, "r") as f:
-            data = toml.load(f)
-
-        data["assays_meta"]["file_path"] = (
-            f"{training_data_path}{data['assays_meta']['file_path']}"
-        )
-
-        with open(dataset_toml_file, "w") as f:
-            toml.dump(data, f)
-
-        return str(output_path), str(dataset_toml_file), str(model_toml_file)
-
-    else:
-        output_path = Path("/output")
-        return str(output_path), str(dataset_toml_file), str(model_toml_file)
 
 
 @app.command()
 def train(
-    dataset_toml_file: str = typer.Option(
-        default="", help="Path to the dataset TOML file"
+    dataset_zip_file: str = typer.Option(
+        default="", help="Path to the dataset ZIP file"
     ),
     model_toml_file: str = typer.Option(default="", help="Path to the model TOML file"),
-    nogpu: bool = typer.Option(default=False, help="GPUs available or not"),
 ):
-    output_path, dataset_toml_file, model_toml_file = _configure_container_paths(
-        dataset_toml_file=dataset_toml_file,
-        model_toml_file=model_toml_file,
-    )
+    console.print(f"Loading {dataset_zip_file} and {model_toml_file}...")
 
-    console.print(f"Loading {dataset_toml_file} and {model_toml_file}...")
+    dataset_zip_file = dataset_zip_file or training_data_path
+    dataset = Dataset.from_path(dataset_zip_file)
+    dataset_name = dataset.name
 
-    manifest = Manifest.from_path(dataset_toml_file)
-    dataset_name = manifest.name
-    dataset = manifest.ingest()
+    model_toml_file = model_toml_file or manifest_path
+    hyper_params = Manifest.from_path(model_toml_file).hyper_params
+    model_name = hyper_params["name"]
 
     assays = dataset.assays.meta.assays
     targets = list(dataset.assays.meta.assays.keys())
@@ -90,21 +53,14 @@ def train(
 
     console.print(f"Loaded {len(df)} records.")
 
-    model_manifest = ModelManifest.from_path(model_toml_file)
-
-    model_name = model_manifest.name
-    location = model_manifest.location
-    scoring_strategy = model_manifest.scoring_strategy
-    hyper_params = model_manifest.hyper_params
-
-    model, alphabet = pretrained.load_model_and_alphabet(location)
+    model, alphabet = pretrained.load_model_and_alphabet(hyper_params["location"])
     model.eval()
 
     console.print(
-        f"Loaded the model from {location} with scoring strategy {scoring_strategy}."
+        f"Loaded the model from {hyper_params['location']} with scoring strategy {hyper_params['scoring_strategy']}."
     )
 
-    if torch.cuda.is_available() and not nogpu:
+    if torch.cuda.is_available() and not hyper_params["nogpu"]:
         model = model.cuda()
         print("Transferred model to GPU")
 
@@ -116,7 +72,7 @@ def train(
 
     batch_labels, batch_strs, batch_tokens = batch_converter(data)
 
-    match scoring_strategy:
+    match hyper_params["scoring_strategy"]:
         case "wt-marginals":
             with torch.no_grad():
                 token_probs = torch.log_softmax(model(batch_tokens)["logits"], dim=-1)
@@ -174,10 +130,12 @@ def train(
             )
 
         case _:
-            err_console.print(f"Error: Invalid scoring strategy: {scoring_strategy}")
+            err_console.print(
+                f"Error: Invalid scoring strategy: {hyper_params['scoring_strategy']}"
+            )
 
     df.rename(columns={targets[0]: "test"}, inplace=True)
-    df.to_csv(f"/{output_path}/{dataset_name}_{model_name}.csv", index=False)
+    df.to_csv(f"{output_path}/{dataset_name}_{model_name}.csv", index=False)
 
     console.print(
         f"Saved the metrics in CSV in {output_path}/{dataset_name}_{model_name}.csv"

@@ -14,13 +14,13 @@ stages:
     deps:
     - path: ../models/esm
       hash: md5
-      md5: 246ce0fcde27791b3acd65bf2805702e.dir
-      size: 831072316
+      md5: 6abde348b69e61d97805679d3caef6e6.dir
+      size: 831071033
       nfiles: 30601
     outs:
     - path: logs/ecr_push_complete.txt
       hash: md5
-      md5: 7eee607d832ef4b4103e7955493dbe55
+      md5: ad5856ae71ff1cc007d73a268555fd75
       size: 52
     - path: logs/image_uri.txt
       hash: md5
@@ -28,42 +28,42 @@ stages:
       size: 56
   upload_to_s3:
     cmd:
-    - aws s3 cp ../datasets/ s3://mango-pe/pg2-benchmark-training-data/../datasets/
-      --recursive --exclude ".*" --exclude "*/.*"
-    - aws s3 cp ../models/ s3://mango-pe/pg2-benchmark-training-data/../models/ --recursive
-      --exclude ".*" --exclude "*/.*"
+    - aws s3 cp ../datasets/ s3://mango-pe/pg2-benchmark-training-data/datasets --recursive
+      --exclude "*" --include "*.zip"
+    - aws s3 cp ../models/ s3://mango-pe/pg2-benchmark-training-data/models --recursive
+      --exclude "*" --include "*.toml"
     - echo "Upload completed at $(date)" > logs/s3_upload_complete.txt
     deps:
     - path: ../datasets/
       hash: md5
-      md5: a286aab2332f01703fcb5a807b625473.dir
-      size: 1974944
-      nfiles: 7
+      md5: 59b322ff2c849cb556c91e169a581bc8.dir
+      size: 99844
+      nfiles: 6
     - path: ../models/
       hash: md5
-      md5: 15e5490b4678f98910eb0d9adb10e133.dir
-      size: 1376994068
+      md5: 789a510506845f5474cb955bd0cefffb.dir
+      size: 1376991179
       nfiles: 48330
     outs:
     - path: logs/s3_upload_complete.txt
       hash: md5
-      md5: ed9aaf1bb63ee770683efb9932bbe32c
+      md5: 3f05d69f85de388e502f53da2785afdd
       size: 50
   create_training_job@dataset0-model0:
     cmd: "uv run pg2-benchmark aws create-training-job --model-name esm --region-name
       us-east-1 --sagemaker-role-name rnd-dev-sagemakerexecutionrole  --ecr-repository-uri
       ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/esm --s3-training-data-prefix
       mango-pe/pg2-benchmark-training-data --s3-output-prefix mango-pe/pg2-benchmark-output
-      --instance-type ml.m5.xlarge --volume-size 5 --dataset-toml-file datasets/ranganathan/ranganathan.toml
-      --model-toml-file models/esm/esm.toml > logs/create_job_ranganathan_esm.txt\n"
+      --instance-type ml.m5.xlarge --volume-size 5 --dataset-prefix ranganathan --model-prefix
+      esm > logs/create_job_ranganathan_esm.txt\n"
     deps:
     - path: ../src/pg2_benchmark/cli/aws.py
       hash: md5
-      md5: 73c644bad8c7bdf688d6e6c521ff9c8c
-      size: 4967
+      md5: c9ab30aefe5bc387546805c51ec2736f
+      size: 5157
     - path: logs/ecr_push_complete.txt
       hash: md5
-      md5: 7eee607d832ef4b4103e7955493dbe55
+      md5: ad5856ae71ff1cc007d73a268555fd75
       size: 52
     - path: logs/image_uri.txt
       hash: md5
@@ -71,12 +71,12 @@ stages:
       size: 56
     - path: logs/s3_upload_complete.txt
       hash: md5
-      md5: ed9aaf1bb63ee770683efb9932bbe32c
+      md5: 3f05d69f85de388e502f53da2785afdd
       size: 50
     outs:
     - path: logs/create_job_ranganathan_esm.txt
       hash: md5
-      md5: 51216c2f693ca490d49128994a589595
+      md5: 8bb8079c936f6e4b08bc8970f1eaf82c
       size: 20
   monitor_training_job@dataset0-model0:
     cmd: "uv run pg2-benchmark aws monitor-training-job --region-name us-east-1 --job-name
@@ -84,16 +84,16 @@ stages:
     deps:
     - path: ../src/pg2_benchmark/cli/aws.py
       hash: md5
-      md5: 73c644bad8c7bdf688d6e6c521ff9c8c
-      size: 4967
+      md5: c9ab30aefe5bc387546805c51ec2736f
+      size: 5157
     - path: logs/create_job_ranganathan_esm.txt
       hash: md5
-      md5: 51216c2f693ca490d49128994a589595
+      md5: 8bb8079c936f6e4b08bc8970f1eaf82c
       size: 20
     outs:
     - path: logs/monitor_job_ranganathan_esm.txt
       hash: md5
-      md5: 4bf26dc9f4ace61f035e548a8993ec01
+      md5: fd47074141fa47863c0baff6bbda13c4
       size: 365
   calculate_metric@dataset0-model0:
     cmd:
@@ -106,7 +106,7 @@ stages:
     deps:
     - path: logs/monitor_job_ranganathan_esm.txt
       hash: md5
-      md5: 4bf26dc9f4ace61f035e548a8993ec01
+      md5: fd47074141fa47863c0baff6bbda13c4
       size: 365
     outs:
     - path: metric/aws/ranganathan_esm.csv

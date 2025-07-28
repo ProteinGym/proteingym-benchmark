@@ -20,8 +20,8 @@ def create_training_job(
     s3_output_prefix: str = typer.Option(help="S3 output prefix"),
     instance_type: str = typer.Option(help="EC2 instance type"),
     volume_size: int = typer.Option(help="EC2 volume size in Gigabytes"),
-    dataset_toml_file: str = typer.Option(help="Dataset TOML file as hyperparamters"),
-    model_toml_file: str = typer.Option(help="Model TOML file as hyperparamters"),
+    dataset_prefix: str = typer.Option(help="Dataset prefix"),
+    model_prefix: str = typer.Option(help="Model TOML file"),
 ):
     """Create and start SageMaker training job"""
 
@@ -43,10 +43,6 @@ def create_training_job(
             "InstanceType": instance_type,
             "VolumeSizeInGB": volume_size,
         },
-        "HyperParameters": {
-            "dataset_toml_file": dataset_toml_file,
-            "model_toml_file": model_toml_file,
-        },
         "AlgorithmSpecification": {
             "TrainingImage": ecr_repository_uri,
             "TrainingInputMode": "File",
@@ -59,15 +55,24 @@ def create_training_job(
         "InputDataConfig": [
             {
                 "ChannelName": "training",
-                "ContentType": "text/csv",
                 "DataSource": {
                     "S3DataSource": {
                         "S3DataType": "S3Prefix",
-                        "S3Uri": f"s3://{s3_training_data_prefix}",
+                        "S3Uri": f"s3://{s3_training_data_prefix}/datasets/{dataset_prefix}",
                         "S3DataDistributionType": "FullyReplicated",
                     }
                 },
-            }
+            },
+            {
+                "ChannelName": "manifest",
+                "DataSource": {
+                    "S3DataSource": {
+                        "S3DataType": "S3Prefix",
+                        "S3Uri": f"s3://{s3_training_data_prefix}/models/{model_prefix}",
+                        "S3DataDistributionType": "FullyReplicated",
+                    }
+                },
+            },
         ],
     }
 

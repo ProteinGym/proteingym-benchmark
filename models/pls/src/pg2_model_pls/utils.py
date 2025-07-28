@@ -2,22 +2,21 @@ import numpy as np
 from typing import Any
 import pickle
 from sklearn.cross_decomposition import PLSRegression
-from pg2_dataset.dataset import Manifest
+from pg2_dataset.dataset import Dataset
 from pg2_dataset.backends.assays import SPLIT_STRATEGY_MAPPING
 from pg2_dataset.splits.abstract_split_strategy import TrainTestValid
-from pg2_model_pls.manifest import Manifest as ModelManifest
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 def load_x_and_y(
-    dataset_toml_file: str,
+    dataset: Dataset,
     split: TrainTestValid,
 ) -> tuple[list[list[Any]], list[Any]]:
-    """Load feature and target data from a dataset configuration file for a specified split.
+    """Load feature and target data from a dataset ZIP file for a specified split.
 
-    This function reads a dataset configuration from a TOML file, ingests the dataset,
+    This function ingests the dataset from a ZIP file,
     applies the configured split strategy, and returns the features (X) and targets (Y)
     for the requested data split.
 
@@ -41,9 +40,6 @@ def load_x_and_y(
         - The split strategy is determined by the dataset's metadata configuration.
         - Multiple targets and features support is planned for future implementation.
     """
-
-    logger.info(f"Loading the dataset from {dataset_toml_file}.")
-    dataset = Manifest.from_path(dataset_toml_file).ingest()
 
     targets = list(dataset.assays.meta.assays.keys())
 
@@ -133,8 +129,8 @@ def encode(spit_X: list[Any], hyper_params: dict[str, Any]) -> np.ndarray:
 def train_model(
     train_X: list[list[Any]],
     train_Y: list[Any],
-    model_toml_file: str,
     model_path: str,
+    hyper_params: dict[str, Any],
 ) -> None:
     """Train a PLS regression model on encoded protein sequences and save it to disk.
 
@@ -147,10 +143,9 @@ def train_model(
             Each inner list represents a single sequence.
         train_Y (list[Any]): Training target values corresponding to the sequences
             in train_X.
-        model_toml_file (str): Path to the TOML configuration file containing model
-            hyperparameters, including encoding parameters and n_components for PLS.
         model_path (str): File path where the trained model will be saved as a
             pickled object.
+        hyper_params (dict[str, Any]): Dictionary containing encoding parameters.
 
     Returns:
         None
@@ -168,8 +163,6 @@ def train_model(
     """
     logger.info(f"Training the model with {len(train_X)} records.")
 
-    hyper_params = ModelManifest.from_path(model_toml_file).hyper_params
-
     encodings = encode(spit_X=train_X, hyper_params=hyper_params)
 
     model = PLSRegression(hyper_params["n_components"])
@@ -183,8 +176,8 @@ def train_model(
 
 def predict_model(
     test_X: list[list[Any]],
-    model_toml_file: str,
     model_path: str,
+    hyper_params: dict[str, Any],
 ) -> list[Any]:
     """Load a trained model and generate predictions on test sequences.
 
@@ -195,9 +188,8 @@ def predict_model(
     Args:
         test_X (list[list[Any]]): Test feature data containing protein sequences.
             Each inner list represents a single sequence to predict on.
-        model_toml_file (str): Path to the TOML configuration file containing model
-            hyperparameters used for consistent encoding of test sequences.
         model_path (str): File path to the saved pickled model to load for prediction.
+        hyper_params (dict[str, Any]): Dictionary containing encoding parameters.
 
     Returns:
         list[Any]: List of predictions corresponding to each sequence in test_X.
@@ -221,8 +213,6 @@ def predict_model(
 
     with open(model_path, "rb") as file:
         model = pickle.load(file)
-
-    hyper_params = ModelManifest.from_path(model_toml_file).hyper_params
 
     encodings = encode(spit_X=test_X, hyper_params=hyper_params)
 

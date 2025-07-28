@@ -1,11 +1,12 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from pathlib import Path
 from typing import Self, Any
 import toml
 
 
 class Manifest(BaseModel):
-    name: str = ""
+    model_config = ConfigDict(extra="allow")
+
     hyper_params: dict[str, Any] = Field(default_factory=dict)
 
     @classmethod

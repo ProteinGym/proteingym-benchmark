@@ -1,6 +1,6 @@
+[hyper_params]
 name = "esm"
+offset_idx = 24
 location = "esm2_t30_150M_UR50D"
 scoring_strategy = "wt-marginals"
-
-[hyper_params]
-offset_idx = 24
+nogpu = false

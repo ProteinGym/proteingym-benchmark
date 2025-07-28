@@ -1,15 +1,13 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from pathlib import Path
 from typing import Self, Any
 import toml
 
 
 class Manifest(BaseModel):
-    name: str = ""
-    hyper_params: dict[str, Any] = Field(default_factory=dict)
+    model_config = ConfigDict(extra="allow")
 
-    location: str = ""
-    scoring_strategy: str = ""
+    hyper_params: dict[str, Any] = Field(default_factory=dict)
 
     @classmethod
     def from_path(cls, toml_file: Path) -> Self:
