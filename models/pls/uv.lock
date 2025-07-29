@@ -159,6 +159,15 @@ wheels = [
 ]
 
 [[package]]
+name = "art"
+version = "6.5"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d4/7d/7d80509bbd19fb747edef94ba487dbadd2747944774ccc0528ad0d005a36/art-6.5.tar.gz", hash = "sha256:a98d77b42c278697ec6cf4b5bdcdfd997f6b2425332da078d4e31e31377d1844", size = 672902, upload_time = "2025-04-12T17:02:20.279Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/67/29/57b06fdb3abdf52c621d3ca3caea735e2db4c8d48288ebd26af448e8e247/art-6.5-py3-none-any.whl", hash = "sha256:70706408144c45c666caab690627d5c74aea7b6c7ce8cc968408ddeef8d84afd", size = 610382, upload_time = "2025-04-12T17:02:21.97Z" },
+]
+
+[[package]]
 name = "asyncssh"
 version = "2.21.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1386,6 +1395,30 @@ wheels = [
 ]
 
 [[package]]
+name = "pg2-benchmark"
+version = "0.1.0"
+source = { editable = "../../" }
+dependencies = [
+    { name = "dvc" },
+    { name = "pg2-dataset", extra = ["biopython"] },
+    { name = "pycm" },
+    { name = "scipy" },
+    { name = "typer" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dvc", specifier = ">=3.59.2" },
+    { name = "pg2-dataset", extras = ["biopython"], git = "https://github.com/ProteinGym2/pg2-dataset.git?rev=58c327e13bade1effe1312eb2b8d5445016a5a8f" },
+    { name = "pycm", specifier = ">=4.3" },
+    { name = "scipy", specifier = ">=1.15.3" },
+    { name = "typer", specifier = ">=0.15.2" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pre-commit", specifier = ">=4.2.0" }]
+
+[[package]]
 name = "pg2-dataset"
 version = "0.1.0"
 source = { git = "https://github.com/ProteinGym2/pg2-dataset.git?rev=58c327e13bade1effe1312eb2b8d5445016a5a8f#58c327e13bade1effe1312eb2b8d5445016a5a8f" }
@@ -1410,6 +1443,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "numpy" },
+    { name = "pg2-benchmark" },
     { name = "pg2-dataset", extra = ["biopython"] },
     { name = "polars", extra = ["pyarrow"] },
     { name = "scikit-learn" },
@@ -1423,15 +1457,16 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "numpy", specifier = "==2.2.5" },
+    { name = "numpy", specifier = "~=2.2.5" },
+    { name = "pg2-benchmark", editable = "../../" },
     { name = "pg2-dataset", extras = ["biopython"], git = "https://github.com/ProteinGym2/pg2-dataset.git?rev=58c327e13bade1effe1312eb2b8d5445016a5a8f" },
-    { name = "polars", extras = ["pyarrow"], specifier = "==1.31.0" },
-    { name = "scikit-learn", specifier = "==1.7.0" },
-    { name = "typer", specifier = "==0.16.0" },
+    { name = "polars", extras = ["pyarrow"], specifier = "~=1.31.0" },
+    { name = "scikit-learn", specifier = "~=1.7.0" },
+    { name = "typer", specifier = "~=0.16.0" },
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = "==8.4.1" }]
+dev = [{ name = "pytest", specifier = "~=8.4.1" }]
 
 [[package]]
 name = "platformdirs"
@@ -1634,6 +1669,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e9/e6/78ebbb10a8c8e4b61a59249394a4a594c1a7af95593dc933a349c8d00964/pyasn1_modules-0.4.2.tar.gz", hash = "sha256:677091de870a80aae844b1ca6134f54652fa2c8c5a52aa396440ac3106e941e6", size = 307892, upload_time = "2025-03-28T02:41:22.17Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/47/8d/d529b5d697919ba8c11ad626e835d4039be708a35b0d22de83a269a6682c/pyasn1_modules-0.4.2-py3-none-any.whl", hash = "sha256:29253a9207ce32b64c3ac6600edc75368f98473906e8fd1043bd6b5b1de2c14a", size = 181259, upload_time = "2025-03-28T02:41:19.028Z" },
+]
+
+[[package]]
+name = "pycm"
+version = "4.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "art" },
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/81/fa/98cf4caac67e7574874201706ef9b6388cfe7480606b2d65b6bcf7edbe9b/pycm-4.3.tar.gz", hash = "sha256:63b45a34f716fbd9b169cbcfc2df78982d3c0d10231425faa79dcaf1974f2e1c", size = 918510, upload_time = "2025-04-04T14:07:52.971Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/24/bd/8fab2781cbbd809c06605d5256105d41ca209dec2ffffeed7d47ada5db1d/pycm-4.3-py3-none-any.whl", hash = "sha256:95ebfe0771f871413de6f245c1129bd136eff0028d340526dd7ec1abc67024f4", size = 70912, upload_time = "2025-04-04T14:07:54.976Z" },
 ]
 
 [[package]]

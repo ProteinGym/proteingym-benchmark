@@ -2,7 +2,7 @@ import polars as pl
 from rich.console import Console
 from pg2_dataset.dataset import Manifest
 from pg2_dataset.splits.abstract_split_strategy import TrainTestValid
-from pg2_model_pls.manifest import Manifest as ModelManifest
+from pg2_benchmark.manifest import Manifest as ModelManifest
 from pg2_model_pls.utils import load_x_and_y, train_model, predict_model
 
 import typer

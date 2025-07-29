@@ -90,25 +90,24 @@ stages:
       size: 1588
   create_training_job@dataset0-model0:
     cmd:
-    - docker build --secret id=git_auth,src=git-auth.txt -t esm:latest ../models/esm
-      --no-cache
+    - docker build --no-cache --secret id=git_auth,src=git-auth.txt -f ../models/esm/Dockerfile
+      -t esm:latest ..
     - docker run --rm -v $(realpath ../datasets):/datasets -v $(realpath ../models):/models
       -v $(realpath output/local):/output esm:latest train --dataset-toml-file /datasets/ranganathan/ranganathan.toml
-      --model-toml-file /models/esm/esm.toml
+      --model-toml-file /models/esm/manifest.toml
     - docker image prune -a -f
     deps:
     - path: ../datasets/ranganathan/ranganathan.toml
       hash: md5
       md5: 2c32981e09b24dfa0ce25b01079cb49a
       size: 1003
-    - path: ../models/esm
+    - path: ../models/esm/Dockerfile
       hash: md5
-      md5: 1d3484e2b24505d96083206110e4dc35.dir
-      size: 831070691
-      nfiles: 30601
-    - path: ../models/esm/esm.toml
+      md5: 7f13567daf55f157ab05f23602a1f53e
+      size: 1138
+    - path: ../models/esm/manifest.toml
       hash: md5
-      md5: 64b3f9c9ca8ca6553bc695a1fba4d974
+      md5: 76c430737597ea876f37d6d4a76bda90
       size: 111
     outs:
     - path: output/local/ranganathan_esm.csv

@@ -5,7 +5,7 @@ from pg2_dataset.dataset import Manifest
 from tqdm import tqdm
 from esm import pretrained
 from pg2_model_esm.utils import compute_pppl, label_row
-from pg2_model_esm.manifest import Manifest as ModelManifest
+from pg2_benchmark.manifest import Manifest as ModelManifest
 
 
 app = typer.Typer(
@@ -42,15 +42,13 @@ def train(
     model_manifest = ModelManifest.from_path(model_toml_file)
 
     model_name = model_manifest.name
-    location = model_manifest.location
-    scoring_strategy = model_manifest.scoring_strategy
     hyper_params = model_manifest.hyper_params
 
-    model, alphabet = pretrained.load_model_and_alphabet(location)
+    model, alphabet = pretrained.load_model_and_alphabet(hyper_params["location"])
     model.eval()
 
     console.print(
-        f"Loaded the model from {location} with scoring strategy {scoring_strategy}."
+        f"Loaded the model from {hyper_params['location']} with scoring strategy {hyper_params['scoring_strategy']}."
     )
 
     if torch.cuda.is_available() and not nogpu:
@@ -65,7 +63,7 @@ def train(
 
     batch_labels, batch_strs, batch_tokens = batch_converter(data)
 
-    match scoring_strategy:
+    match hyper_params["scoring_strategy"]:
         case "wt-marginals":
             with torch.no_grad():
                 token_probs = torch.log_softmax(model(batch_tokens)["logits"], dim=-1)
@@ -123,7 +121,9 @@ def train(
             )
 
         case _:
-            err_console.print(f"Error: Invalid scoring strategy: {scoring_strategy}")
+            err_console.print(
+                f"Error: Invalid scoring strategy: {hyper_params['scoring_strategy']}"
+            )
 
     df.rename(columns={targets[0]: "test"}, inplace=True)
     df.to_csv(f"/output/{dataset_name}_{model_name}.csv", index=False)

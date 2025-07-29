@@ -5,7 +5,7 @@ from sklearn.cross_decomposition import PLSRegression
 from pg2_dataset.dataset import Manifest
 from pg2_dataset.backends.assays import SPLIT_STRATEGY_MAPPING
 from pg2_dataset.splits.abstract_split_strategy import TrainTestValid
-from pg2_model_pls.manifest import Manifest as ModelManifest
+from pg2_benchmark.manifest import Manifest as ModelManifest
 import logging
 
 logger = logging.getLogger(__name__)
