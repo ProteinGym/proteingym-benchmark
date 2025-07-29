@@ -16,6 +16,9 @@ app = typer.Typer(
 
 console = Console()
 
+prefix = Path("/opt/ml")
+output_path = prefix / "model"
+
 
 @app.command()
 def train(
@@ -82,9 +85,9 @@ def train(
         }
     )
 
-    df.write_csv(f"/output/{dataset.name}_{manifest.name}.csv")
+    df.write_csv(f"{output_path}/{dataset.name}_{manifest.name}.csv")
     console.print(
-        f"Saved the metrics in CSV in output/{dataset.name}_{manifest.name}.csv"
+        f"Saved the metrics in CSV in {output_path}/{dataset.name}_{manifest.name}.csv"
     )
 
     console.print("Done.")

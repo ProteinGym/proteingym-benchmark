@@ -20,7 +20,7 @@ stages:
     
     cmd: 
       - docker build --build-arg GIT_CACHE_BUST=${git.git_cache_bust} --secret id=git_auth,src=git-auth.txt -f ${item.model.dockerfile} -t ${item.model.name}:latest ..
-      - docker run --rm -v $(realpath ${source.datasets_dir}):/datasets -v $(realpath ${source.models_dir}):/models -v $(realpath ${destination.local.output_dir}):/opt/ml/model ${item.model.name}:latest train --dataset-file-path ${item.dataset.container_path} --model-toml-file ${item.model.container_path}
+      - docker run --rm -v $(realpath ${source.datasets_dir}):/datasets -v $(realpath ${source.models_dir}):/models -v $(realpath ${destination.local.output_dir}):/opt/ml/model ${item.model.name}:latest train --dataset-file ${item.dataset.container_path} --model-toml-file ${item.model.container_path}
       - docker image prune -a -f
 
     deps:

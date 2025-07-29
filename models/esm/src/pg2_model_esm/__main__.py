@@ -18,6 +18,9 @@ app = typer.Typer(
 err_console = Console(stderr=True)
 console = Console()
 
+prefix = Path("/opt/ml")
+output_path = prefix / "model"
+
 
 @app.command()
 def train(
@@ -134,10 +137,10 @@ def train(
             )
 
     df.rename(columns={targets[0]: "test"}, inplace=True)
-    df.to_csv(f"/output/{dataset.name}_{manifest.name}.csv", index=False)
+    df.to_csv(f"{output_path}/{dataset.name}_{manifest.name}.csv", index=False)
 
     console.print(
-        f"Saved the metrics in CSV in output/{dataset.name}_{manifest.name}.csv"
+        f"Saved the metrics in CSV in {output_path}/{dataset.name}_{manifest.name}.csv"
     )
     console.print("Done.")
 

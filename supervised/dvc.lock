@@ -178,17 +178,17 @@ stages:
       size: 1619
   create_training_job@dataset0-model0:
     cmd:
-    - docker build --no-cache --secret id=git_auth,src=git-auth.txt -f ../models/pls/Dockerfile
-      -t pls:latest ..
+    - docker build --build-arg GIT_CACHE_BUST=1 --secret id=git_auth,src=git-auth.txt
+      -f ../models/pls/Dockerfile -t pls:latest ..
     - docker run --rm -v $(realpath ../datasets):/datasets -v $(realpath ../models):/models
-      -v $(realpath output/local):/output pls:latest train --dataset-toml-file /datasets/dummy/charge_ladder.toml
+      -v $(realpath output/local):/opt/ml/model pls:latest train --dataset-file /datasets/dummy/dataset.zip
       --model-toml-file /models/pls/manifest.toml
     - docker image prune -a -f
     deps:
-    - path: ../datasets/dummy/charge_ladder.toml
+    - path: ../datasets/dummy/dataset.zip
       hash: md5
-      md5: bcd140fc3152f1fcc9906f1a0667846d
-      size: 258
+      md5: 6efa993ab1d169974759032feae3f93c
+      size: 33985
     - path: ../models/pls/Dockerfile
       hash: md5
       md5: 901a42e51cf4a14665099985ee9c30de
@@ -200,21 +200,21 @@ stages:
     outs:
     - path: output/local/charge_ladder_pls.csv
       hash: md5
-      md5: 2a2145f0345bf340c208c6dcc3bf2863
-      size: 13780
+      md5: def109d3eba837eb1ea9b4f87b5c45f7
+      size: 13787
   create_training_job@dataset1-model0:
     cmd:
-    - docker build --no-cache --secret id=git_auth,src=git-auth.txt -f ../models/pls/Dockerfile
-      -t pls:latest ..
+    - docker build --build-arg GIT_CACHE_BUST=1 --secret id=git_auth,src=git-auth.txt
+      -f ../models/pls/Dockerfile -t pls:latest ..
     - docker run --rm -v $(realpath ../datasets):/datasets -v $(realpath ../models):/models
-      -v $(realpath output/local):/output pls:latest train --dataset-toml-file /datasets/neime/neime.toml
+      -v $(realpath output/local):/opt/ml/model pls:latest train --dataset-file /datasets/neime/dataset.zip
       --model-toml-file /models/pls/manifest.toml
     - docker image prune -a -f
     deps:
-    - path: ../datasets/neime/neime.toml
+    - path: ../datasets/neime/dataset.zip
       hash: md5
-      md5: 894acf89b5058d6e50c454ddc53dd326
-      size: 276
+      md5: 45524cd511a606635ea0ba0b84ce7b55
+      size: 8375
     - path: ../models/pls/Dockerfile
       hash: md5
       md5: 901a42e51cf4a14665099985ee9c30de
@@ -226,31 +226,31 @@ stages:
     outs:
     - path: output/local/neime_pls.csv
       hash: md5
-      md5: 4ac1900a997dcf92c86ff082c5525a29
-      size: 35019
+      md5: d7abbafb12852cb02158bea80e5a4d02
+      size: 35106
   calculate_metric@dataset0-model0:
     cmd: uv run pg2-benchmark metric calc --output-path output/local/charge_ladder_pls.csv
       --metric-path metric/local/charge_ladder_pls.csv
     deps:
     - path: output/local/charge_ladder_pls.csv
       hash: md5
-      md5: 2a2145f0345bf340c208c6dcc3bf2863
-      size: 13780
+      md5: def109d3eba837eb1ea9b4f87b5c45f7
+      size: 13787
     outs:
     - path: metric/local/charge_ladder_pls.csv
       hash: md5
-      md5: d2e9585da62ad366468746533536fa83
-      size: 1457
+      md5: c0a6fb636760a602b8cdd11c48bb937b
+      size: 1458
   calculate_metric@dataset1-model0:
     cmd: uv run pg2-benchmark metric calc --output-path output/local/neime_pls.csv
       --metric-path metric/local/neime_pls.csv
     deps:
     - path: output/local/neime_pls.csv
       hash: md5
-      md5: 4ac1900a997dcf92c86ff082c5525a29
-      size: 35019
+      md5: d7abbafb12852cb02158bea80e5a4d02
+      size: 35106
     outs:
     - path: metric/local/neime_pls.csv
       hash: md5
-      md5: 71acb4373ff1e2e9ec3cab577615189f
-      size: 1624
+      md5: b5f54a3bd4cdda5a129ddeee968c5f64
+      size: 1616

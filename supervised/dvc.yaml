@@ -24,7 +24,7 @@ stages:
 
     cmd: 
       - docker build --build-arg GIT_CACHE_BUST=${git.git_cache_bust} --secret id=git_auth,src=git-auth.txt -f ${item.model.dockerfile} -t ${item.model.name}:latest ..
-      - docker run --rm -v $(realpath ${source.datasets_dir}):/datasets -v $(realpath ${source.models_dir}):/models -v $(realpath ${local.output_dir}):/output ${item.model.name}:latest train --dataset-file-path ${item.dataset.container_path} --model-toml-file ${item.model.container_path}
+      - docker run --rm -v $(realpath ${source.datasets_dir}):/datasets -v $(realpath ${source.models_dir}):/models -v $(realpath ${destination.local.output_dir}):/opt/ml/model ${item.model.name}:latest train --dataset-file ${item.dataset.container_path} --model-toml-file ${item.model.container_path}
       - docker image prune -a -f
     
     deps:
@@ -32,7 +32,7 @@ stages:
       - ${item.model.local_path}
       - ${item.model.dockerfile}
     outs:
-      - ${local.output_dir}/${item.dataset.name}_${item.model.name}.csv:
+      - ${destination.local.output_dir}/${item.dataset.name}_${item.model.name}.csv:
           cache: true
 
   calculate_metric:
@@ -40,9 +40,9 @@ stages:
       dataset: ${datasets}
       model: ${models}
 
-    cmd: uv run pg2-benchmark metric calc --output-path ${local.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric-path ${local.metric_dir}/${item.dataset.name}_${item.model.name}.csv
+    cmd: uv run pg2-benchmark metric calc --output-path ${destination.local.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric-path ${destination.local.metric_dir}/${item.dataset.name}_${item.model.name}.csv
     deps:
-      - ${local.output_dir}/${item.dataset.name}_${item.model.name}.csv
+      - ${destination.local.output_dir}/${item.dataset.name}_${item.model.name}.csv
     outs:
-      - ${local.metric_dir}/${item.dataset.name}_${item.model.name}.csv:
+      - ${destination.local.metric_dir}/${item.dataset.name}_${item.model.name}.csv:
           cache: true
