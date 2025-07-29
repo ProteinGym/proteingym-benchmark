@@ -21,7 +21,6 @@ console = Console()
 def train(
     dataset_toml_file: str = typer.Option(help="Path to the dataset TOML file"),
     model_toml_file: str = typer.Option(help="Path to the model TOML file"),
-    nogpu: bool = typer.Option(False, help="GPUs available"),
 ):
     console.print(f"Loading {dataset_toml_file} and {model_toml_file}...")
 
@@ -51,7 +50,7 @@ def train(
         f"Loaded the model from {hyper_params['location']} with scoring strategy {hyper_params['scoring_strategy']}."
     )
 
-    if torch.cuda.is_available() and not nogpu:
+    if torch.cuda.is_available() and not hyper_params["nogpu"]:
         model = model.cuda()
         print("Transferred model to GPU")
 
