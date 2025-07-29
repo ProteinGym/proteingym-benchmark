@@ -1,18 +1,14 @@
 vars:
-  - local:
-      datasets_dir: ../datasets
-      models_dir: ../models
-      output_dir: output/local
-      metric_dir: metric/local
+  - params.yaml
 
   - datasets:
     - name: charge_ladder
-      container_path: /datasets/dummy/charge_ladder.toml
-      local_path: ../datasets/dummy/charge_ladder.toml
+      container_path: /datasets/dummy/dataset.zip
+      local_path: ../datasets/dummy/dataset.zip
 
     - name: neime
-      container_path: /datasets/neime/neime.toml
-      local_path: ../datasets/neime/neime.toml
+      container_path: /datasets/neime/dataset.zip
+      local_path: ../datasets/neime/dataset.zip
 
   - models:
     - name: pls
@@ -27,8 +23,8 @@ stages:
       model: ${models}
 
     cmd: 
-      - docker build --no-cache --secret id=git_auth,src=git-auth.txt -f ${item.model.dockerfile} -t ${item.model.name}:latest ..
-      - docker run --rm -v $(realpath ${local.datasets_dir}):/datasets -v $(realpath ${local.models_dir}):/models -v $(realpath ${local.output_dir}):/output ${item.model.name}:latest train --dataset-toml-file ${item.dataset.container_path} --model-toml-file ${item.model.container_path}
+      - docker build --build-arg GIT_CACHE_BUST=${git.git_cache_bust} --secret id=git_auth,src=git-auth.txt -f ${item.model.dockerfile} -t ${item.model.name}:latest ..
+      - docker run --rm -v $(realpath ${source.datasets_dir}):/datasets -v $(realpath ${source.models_dir}):/models -v $(realpath ${local.output_dir}):/output ${item.model.name}:latest train --dataset-file-path ${item.dataset.container_path} --model-toml-file ${item.model.container_path}
       - docker image prune -a -f
     
     deps:
