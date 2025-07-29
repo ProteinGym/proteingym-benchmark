@@ -17,6 +17,7 @@ dependencies = [
     "pycm>=4.3",
     "scipy>=1.15.3",
     "dvc>=3.59.2",
+    "boto3>=1.38.27",
 ]
 
 [project.scripts]

@@ -17,7 +17,12 @@ app = typer.Typer(
 console = Console()
 
 prefix = Path("/opt/ml")
+training_data_path = prefix / "input" / "data" / "training" / "dataset.zip"
+manifest_path = prefix / "input" / "data" / "manifest" / "manifest.toml"
+params_path = prefix / "input" / "config" / "hyperparameters.json"
 output_path = prefix / "model"
+
+model_path = Path("/model.pkl")
 
 
 @app.command()
@@ -37,9 +42,10 @@ def train(
 ):
     console.print(f"Loading {dataset_file} and {model_toml_file}...")
 
+    dataset_file = dataset_file or training_data_path
     dataset = Dataset.from_path(dataset_file)
 
-    model_path = "/model.pkl"
+    model_toml_file = model_toml_file or manifest_path
     manifest = Manifest.from_path(model_toml_file)
 
     train_X, train_Y = load_x_and_y(
