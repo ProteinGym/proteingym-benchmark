@@ -15,7 +15,7 @@ def load_x_and_y(
     dataset: Dataset,
     split: TrainTestValid,
 ) -> tuple[list[list[Any]], list[Any]]:
-    """Load feature and target data from a dataset configuration file for a specified split.
+    """Load feature and target data from a dataset archive file for a specified split.
 
     This function applies the configured split strategy for the dataset,
     and returns the features (X) and targets (Y)
