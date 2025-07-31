@@ -60,7 +60,7 @@ stages:
       > logs/create_job_${item.dataset.name}_${item.model.name}.txt
 
     deps:
-      - ../src/pg2_benchmark/cli/aws.py
+      - ../src/pg2_benchmark/cli/sagemaker.py
       - logs/s3_upload_complete.txt
       - logs/ecr_push_complete.txt
       - logs/image_uri.txt
@@ -81,7 +81,7 @@ stages:
       > logs/monitor_job_${item.dataset.name}_${item.model.name}.txt
     
     deps:
-      - ../src/pg2_benchmark/cli/aws.py
+      - ../src/pg2_benchmark/cli/sagemaker.py
       - logs/create_job_${item.dataset.name}_${item.model.name}.txt
     
     outs:
