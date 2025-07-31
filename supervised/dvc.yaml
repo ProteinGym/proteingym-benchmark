@@ -16,9 +16,9 @@ vars:
 
   - models:
     - name: pls
-      container_path: /models/pls/pls.toml
-      local_path: ../models/pls/pls.toml
-      dockerfile: ../models/pls
+      container_path: /models/pls/manifest.toml
+      local_path: ../models/pls/manifest.toml
+      dockerfile: ../models/pls/Dockerfile
 
 stages:
   create_training_job:
@@ -27,7 +27,7 @@ stages:
       model: ${models}
 
     cmd: 
-      - docker build --secret id=git_auth,src=git-auth.txt -t ${item.model.name}:latest ${item.model.dockerfile} --no-cache
+      - docker build --no-cache --secret id=git_auth,src=git-auth.txt -f ${item.model.dockerfile} -t ${item.model.name}:latest ..
       - docker run --rm -v $(realpath ${local.datasets_dir}):/datasets -v $(realpath ${local.models_dir}):/models -v $(realpath ${local.output_dir}):/output ${item.model.name}:latest train --dataset-toml-file ${item.dataset.container_path} --model-toml-file ${item.model.container_path}
       - docker image prune -a -f
     
