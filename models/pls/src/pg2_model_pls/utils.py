@@ -2,28 +2,27 @@ import numpy as np
 from typing import Any
 import pickle
 from sklearn.cross_decomposition import PLSRegression
-from pg2_dataset.dataset import Manifest
+from pg2_dataset.dataset import Dataset
 from pg2_dataset.backends.assays import SPLIT_STRATEGY_MAPPING
 from pg2_dataset.splits.abstract_split_strategy import TrainTestValid
-from pg2_benchmark.manifest import Manifest as ModelManifest
+from pg2_benchmark.manifest import Manifest
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 def load_x_and_y(
-    dataset_toml_file: str,
+    dataset: Dataset,
     split: TrainTestValid,
 ) -> tuple[list[list[Any]], list[Any]]:
-    """Load feature and target data from a dataset configuration file for a specified split.
+    """Load feature and target data from a dataset archive file for a specified split.
 
-    This function reads a dataset configuration from a TOML file, ingests the dataset,
-    applies the configured split strategy, and returns the features (X) and targets (Y)
+    This function applies the configured split strategy for the dataset,
+    and returns the features (X) and targets (Y)
     for the requested data split.
 
     Args:
-        dataset_toml_file (str): Path to the TOML configuration file containing dataset
-            specifications and metadata.
+        dataset (Dataset): The dataset object loaded by pg2-dataset.
         split (TrainTestValid): The data split to load (train, validation, or test).
 
     Returns:
@@ -32,18 +31,11 @@ def load_x_and_y(
                 inner list represents features for a single sample.
             - split_Y (list[Any]): Target values for the specified split.
 
-    Example:
-        >>> X_train, y_train = load_x_and_y("config.toml", TrainTestValid.train)
-        >>> X_test, y_test = load_x_and_y("config.toml", TrainTestValid.test)
-
     Note:
         - Currently only supports single target and single feature column (index 0).
         - The split strategy is determined by the dataset's metadata configuration.
         - Multiple targets and features support is planned for future implementation.
     """
-
-    logger.info(f"Loading the dataset from {dataset_toml_file}.")
-    dataset = Manifest.from_path(dataset_toml_file).ingest()
 
     targets = list(dataset.assays.meta.assays.keys())
 
@@ -168,11 +160,11 @@ def train_model(
     """
     logger.info(f"Training the model with {len(train_X)} records.")
 
-    hyper_params = ModelManifest.from_path(model_toml_file).hyper_params
+    manifest = Manifest.from_path(model_toml_file)
 
-    encodings = encode(spit_X=train_X, hyper_params=hyper_params)
+    encodings = encode(spit_X=train_X, hyper_params=manifest.hyper_params)
 
-    model = PLSRegression(hyper_params["n_components"])
+    model = PLSRegression(manifest.hyper_params["n_components"])
     model.fit(encodings, train_Y)
 
     with open(model_path, "wb") as file:
@@ -222,9 +214,9 @@ def predict_model(
     with open(model_path, "rb") as file:
         model = pickle.load(file)
 
-    hyper_params = ModelManifest.from_path(model_toml_file).hyper_params
+    manifest = Manifest.from_path(model_toml_file)
 
-    encodings = encode(spit_X=test_X, hyper_params=hyper_params)
+    encodings = encode(spit_X=test_X, hyper_params=manifest.hyper_params)
 
     preds = model.predict(encodings)
     logger.info("Generated predictions.")

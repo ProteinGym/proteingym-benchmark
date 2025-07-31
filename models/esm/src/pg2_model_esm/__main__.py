@@ -1,11 +1,13 @@
+from typing import Annotated
+from pathlib import Path
 import torch
 import typer
 from rich.console import Console
-from pg2_dataset.dataset import Manifest
+from pg2_dataset.dataset import Dataset
 from tqdm import tqdm
 from esm import pretrained
 from pg2_model_esm.utils import compute_pppl, label_row
-from pg2_benchmark.manifest import Manifest as ModelManifest
+from pg2_benchmark.manifest import Manifest
 
 
 app = typer.Typer(
@@ -16,17 +18,28 @@ app = typer.Typer(
 err_console = Console(stderr=True)
 console = Console()
 
+prefix = Path("/opt/ml")
+output_path = prefix / "model"
+
 
 @app.command()
 def train(
-    dataset_toml_file: str = typer.Option(help="Path to the dataset TOML file"),
-    model_toml_file: str = typer.Option(help="Path to the model TOML file"),
+    dataset_file: Annotated[
+        Path,
+        typer.Option(
+            help="Path to the dataset file",
+        ),
+    ],
+    model_toml_file: Annotated[
+        Path,
+        typer.Option(
+            help="Path to the model TOML file",
+        ),
+    ],
 ):
-    console.print(f"Loading {dataset_toml_file} and {model_toml_file}...")
+    console.print(f"Loading {dataset_file} and {model_toml_file}...")
 
-    manifest = Manifest.from_path(dataset_toml_file)
-    dataset_name = manifest.name
-    dataset = manifest.ingest()
+    dataset = Dataset.from_path(dataset_file)
 
     assays = dataset.assays.meta.assays
     targets = list(dataset.assays.meta.assays.keys())
@@ -38,19 +51,18 @@ def train(
 
     console.print(f"Loaded {len(df)} records.")
 
-    model_manifest = ModelManifest.from_path(model_toml_file)
+    manifest = Manifest.from_path(model_toml_file)
 
-    model_name = model_manifest.name
-    hyper_params = model_manifest.hyper_params
-
-    model, alphabet = pretrained.load_model_and_alphabet(hyper_params["location"])
+    model, alphabet = pretrained.load_model_and_alphabet(
+        manifest.hyper_params["location"]
+    )
     model.eval()
 
     console.print(
-        f"Loaded the model from {hyper_params['location']} with scoring strategy {hyper_params['scoring_strategy']}."
+        f"Loaded the model from {manifest.hyper_params['location']} with scoring strategy {manifest.hyper_params['scoring_strategy']}."
     )
 
-    if torch.cuda.is_available() and not hyper_params["nogpu"]:
+    if torch.cuda.is_available() and not manifest.hyper_params["nogpu"]:
         model = model.cuda()
         print("Transferred model to GPU")
 
@@ -62,7 +74,7 @@ def train(
 
     batch_labels, batch_strs, batch_tokens = batch_converter(data)
 
-    match hyper_params["scoring_strategy"]:
+    match manifest.hyper_params["scoring_strategy"]:
         case "wt-marginals":
             with torch.no_grad():
                 token_probs = torch.log_softmax(model(batch_tokens)["logits"], dim=-1)
@@ -73,7 +85,7 @@ def train(
                     sequence,
                     token_probs,
                     alphabet,
-                    hyper_params["offset_idx"],
+                    manifest.hyper_params["offset_idx"],
                 ),
                 axis=1,
             )
@@ -100,7 +112,7 @@ def train(
                     sequence,
                     token_probs,
                     alphabet,
-                    hyper_params["offset_idx"],
+                    manifest.hyper_params["offset_idx"],
                 ),
                 axis=1,
             )
@@ -114,20 +126,22 @@ def train(
                     sequence,
                     model,
                     alphabet,
-                    hyper_params["offset_idx"],
+                    manifest.hyper_params["offset_idx"],
                 ),
                 axis=1,
             )
 
         case _:
             err_console.print(
-                f"Error: Invalid scoring strategy: {hyper_params['scoring_strategy']}"
+                f"Error: Invalid scoring strategy: {manifest.hyper_params['scoring_strategy']}"
             )
 
     df.rename(columns={targets[0]: "test"}, inplace=True)
-    df.to_csv(f"/output/{dataset_name}_{model_name}.csv", index=False)
+    df.to_csv(f"{output_path}/{dataset.name}_{manifest.name}.csv", index=False)
 
-    console.print(f"Saved the metrics in CSV in output/{dataset_name}_{model_name}.csv")
+    console.print(
+        f"Saved the metrics in CSV in {output_path}/{dataset.name}_{manifest.name}.csv"
+    )
     console.print("Done.")
 
 

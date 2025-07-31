@@ -1,8 +1,10 @@
+from typing import Annotated
+from pathlib import Path
 import polars as pl
 from rich.console import Console
-from pg2_dataset.dataset import Manifest
+from pg2_dataset.dataset import Dataset
 from pg2_dataset.splits.abstract_split_strategy import TrainTestValid
-from pg2_benchmark.manifest import Manifest as ModelManifest
+from pg2_benchmark.manifest import Manifest as Manifest
 from pg2_model_pls.utils import load_x_and_y, train_model, predict_model
 
 import typer
@@ -14,21 +16,34 @@ app = typer.Typer(
 
 console = Console()
 
+prefix = Path("/opt/ml")
+output_path = prefix / "model"
+
 
 @app.command()
 def train(
-    dataset_toml_file: str = typer.Option(help="Path to the dataset TOML file"),
-    model_toml_file: str = typer.Option(help="Path to the model TOML file"),
+    dataset_file: Annotated[
+        Path,
+        typer.Option(
+            help="Path to the dataset file",
+        ),
+    ],
+    model_toml_file: Annotated[
+        Path,
+        typer.Option(
+            help="Path to the model TOML file",
+        ),
+    ],
 ):
-    console.print(f"Loading {dataset_toml_file} and {model_toml_file}...")
+    console.print(f"Loading {dataset_file} and {model_toml_file}...")
 
-    dataset_name = Manifest.from_path(dataset_toml_file).name
+    dataset = Dataset.from_path(dataset_file)
 
     model_path = "/model.pkl"
-    model_name = ModelManifest.from_path(model_toml_file).name
+    manifest = Manifest.from_path(model_toml_file)
 
     train_X, train_Y = load_x_and_y(
-        dataset_toml_file=dataset_toml_file,
+        dataset=dataset,
         split=TrainTestValid.train,
     )
 
@@ -46,7 +61,7 @@ def train(
     console.print("Finished the training...")
 
     valid_X, valid_Y = load_x_and_y(
-        dataset_toml_file=dataset_toml_file,
+        dataset=dataset,
         split=TrainTestValid.valid,
     )
 
@@ -70,8 +85,10 @@ def train(
         }
     )
 
-    df.write_csv(f"/output/{dataset_name}_{model_name}.csv")
-    console.print(f"Saved the metrics in CSV in output/{dataset_name}_{model_name}.csv")
+    df.write_csv(f"{output_path}/{dataset.name}_{manifest.name}.csv")
+    console.print(
+        f"Saved the metrics in CSV in {output_path}/{dataset.name}_{manifest.name}.csv"
+    )
 
     console.print("Done.")
 
