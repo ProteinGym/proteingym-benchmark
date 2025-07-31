@@ -34,17 +34,15 @@ def train(
     dataset_file: Annotated[
         Path,
         typer.Option(
-            default=SageMakerTrainingJobPath.TRAINING_JOB_PATH,
             help="Path to the dataset file",
         ),
-    ],
+    ] = SageMakerTrainingJobPath.TRAINING_JOB_PATH,
     model_toml_file: Annotated[
         Path,
         typer.Option(
-            default=SageMakerTrainingJobPath.MANIFEST_PATH,
             help="Path to the model TOML file",
         ),
-    ],
+    ] = SageMakerTrainingJobPath.MANIFEST_PATH,
 ):
     console.print(f"Loading {dataset_file} and {model_toml_file}...")
 
