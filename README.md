@@ -10,6 +10,8 @@ https://username:token@github.com
 
 ## Benchmark
 
+### Local environment
+
 There are two games to benchmark: supervised and zero-shot. Each game has its selected list of models and datasets defined in `dvc.yaml`.
 
 - Supervised game is defined in this [dvc.yaml](supervised/dvc.yaml)
@@ -27,21 +29,21 @@ for dataset in datasets:
         calculate_metric()
 ```
 
-### Supervised
+#### Supervised
 
 You can benchmark a group of supervised models:
 ```shell
 dvc repro supervised/dvc.yaml
 ```
 
-### Zero-shot
+#### Zero-shot
 
 You can benchmark a group of zero-shot models:
 ```shell
 dvc repro zero_shot/dvc.yaml
 ```
 
-## AWS
+### AWS environment
 
 There are two environments in which to run benchmark: one is the local environment, the other is the AWS environment.
 
@@ -58,14 +60,14 @@ The difference of the AWS environment is that:
 > 4. Finally, you can run `dvc repro` with environment variables in each game: `AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro`.
 > 5. Before you run `dvc repro`, you need to change the filename of `dvc.aws.yaml` to `dvc.yaml`.
 
-### Supervised
+#### Supervised
 
 You can benchmark a group of supervised models:
 ```shell
 AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro supervised/dvc.yaml
 ```
 
-### Zero-shot
+#### Zero-shot
 
 You can benchmark a group of zero-shot models:
 ```shell
