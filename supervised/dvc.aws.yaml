@@ -50,7 +50,7 @@ stages:
       model: ${models}
     
     cmd: >
-      uv run pg2-benchmark aws create-training-job
+      uv run pg2-benchmark sagemaker create-training-job
       --model-name ${item.model.name}
       --region-name ${aws.region_name}
       --sagemaker-role-name ${aws.sagemaker_role_name}
@@ -79,7 +79,7 @@ stages:
       model: ${models}
     
     cmd: >
-      uv run pg2-benchmark aws monitor-training-job
+      uv run pg2-benchmark sagemaker monitor-training-job
       --region-name ${aws.region_name}
       --job-name $(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)
       > logs/monitor_job_${item.dataset.name}_${item.model.name}.txt

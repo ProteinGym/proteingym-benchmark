@@ -4,13 +4,13 @@ import boto3
 from datetime import datetime
 import time
 
-aws_app = typer.Typer()
+sagemaker_app = typer.Typer()
 
 console = Console()
 err_console = Console(stderr=True)
 
 
-@aws_app.command()
+@sagemaker_app.command()
 def create_training_job(
     model_name: str = typer.Option(help="Unique model name"),
     region_name: str = typer.Option(help="AWS region name"),
@@ -82,7 +82,7 @@ def create_training_job(
     console.print(training_job_name)
 
 
-@aws_app.command()
+@sagemaker_app.command()
 def monitor_training_job(
     region_name: str = typer.Option(help="AWS region name"),
     job_name: str = typer.Option(help="AWS SageMaker training job name"),

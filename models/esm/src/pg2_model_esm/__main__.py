@@ -18,13 +18,15 @@ app = typer.Typer(
 err_console = Console(stderr=True)
 console = Console()
 
-prefix = Path("/opt/ml")
-training_data_path = prefix / "input" / "data" / "training" / "dataset.zip"
-manifest_path = prefix / "input" / "data" / "manifest" / "manifest.toml"
-params_path = prefix / "input" / "config" / "hyperparameters.json"
-output_path = prefix / "model"
 
-model_path = Path("/model.pkl")
+class SageMakerTrainingJobPath:
+    PREFIX = Path("/opt/ml")
+    TRAINING_JOB_PATH = PREFIX / "input" / "data" / "training" / "dataset.zip"
+    MANIFEST_PATH = PREFIX / "input" / "data" / "manifest" / "manifest.toml"
+    PARAMS_PATH = PREFIX / "input" / "config" / "hyperparameters.json"
+    OUTPUT_PATH = PREFIX / "model"
+
+    MODEL_PATH = Path("/model.pkl")
 
 
 @app.command()
@@ -32,19 +34,20 @@ def train(
     dataset_file: Annotated[
         Path,
         typer.Option(
+            default=SageMakerTrainingJobPath.TRAINING_JOB_PATH,
             help="Path to the dataset file",
         ),
     ],
     model_toml_file: Annotated[
         Path,
         typer.Option(
+            default=SageMakerTrainingJobPath.MANIFEST_PATH,
             help="Path to the model TOML file",
         ),
     ],
 ):
     console.print(f"Loading {dataset_file} and {model_toml_file}...")
 
-    dataset_file = dataset_file or training_data_path
     dataset = Dataset.from_path(dataset_file)
 
     assays = dataset.assays.meta.assays
@@ -57,7 +60,6 @@ def train(
 
     console.print(f"Loaded {len(df)} records.")
 
-    model_toml_file = model_toml_file or manifest_path
     manifest = Manifest.from_path(model_toml_file)
 
     model, alphabet = pretrained.load_model_and_alphabet(
@@ -144,10 +146,13 @@ def train(
             )
 
     df.rename(columns={targets[0]: "test"}, inplace=True)
-    df.to_csv(f"{output_path}/{dataset.name}_{manifest.name}.csv", index=False)
+    df.to_csv(
+        f"{SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{manifest.name}.csv",
+        index=False,
+    )
 
     console.print(
-        f"Saved the metrics in CSV in {output_path}/{dataset.name}_{manifest.name}.csv"
+        f"Saved the metrics in CSV in {SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{manifest.name}.csv"
     )
     console.print("Done.")
 
