@@ -36,21 +36,16 @@ def train(
         typer.Option(
             help="Path to the dataset file",
         ),
-    ],
+    ] = SageMakerTrainingJobPath.TRAINING_JOB_PATH,
     model_toml_file: Annotated[
         Path,
         typer.Option(
             help="Path to the model TOML file",
         ),
-    ],
+    ] = SageMakerTrainingJobPath.MANIFEST_PATH,
 ):
-    # Reference: https://typer.tiangolo.com/tutorial/parameter-types/path/#path-validations
-    # Cannot use default in Typer.Option for pathlib's Path object,
-    # Otherwise the error: 'AttributeError: 'PosixPath' object has no attribute 'isidentifier'
-
     console.print(f"Loading {dataset_file} and {model_toml_file}...")
 
-    dataset_file = dataset_file or SageMakerTrainingJobPath.TRAINING_JOB_PATH
     dataset = Dataset.from_path(dataset_file)
 
     assays = dataset.assays.meta.assays
@@ -63,7 +58,6 @@ def train(
 
     console.print(f"Loaded {len(df)} records.")
 
-    model_toml_file = model_toml_file or SageMakerTrainingJobPath.MANIFEST_PATH
     manifest = Manifest.from_path(model_toml_file)
 
     model, alphabet = pretrained.load_model_and_alphabet(
