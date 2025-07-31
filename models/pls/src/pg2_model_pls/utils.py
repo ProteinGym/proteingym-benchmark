@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Any
 import pickle
+from pathlib import Path
 from sklearn.cross_decomposition import PLSRegression
 from pg2_dataset.dataset import Dataset
 from pg2_dataset.backends.assays import SPLIT_STRATEGY_MAPPING
@@ -125,8 +126,8 @@ def encode(spit_X: list[Any], hyper_params: dict[str, Any]) -> np.ndarray:
 def train_model(
     train_X: list[list[Any]],
     train_Y: list[Any],
-    model_toml_file: str,
-    model_path: str,
+    model_toml_file: Path,
+    model_path: Path,
 ) -> None:
     """Train a PLS regression model on encoded protein sequences and save it to disk.
 
@@ -139,9 +140,9 @@ def train_model(
             Each inner list represents a single sequence.
         train_Y (list[Any]): Training target values corresponding to the sequences
             in train_X.
-        model_toml_file (str): Path to the TOML configuration file containing model
+        model_toml_file (Path): Path to the TOML configuration file containing model
             hyperparameters, including encoding parameters and n_components for PLS.
-        model_path (str): File path where the trained model will be saved as a
+        model_path (Path): File path where the trained model will be saved as a
             pickled object.
 
     Returns:
@@ -167,7 +168,7 @@ def train_model(
     model = PLSRegression(manifest.hyper_params["n_components"])
     model.fit(encodings, train_Y)
 
-    with open(model_path, "wb") as file:
+    with model_path.open(mode="wb") as file:
         pickle.dump(model, file)
 
     logger.info(f"Saved the model to {model_path}")
@@ -175,8 +176,8 @@ def train_model(
 
 def predict_model(
     test_X: list[list[Any]],
-    model_toml_file: str,
-    model_path: str,
+    model_toml_file: Path,
+    model_path: Path,
 ) -> list[Any]:
     """Load a trained model and generate predictions on test sequences.
 
@@ -187,9 +188,9 @@ def predict_model(
     Args:
         test_X (list[list[Any]]): Test feature data containing protein sequences.
             Each inner list represents a single sequence to predict on.
-        model_toml_file (str): Path to the TOML configuration file containing model
+        model_toml_file (Path): Path to the TOML configuration file containing model
             hyperparameters used for consistent encoding of test sequences.
-        model_path (str): File path to the saved pickled model to load for prediction.
+        model_path (Path): File path to the saved pickled model to load for prediction.
 
     Returns:
         list[Any]: List of predictions corresponding to each sequence in test_X.
@@ -211,7 +212,7 @@ def predict_model(
     """
     logger.info(f"Testing the model with {len(test_X)} records.")
 
-    with open(model_path, "rb") as file:
+    with model_path.open(mode="rb") as file:
         model = pickle.load(file)
 
     manifest = Manifest.from_path(model_toml_file)
