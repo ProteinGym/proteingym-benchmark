@@ -11,7 +11,7 @@ vars:
   - models:
     - name: pls
       aws_prefix: pls
-      dockerfile: ../models/pls
+      dockerfile: ../models/pls/Dockerfile
 
 stages:
   
@@ -33,7 +33,7 @@ stages:
     cmd:
       - aws ecr describe-repositories --repository-names ${item.model.name} --region ${aws.region_name} >/dev/null 2>&1 || aws ecr create-repository --repository-name ${item.model.name} --region ${aws.region_name} >/dev/null
       - aws ecr get-login-password --region ${aws.region_name} | docker login --username AWS --password-stdin ${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com
-      - docker buildx build --build-arg GIT_CACHE_BUST=${git.git_cache_bust} --platform linux/amd64,linux/arm64 --secret id=git_auth,src=git-auth.txt -t ${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}:latest ${item.model.dockerfile} --push
+      - docker buildx build --build-arg GIT_CACHE_BUST=${git.git_cache_bust} --platform linux/amd64,linux/arm64 --secret id=git_auth,src=git-auth.txt -f ${item.model.dockerfile} -t ${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}:latest .. --push
       - echo "ECR push completed at $(date)" > logs/ecr_push_complete.txt
       - echo "${aws.account_id}.dkr.ecr.${aws.region_name}.amazonaws.com/${item.model.name}:latest" > logs/image_uri.txt
     deps:
@@ -64,7 +64,7 @@ stages:
       > logs/create_job_${item.dataset.name}_${item.model.name}.txt
 
     deps:
-      - ../src/pg2_benchmark/cli/aws.py
+      - ../src/pg2_benchmark/cli/sagemaker.py
       - logs/s3_upload_complete.txt
       - logs/ecr_push_complete.txt
       - logs/image_uri.txt
@@ -85,7 +85,7 @@ stages:
       > logs/monitor_job_${item.dataset.name}_${item.model.name}.txt
     
     deps:
-      - ../src/pg2_benchmark/cli/aws.py
+      - ../src/pg2_benchmark/cli/sagemaker.py
       - logs/create_job_${item.dataset.name}_${item.model.name}.txt
     
     outs:
