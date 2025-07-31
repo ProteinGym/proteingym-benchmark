@@ -1,3 +1,12 @@
+aws:
+  account_id: ${AWS_ACCOUNT_ID}
+  region_name: "us-east-1"
+  sagemaker_role_name: "rnd-dev-sagemakerexecutionrole "
+  s3_output_prefix: "mango-pe/pg2-benchmark-output"
+  s3_training_data_prefix: "mango-pe/pg2-benchmark-training-data"
+  instance_type: "ml.m5.xlarge"
+  volume_size: 5
+
 git:
   git_cache_bust: 1
 
@@ -6,6 +15,9 @@ source:
   models_dir: ../models
   
 destination:
+  aws:
+    output_dir: output/aws
+    metric_dir: metric/aws
   local:
     output_dir: output/local
     metric_dir: metric/local
