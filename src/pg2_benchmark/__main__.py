@@ -11,7 +11,7 @@ app = typer.Typer(
 
 app.add_typer(dataset_app, name="dataset", help="Dataset operations")
 app.add_typer(metric_app, name="metric", help="Metric operations")
-app.add_typer(sagemaker_app, name="sagemaker", help="AWS operations")
+app.add_typer(sagemaker_app, name="sagemaker", help="SageMaker operations")
 
 
 @app.command()
