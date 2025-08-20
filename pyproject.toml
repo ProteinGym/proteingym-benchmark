@@ -40,4 +40,5 @@ logging_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 [dependency-groups]
 dev = [
     "pre-commit>=4.2.0",
+    "pytest>=8.4.1",
 ]
