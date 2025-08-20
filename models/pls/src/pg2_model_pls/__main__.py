@@ -4,8 +4,10 @@ import polars as pl
 from rich.console import Console
 from pg2_dataset.dataset import Dataset
 from pg2_dataset.splits.abstract_split_strategy import TrainTestValid
-from pg2_benchmark.manifest import Manifest as Manifest
-from pg2_model_pls.utils import load_x_and_y, train_model, predict_model
+from pg2_benchmark.manifest import Manifest
+from pg2_model_pls.preprocess import load_x_and_y
+from pg2_model_pls.train import train_model
+from pg2_model_pls.predict import predict_model
 
 import typer
 
@@ -60,7 +62,7 @@ def train(
     train_model(
         train_X=train_X,
         train_Y=train_Y,
-        model_toml_file=model_toml_file,
+        manifest=manifest,
         model_path=SageMakerTrainingJobPath.MODEL_PATH,
     )
 
@@ -77,7 +79,7 @@ def train(
 
     pred_y = predict_model(
         test_X=valid_X,
-        model_toml_file=model_toml_file,
+        manifest=manifest,
         model_path=SageMakerTrainingJobPath.MODEL_PATH,
     )
 

@@ -1,12 +1,8 @@
 import numpy as np
 from typing import Any
-import pickle
-from pathlib import Path
-from sklearn.cross_decomposition import PLSRegression
 from pg2_dataset.dataset import Dataset
 from pg2_dataset.backends.assays import SPLIT_STRATEGY_MAPPING
 from pg2_dataset.splits.abstract_split_strategy import TrainTestValid
-from pg2_benchmark.manifest import Manifest
 import logging
 
 logger = logging.getLogger(__name__)
@@ -121,105 +117,3 @@ def encode(spit_X: list[Any], hyper_params: dict[str, Any]) -> np.ndarray:
         encodings[idx] = encoding
 
     return encodings
-
-
-def train_model(
-    train_X: list[list[Any]],
-    train_Y: list[Any],
-    model_toml_file: Path,
-    model_path: Path,
-) -> None:
-    """Train a PLS regression model on encoded protein sequences and save it to disk.
-
-    This function loads model hyperparameters from a configuration file, encodes the
-    training sequences using one-hot encoding, trains a Partial Least Squares (PLS)
-    regression model, and saves the trained model to the specified path.
-
-    Args:
-        train_X (list[list[Any]]): Training feature data containing protein sequences.
-            Each inner list represents a single sequence.
-        train_Y (list[Any]): Training target values corresponding to the sequences
-            in train_X.
-        model_toml_file (Path): Path to the TOML configuration file containing model
-            hyperparameters, including encoding parameters and n_components for PLS.
-        model_path (Path): File path where the trained model will be saved as a
-            pickled object.
-
-    Returns:
-        None
-
-    Example:
-        >>> train_sequences = [["A", "C", "G"], ["A", "G", "C"]]
-        >>> train_targets = [0.5, 0.8]
-        >>> train_model(train_sequences, train_targets, "model_config.toml", "model.pkl")
-
-    Note:
-        - The model configuration file must contain hyperparameters compatible with
-            the encode() function (sequence_length, aa_alphabet_length, aa_alphabet)
-        - The trained model uses PLSRegression from scikit-learn
-        - Model is saved using pickle serialization
-    """
-    logger.info(f"Training the model with {len(train_X)} records.")
-
-    manifest = Manifest.from_path(model_toml_file)
-
-    encodings = encode(spit_X=train_X, hyper_params=manifest.hyper_params)
-
-    model = PLSRegression(manifest.hyper_params["n_components"])
-    model.fit(encodings, train_Y)
-
-    with model_path.open(mode="wb") as file:
-        pickle.dump(model, file)
-
-    logger.info(f"Saved the model to {model_path}")
-
-
-def predict_model(
-    test_X: list[list[Any]],
-    model_toml_file: Path,
-    model_path: Path,
-) -> list[Any]:
-    """Load a trained model and generate predictions on test sequences.
-
-    This function loads a previously trained and saved model, encodes the test
-    sequences using the same hyperparameters used during training, and generates
-    predictions for the input sequences.
-
-    Args:
-        test_X (list[list[Any]]): Test feature data containing protein sequences.
-            Each inner list represents a single sequence to predict on.
-        model_toml_file (Path): Path to the TOML configuration file containing model
-            hyperparameters used for consistent encoding of test sequences.
-        model_path (Path): File path to the saved pickled model to load for prediction.
-
-    Returns:
-        list[Any]: List of predictions corresponding to each sequence in test_X.
-            The format and type of predictions depend on the trained model's output.
-
-    Example:
-        >>> test_sequences = [["A", "C", "G"], ["G", "C", "A"]]
-        >>> predictions = predict_model(test_sequences, "model_config.toml", "model.pkl")
-        >>> len(predictions) == len(test_sequences)
-        True
-
-    Note:
-        - The model configuration file must contain the same hyperparameters used
-            during training for consistent sequence encoding
-        - The model file must be a pickled model compatible with scikit-learn's
-            predict() method
-        - Input sequences must be compatible with the encoding parameters
-        - Logs prediction progress and completion messages
-    """
-    logger.info(f"Testing the model with {len(test_X)} records.")
-
-    with model_path.open(mode="rb") as file:
-        model = pickle.load(file)
-
-    manifest = Manifest.from_path(model_toml_file)
-
-    encodings = encode(spit_X=test_X, hyper_params=manifest.hyper_params)
-
-    preds = model.predict(encodings)
-    logger.info("Generated predictions.")
-
-    return preds.tolist()
