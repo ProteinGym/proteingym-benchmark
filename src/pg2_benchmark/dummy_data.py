@@ -116,7 +116,6 @@ def charge_ladder_dataset(n_rows: int = 200, seq_len: int = 20) -> pd.DataFrame:
     }
 
     charge = [peptide_charge(seq) for seq in sequences]
-    print(sequences)
     return pd.DataFrame({"sequence": list(sequences), "charge": charge})
 
 
