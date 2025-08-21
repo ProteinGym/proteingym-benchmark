@@ -4,7 +4,10 @@ from pathlib import Path
 from pg2_dataset.dataset import Dataset, Manifest
 from pg2_dataset.backends import Assays
 from pg2_benchmark.split import load_assays
-from pg2_benchmark.dummy_data import charge_ladder_dataset, add_extra_features
+from pg2_benchmark.dummy_data import (
+    charge_ladder_dataset,
+    adjust_target_with_two_dummy_features,
+)
 
 dataset_app = typer.Typer()
 
@@ -48,6 +51,6 @@ def generate_dummy_data(
 ) -> None:
     ladder = charge_ladder_dataset(n_rows, sequence_length)
 
-    ladder.pipe(add_extra_features, target="charge").to_csv(
+    ladder.pipe(adjust_target_with_two_dummy_features, target="charge").to_csv(
         data_file, index=False
     )
