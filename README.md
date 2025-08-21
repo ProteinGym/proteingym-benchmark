@@ -56,9 +56,18 @@ The difference of the AWS environment is that:
 > In order to use the AWS environment, you need to set up your AWS profile with the below steps:
 > 1. Execute `aws configure sso`.
 > 2. Fill in the required fields, especially: "Default client Region" is "us-east-1".
-> 3. You can find your account ID and profile by executing `cat ~/.aws/config`.
-> 4. Finally, you can run `dvc repro` with environment variables in each game: `AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro`.
-> 5. Before you run `dvc repro`, you need to change the filename of `dvc.aws.yaml` to `dvc.yaml`.
+>   a. SSO session name: `pg2benchmark`.
+>   b. SSO start URL: https://d-90674355f1.awsapps.com/start
+>   c. SSO region: `us-east-1`.
+>   d. SSO registration scopes: Leave empty.
+>   e. Login via browser.
+> 2. Select the account: `ifflabdev`.
+>   a. Default client Region is `us-east-1`.
+>   b. CLI default ouptut: Leave empty.
+>   c. Profile name: `pg2benchmark`.
+> 4. You can find your account ID and profile by executing `cat ~/.aws/config`.
+> 5. Finally, you can run `dvc repro` with environment variables in each game: `AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro`
+> 6. Before you run `dvc repro`, you need to change the filename of `dvc.aws.yaml` to `dvc.yaml`.
 
 #### Supervised
 
