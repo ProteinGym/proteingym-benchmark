@@ -75,7 +75,7 @@ def peptide_charge(seq: str, ph: float = 7.0, amide: bool = False) -> float:
     return pos_charge - neg_charge
 
 
-def _generate_sequence(seq_len):
+def _generate_sequence(seq_len: int) -> str:
     return "".join(random.choices(AA_ALPHABET, k=seq_len))
 
 
@@ -119,11 +119,46 @@ def charge_ladder_dataset(n_rows: int = 200, seq_len: int = 20) -> pd.DataFrame:
     return pd.DataFrame({"sequence": list(sequences), "charge": charge})
 
 
-def add_extra_features(df: pd.DataFrame, target: str):
-    df = df.copy()
-    foo = (np.random.random(len(df))) * 100
-    bar = np.random.choice(["a", "b"], len(df))
-    df["foo"] = foo
-    df["bar"] = bar
-    df[target] = df[target] * np.array((df["bar"] == "a") * 2 - 1) - df["foo"] / 50
-    return df
+def adjust_target_with_two_dummy_features(
+    df: pd.DataFrame, target: str, *, feature_names: list[str] | None = None
+) -> pd.DataFrame:
+    """Add two dummy features to a DataFrame and adjust the target column based on them.
+
+    This function adds two new features to the input DataFrame:
+    - A continuous feature with random values between 0-100
+    - A categorical feature with random choices between "a" and "b"
+
+    The target variable is then transformed using these new features according to:
+    target_new = target_old * (2 if bar=="a" else -1) - foo/50
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing the target column.
+        target (str): Name of the target column to adjust.
+        feature_names (list[str] | None): Names for the two new features. Must contain exactly 2 names. Defaults to ["foo", "bar"] if None.
+
+    Returns:
+        pd.DataFrame: DataFrame with two new features added and the target variable adjusted.
+
+    Raises:
+        ValueError: If feature_names doesn't contain exactly 2 names.
+
+    Examples:
+    >>> import pandas as pd
+    >>> df = pd.DataFrame({'target': [10, 20, 30]})
+    >>> result = adjust_target_with_two_dummy_features(df, 'target')
+    >>> result.columns.tolist()
+    ['target', 'foo', 'bar']
+    """
+    feature_names = feature_names or ("foo", "bar")
+
+    if len(feature_names) != 2:
+        raise ValueError(f"Expecting two feature names: {feature_names}")
+
+    return df.assign(
+        **{
+            feature_names[0]: lambda df: np.random.random(len(df)) * 100,
+            feature_names[1]: lambda df: np.random.choice(["a", "b"], len(df)),
+            target: lambda df: df[target] * np.array((df["bar"] == "a") * 2 - 1)
+            - df["foo"] / 50,
+        }
+    )
