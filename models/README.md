@@ -6,6 +6,36 @@ The basic structure for a supervised and a zero-shot model is listed respectivel
 
 What is in common is `__main__.py`, which contains the glue code to glue the model's original source code with `pg2-dataset` / `pg2-benchmark`.
 
+### Supervised model
+
+For a supervised model, since it needs to be trained with the training dataset, its source code structure is as below:
+
+```shell
+├── __main__.py
+├── predict.py
+├── preprocess.py
+└── train.py
+```
+
+### Zero-shot model
+
+For a zero-shot model, since it does not need training, its source code structure is as below:
+
+```shell
+├── __main__.py
+├── predict.py
+├── preprocess.py
+```
+
+> [!TIP]
+> * `__main__.py` contains the glue code to load the dataset using `pg2-dataset` and the model manifest using `pg2-benchmark`. Namely, the following two classes are imported and used: `from pg2_dataset.dataset import Dataset` and `from pg2_benchmark.manifest import Manifest`.
+>
+> * `preprocess.py` contains the data preprocessing code, like encoding and load training or test split of the dataset.
+>
+> * `train.py` contains the training code, which might use `preprocess.py`'s `encode()` function to encode the data before feeding into the model and the model's `Manifest` to load hyper parameters.
+>
+> * `predict.py` contains the scoring code, which might use `preprocess.py`'s `encode()` function and model's `Manifest` as well.
+
 ### API via train()
 
 The entrypoint for each model is defined in the function `train()`, which is the same for all models:
@@ -50,7 +80,7 @@ def train(
 
 The other common thing is the SageMaker settings, which is the same for every model.
 
-They are the paths internal to SageMaker to mount S3 to the paths inside the containers. When the containers are destroyed, the results can be kept safely inside S3 buckets. The paths are defined as below, you can copy and paste for each model you want to containerise, if you also plan to use AWS to run benchmarking.
+They are the paths internal to SageMaker to mount S3 to the paths inside the containers. When the containers are destroyed, the results can be kept safely inside S3 buckets. The paths are defined as below, you can copy and paste the below class for each model you want to containerise, if you also plan to use AWS to run benchmarking.
 
 ```python
 class SageMakerTrainingJobPath:
@@ -71,33 +101,3 @@ df.to_csv(
     index=False,
 )
 ```
-
-### Supervised model
-
-For a supervised model, since it needs to be trained with the training dataset, its source code structure is as below:
-
-```shell
-├── __main__.py
-├── predict.py
-├── preprocess.py
-└── train.py
-```
-
-### Zero-shot model
-
-For a zero-shot model, since it does not need training, its source code structure is as below:
-
-```shell
-├── __main__.py
-├── predict.py
-├── preprocess.py
-```
-
-> [!TIP]
-> * `__main__.py` contains the glue code to load the dataset using `pg2-dataset` and the model manifest using `pg2-benchmark`. Namely, the following two classes are imported and used: `from pg2_dataset.dataset import Dataset` and `from pg2_benchmark.manifest import Manifest`.
->
-> * `preprocess.py` contains the data preprocessing code, like encoding and load training or test split of the dataset.
->
-> * `train.py` contains the training code, which might use `preprocess.py`'s `encode()` function to encode the data before feeding into the model and the model's `Manifest` to load hyper parameters.
->
-> * `predict.py` contains the scoring code, which might use `preprocess.py`'s `encode()` function and model's `Manifest` as well.
