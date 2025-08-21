@@ -16,3 +16,6 @@ wheels/
 
 # Git
 git-auth.txt
+
+# Environment variables
+.env
