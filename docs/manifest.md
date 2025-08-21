@@ -18,7 +18,7 @@ offset_idx = 24
 
 ### Top-level
 
-The top-level of the manifest contains the model metadata.
+The top-level of the manifest contains the model metadata and its hyper parameters.
 
 | **Field**      | **Type**                              | **Required** | **Default** | **Description**                     |
 |----------------|---------------------------------------|--------------|-------------|-------------------------------------|
