@@ -45,13 +45,13 @@ app = typer.Typer(
 
 @app.command()
 def train(
-    dataset_path: Annotated[
+    dataset_reference: Annotated[
         Path,
         typer.Option(
             help="Path to the archived dataset",
         ),
     ],
-    model_car: Annotated[
+    model_reference: Annotated[
         Path,
         typer.Option(
             help="Path to the model card file",
@@ -62,7 +62,7 @@ def train(
     
     Args:
         dataset_reference (Path) : Path to the archived dataset.
-        model_card_reference (Path) : Path to the model card file.
+        model_reference (Path) : Path to the model card file.
 
     Returns:
         Path : The trained and persisted model.
@@ -92,8 +92,8 @@ def predict(
     """Predict (aka infer) given the dataset and the model. 
     
     Args:
-        dataset_path (Path) : Path to the archived dataset.
-        model_card_path (Path) : Path to the model card file.
+        dataset_reference (Path) : Path to the archived dataset.
+        model_reference (Path) : Path to the persisted and trained model file.
     
     Returns:
         Iterable[float] : The predictions.
@@ -113,6 +113,9 @@ if __name__ == "__main__":
 
 ## Suggested code structure
 
+> [!NOTE]
+> Python examples below translates to other languages too.
+
 In addition to the [**required** entrypoints](#entrypoints), we suggest the
 following code structure:
 
@@ -123,16 +126,56 @@ following code structure:
 └── train.py
 ```
 
-- `__main__.py` contains the `train` and `predict` entrypoints as shown above.
-  The code loads the dataset and model (card) before passing it to the `train_model`
-  or `predict_model` methods after preprocessing.
-- `preprocess.py` contains the data preprocessing code, like encoding
-  and splits. 
-- `train.py` contains the training code.
-- `predict.py` contains the inference and scoring code.
+### `__main__.py` 
 
-> [!NOTE]
-> Python example above translates to other languages too.
+The `__main__.py` contains the `train` and `predict` entrypoints as shown above.
+The code loads the dataset and model (card) before passing it to the `train_model`
+or `predict_model` methods after preprocessing.
+
+### `preprocess.py
+
+`preprocess.py` contains the data preprocessing code, functions like:
+
+``` python
+def encode(data: np.ndarray) -> np.ndarray:
+    """Encode the data."""
+    return encoded_data
+```
+
+``` python
+def train_test_split(data: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Split the data."""
+    return train_data, test_data
+```
+
+### `train.py`
+
+`train.py` contains the training code, functions like:
+
+``` python
+def train(model, Any, X: np.ndarray, y: np.array) -> Path
+    """Train the model."""
+    model.fit(X, y)
+    model_path = model.persist()
+    return model_path
+```
+
+``` python
+def load(model_card_reference: Path) -> Any:
+    """Load the model."""
+    model_config = ModelCard.from_path(model_card_reference)
+    model = Model.from_config(model_config)
+    return model
+```
+
+### `predict.py`
+
+``` python
+def predict(model: Any, X: np.ndarray) -> np.array:
+    """Infer predictions on the data."""
+    predictions = model.predict(X)
+    return predictions
+```
 
 ## Backends
 
