@@ -1,103 +1,175 @@
-# Containerise model in Docker
+# Model
 
-## Structure
+This README details how to add a model to the benchmark.
 
-The basic structure for a supervised and a zero-shot model is listed respectively as below. The difference is that a supervised model has `train.py`, whereas a zero-shot model doesn't have it.
+## Entrypoints
 
-What is in common is `__main__.py`, which contains the glue code to glue the model's original source code with `pg2-dataset` / `pg2-benchmark`.
+A model requires the following entrypoints: `train` and `predict`:
 
-### Supervised model
+The `train` entrypoint is only required for **supervised** models.
+The `predict` entrypoint is required for all models.
 
-For a supervised model, since it needs to be trained with the training dataset, its source code structure is as below:
+Both entrypoints expect a reference to a dataset: `dataset_reference`.
+Additionally, the `train` entrypoint expects a reference to the model card
+and the `predict` entrypoint expects a reference to the peristed model:
+`model_card_reference` and `model_reference`, respectively.
 
-```shell
+Finally, the `train` entrypoint outputs the model reference, which is the input
+for the `predict` entrypoint next to the dataset. The `predict` entrypoints
+outputs the inferred predictions:
+
+From the commandline these entrypoints interact as follows:
+
+``` bash
+$ train ./path/to/dataset_train.pgdata ./path/to/model_card.md
+./path/to/model.pickle
+$ predict ./path/to/dataset_validate.pgdata ./path/to/model.pickle
+[0.8, 0.5, ..., .04]
+```
+
+For reference, below an example Python implementation with `typer`:
+
+
+``` python
+# In `__main__.py`
+import typer
+from pg2_dataset import Dataset
+from pg2_benchmark import Manifest
+
+
+app = typer.Typer(
+    help="My ProteinGym model",
+    add_completion=True,
+)
+
+
+@app.command()
+def train(
+    dataset_path: Annotated[
+        Path,
+        typer.Option(
+            help="Path to the archived dataset",
+        ),
+    ],
+    model_car: Annotated[
+        Path,
+        typer.Option(
+            help="Path to the model card file",
+        ),
+    ],
+) -> Path:
+    """Train the model on the dataset.
+    
+    Args:
+        dataset_reference (Path) : Path to the archived dataset.
+        model_card_reference (Path) : Path to the model card file.
+
+    Returns:
+        Path : The trained and persisted model.
+    """
+    dataset = Dataset.from_path(dataset_path)
+    manifest = Manifest.from_path(model_card_path)
+
+    # Train the model below
+    model_reference = ...
+    return model_reference
+
+
+def predict(
+    dataset_reference: Annotated[
+        Path,
+        typer.Option(
+            help="Path to the archived dataset",
+        ),
+    ],
+    model_reference: Annotated[
+        Path,
+        typer.Option(
+            help="Path to the model file",
+        ),
+    ],
+) -> Iterable[float]:
+    """Predict (aka infer) given the dataset and the model. 
+    
+    Args:
+        dataset_path (Path) : Path to the archived dataset.
+        model_card_path (Path) : Path to the model card file.
+    
+    Returns:
+        Iterable[float] : The predictions.
+    """
+    dataset = Dataset.from_path(dataset_path)
+    model = pickle.load(model_reference)
+
+    # Predict the model below 
+    predictions = ...
+    return predictions
+
+
+if __name__ == "__main__":
+    app()
+
+```
+
+## Suggested code structure
+
+In addition to the [**required** entrypoints](#entrypoints), we suggest the
+following code structure:
+
+``` tree
 ├── __main__.py
-├── predict.py
+├── predict.py       # For supervised models only
 ├── preprocess.py
 └── train.py
 ```
 
-### Zero-shot model
+- `__main__.py` contains the `train` and `predict` entrypoints as shown above.
+  The code loads the dataset and model (card) before passing it to the `train_model`
+  or `predict_model` methods after preprocessing.
+- `preprocess.py` contains the data preprocessing code, like encoding
+  and splits. 
+- `train.py` contains the training code.
+- `predict.py` contains the inference and scoring code.
 
-For a zero-shot model, since it does not need training, its source code structure is as below:
+> [!NOTE]
+> Python example above translates to other languages too.
 
-```shell
-├── __main__.py
-├── predict.py
-├── preprocess.py
-```
+## Backends
 
-> [!TIP]
-> * `__main__.py` contains the glue code to load the dataset using `pg2-dataset` and the model manifest using `pg2-benchmark`. Namely, the following two classes are imported and used: `from pg2_dataset.dataset import Dataset` and `from pg2_benchmark.manifest import Manifest`.
->
-> * `preprocess.py` contains the data preprocessing code, like encoding and load training or test split of the dataset.
->
-> * `train.py` contains the training code, which might use `preprocess.py`'s `encode()` function to encode the data before feeding into the model and the model's `Manifest` to load hyper parameters.
->
-> * `predict.py` contains the scoring code, which might use `preprocess.py`'s `encode()` function and model's `Manifest` as well.
+This section details common logic per backend.
 
-### API via train()
+### SageMaker 
 
-The entrypoint for each model is defined in the function `train()`, which is the same for all models:
+When using SageMaker, the references point to S3 paths mounted to the (Docker)
+container. Containers are destroyed after running them, but the data can be
+safely persisted in the S3 buckets. These mounted paths are defined as below
 
 ```python
-from typing import Annotated
-from pathlib import Path
-import typer
-from pg2_dataset.dataset import Dataset
-from pg2_benchmark.manifest import Manifest
+class SageMakerPathLayout:
+    """SageMaker's paths layout."""
 
-def train(
-    dataset_file: Annotated[
-        Path,
-        typer.Option(
-            help="Path to the dataset file",
-        ),
-    ] = SageMakerTrainingJobPath.TRAINING_JOB_PATH,
-    model_toml_file: Annotated[
-        Path,
-        typer.Option(
-            help="Path to the model TOML file",
-        ),
-    ] = SageMakerTrainingJobPath.MANIFEST_PATH,
-):
+    PREFIX: Path = Path("/opt/ml")
+    """All Sagemaker paths start with this prefix."""
 
-    dataset = Dataset.from_path(dataset_file)
+    TRAINING_JOB_PATH: Path = PREFIX / "input" / "data" / "training" / "dataset.zip"
+    """Path to training data."""
 
-    manifest = Manifest.from_path(model_toml_file)
+    MODEL_CARD_PATH: PAth = PREFIX / "input" / "config" / "model_card.md"
+    """Path to the model card."""
 
-    # After dataset and model manifest are loaded,
-    # the remaining glue code goes below to bind `preprocess.py`, `train.py` and `predict.py`.
-    ...
+    MODEL_PATH: Path = Path("/model.pkl")
+    """Model path."""
+
+    OUTPUT_PATH = PREFIX / "output"
+    """Output path"""
 ```
 
-> [!IMPORTANT]
-> The input for the function `train()` is universal for all models, which are:
-> * `dataset_file`: the archive file of the desired dataset.
-> * `model_toml_file`: the model's manifest file, which contains the definition of hyper parameters.
+For example, to persist the score for a given dataset and model as csv:
 
-### SageMaker settings
-
-The other common thing is the SageMaker settings, which is the same for every model.
-
-They are the paths internal to SageMaker to mount S3 to the paths inside the containers. When the containers are destroyed, the results can be kept safely inside S3 buckets. The paths are defined as below, you can copy and paste the below class for each model you want to containerise, if you also plan to use AWS to run benchmarking.
-
-```python
-class SageMakerTrainingJobPath:
-    PREFIX = Path("/opt/ml")
-    TRAINING_JOB_PATH = PREFIX / "input" / "data" / "training" / "dataset.zip"
-    MANIFEST_PATH = PREFIX / "input" / "data" / "manifest" / "manifest.toml"
-    PARAMS_PATH = PREFIX / "input" / "config" / "hyperparameters.json"
-    OUTPUT_PATH = PREFIX / "model"
-
-    MODEL_PATH = Path("/model.pkl")
-```
-
-The last thing to pay attention to is to save the result data frame in CSV files in the desired paths, which are always as below:
-
-```python
-df.to_csv(
-    f"{SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{manifest.name}.csv",
+``` python
+scores: pd.DataFrame
+scores.to_csv(
+    f"{SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model.name}.csv",
     index=False,
 )
 ```
