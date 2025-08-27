@@ -3,6 +3,15 @@ from esm.data import Alphabet
 
 
 def encode(sequence: str, alphabet: Alphabet) -> torch.Tensor:
+    """Encode a protein sequence into tokens using the ESM alphabet.
+
+    Args:
+        sequence: Protein sequence to encode
+        alphabet: ESM alphabet for tokenization
+
+    Returns:
+        Batch tokens tensor for the sequence
+    """
     data = [
         ("protein1", sequence),
     ]

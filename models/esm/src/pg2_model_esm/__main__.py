@@ -3,7 +3,7 @@ from pathlib import Path
 import typer
 from rich.console import Console
 from pg2_dataset.dataset import Dataset
-from pg2_model_esm.predict import load_model, predict_model
+from pg2_model_esm.model import load, predict
 from pg2_benchmark.manifest import Manifest
 
 
@@ -12,7 +12,6 @@ app = typer.Typer(
     add_completion=True,
 )
 
-err_console = Console(stderr=True)
 console = Console()
 
 
@@ -20,10 +19,7 @@ class SageMakerTrainingJobPath:
     PREFIX = Path("/opt/ml")
     TRAINING_JOB_PATH = PREFIX / "input" / "data" / "training" / "dataset.zip"
     MANIFEST_PATH = PREFIX / "input" / "data" / "manifest" / "manifest.toml"
-    PARAMS_PATH = PREFIX / "input" / "config" / "hyperparameters.json"
     OUTPUT_PATH = PREFIX / "model"
-
-    MODEL_PATH = Path("/model.pkl")
 
 
 @app.command()
@@ -44,12 +40,11 @@ def train(
     console.print(f"Loading {dataset_file} and {model_toml_file}...")
 
     dataset = Dataset.from_path(dataset_file)
-
     manifest = Manifest.from_path(model_toml_file)
 
-    model, alphabet = load_model(manifest)
+    model, alphabet = load(manifest)
 
-    df = predict_model(
+    df = predict(
         dataset=dataset,
         manifest=manifest,
         model=model,
@@ -64,7 +59,6 @@ def train(
     console.print(
         f"Saved the metrics in CSV in {SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{manifest.name}.csv"
     )
-    console.print("Done.")
 
 
 @app.command()

@@ -4,31 +4,40 @@ This README details how to add a model to the benchmark.
 
 ## Entrypoints
 
-A model requires the following entrypoints: `train` and `predict`:
+A model requires only one entrypoint: the `train` method, which you can referecen from below two models:
 
-The `train` entrypoint is only required for **supervised** models.
-The `predict` entrypoint is required for all models.
+* [esm/src/pg2_model_esm/__main__.py](esm/src/pg2_model_esm/__main__.py)
+* [pls/src/pg2_model_pls/__main__.py](pls/src/pg2_model_pls/__main__.py)
 
-Both entrypoints expect a reference to a dataset: `dataset_reference`.
-Additionally, the `train` entrypoint expects a reference to the model card
-and the `predict` entrypoint expects a reference to the peristed model:
-`model_card_reference` and `model_reference`, respectively.
+Both **supervised** models and **zero-shot** models call this `train` method, because it is the glue method to glue the packages: `pg2-dataset`, `pg2-benchmark` and the models' original source code together. The method is named `train`, because for SageMaker, it looks for the `train` method as a entrypoint, thus it becomes the common method for both environments: local and AWS.
 
-Finally, the `train` entrypoint outputs the model reference, which is the input
-for the `predict` entrypoint next to the dataset. The `predict` entrypoints
-outputs the inferred predictions:
+This entrypoint expects a reference to a dataset, e.g., loaded by `pg2-dataset`: 
 
-From the commandline these entrypoints interact as follows:
-
-``` bash
-$ train ./path/to/dataset_train.pgdata ./path/to/model_card.md
-./path/to/model.pickle
-$ predict ./path/to/dataset_validate.pgdata ./path/to/model.pickle
-[0.8, 0.5, ..., .04]
+```python
+from pg2_dataset.dataset import Dataset
+dataset = Dataset.from_path(dataset_file)
 ```
 
-For reference, below an example Python implementation with `typer`:
+Additionally, this entrypoint also expects a reference to a model card, e.g., loaded by `pg2-benchmark`:
 
+```
+from pg2_benchmark.manifest import Manifest
+manifest = Manifest.from_path(model_toml_file)
+```
+
+Finally, inside this `train` method:
+
+* For a **supervised** model, like [esm](esm/), it calls `load_model` and `predict_model` in order:
+    * `load_model` uses `manifest` as input, and returns a model object as output.
+    * `predict_model` uses `dataset`, `manifest` and the model object as input, and returns the inferred predictions in a data frame as output.
+
+* For a **zero-shot** model, like [pls](pls/), it calls `train_model` and `predict_model` in order:
+    * `train_model` uses `dataset` and `manifest` as input, and returns a model object as output.
+    * `predict_model` uses `dataset`, `manifest` and the model object as input, and returns the inferred predictions in a data frame as output.
+
+The result data frame is saved on the disk in the local environment and stored in AWS S3 in the cloud environment. After the container is destroyed, the result data frame is persisted for the later metric calculation.
+
+For reference, below an example Python implementation with `typer`:
 
 ``` python
 # In `__main__.py`
@@ -58,52 +67,19 @@ def train(
         ),
     ],
 ) -> Path:
-    """Train the model on the dataset.
-    
-    Args:
-        dataset_reference (Path) : Path to the archived dataset.
-        model_reference (Path) : Path to the model card file.
 
-    Returns:
-        Path : The trained and persisted model.
-    """
     dataset = Dataset.from_path(dataset_path)
     manifest = Manifest.from_path(model_card_path)
 
-    # Train the model below
-    model_reference = ...
-    return model_reference
+    # For a supervised model
+    model = load(manifest)
+    df = predict(dataset, manifest, model)
+    df.to_csv(...)
 
-
-def predict(
-    dataset_reference: Annotated[
-        Path,
-        typer.Option(
-            help="Path to the archived dataset",
-        ),
-    ],
-    model_reference: Annotated[
-        Path,
-        typer.Option(
-            help="Path to the model file",
-        ),
-    ],
-) -> Iterable[float]:
-    """Predict (aka infer) given the dataset and the model. 
-    
-    Args:
-        dataset_reference (Path) : Path to the archived dataset.
-        model_reference (Path) : Path to the persisted and trained model file.
-    
-    Returns:
-        Iterable[float] : The predictions.
-    """
-    dataset = Dataset.from_path(dataset_path)
-    model = pickle.load(model_reference)
-
-    # Predict the model below 
-    predictions = ...
-    return predictions
+    # For a zero-shot model
+    model = train(dataset, manifest)
+    df = predict(dataset, manifest, model)
+    df.to_csv(...)
 
 
 if __name__ == "__main__":
@@ -121,18 +97,18 @@ following code structure:
 
 ``` tree
 ├── __main__.py
-├── predict.py       # For supervised models only
+├── model.py
 ├── preprocess.py
-└── train.py
+└── utils.py
 ```
 
 ### `__main__.py` 
 
-The `__main__.py` contains the `train` and `predict` entrypoints as shown above.
-The code loads the dataset and model (card) before passing it to the `train_model`
-or `predict_model` methods after preprocessing.
+The `__main__.py` contains the `train` entrypoint as shown above.
+The code loads the dataset and model (card) before passing it to the `load_model`, `train_model`
+or `predict_model` methods.
 
-### `preprocess.py
+### `preprocess.py`
 
 `preprocess.py` contains the data preprocessing code, functions like:
 
@@ -148,34 +124,49 @@ def train_test_split(data: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return train_data, test_data
 ```
 
-### `train.py`
+### `model.py`
 
-`train.py` contains the training code, functions like:
+`model.py` contains the code related with model:
 
 ``` python
-def train(model, Any, X: np.ndarray, y: np.array) -> Path
+def train(dataset: Dataset, manifest: Manifest) -> Any
     """Train the model."""
-    model.fit(X, y)
-    model_path = model.persist()
-    return model_path
-```
+    X, y = load_x_and_y(
+        dataset=dataset,
+        split="train",
+    )
 
-``` python
-def load(model_card_reference: Path) -> Any:
-    """Load the model."""
-    model_config = ModelCard.from_path(model_card_reference)
-    model = Model.from_config(model_config)
+    model = Model(manifest)
+    model.fit(X, y)
+
     return model
 ```
 
-### `predict.py`
+``` python
+def load(manifest: Manifest) -> Any:
+    """Load the model."""
+    model = Model.from_manifest(manifest)
+    return model
+```
 
 ``` python
-def predict(model: Any, X: np.ndarray) -> np.array:
+def predict(dataset: Dataset, manifest: Manifest, model: Any) -> DataFrame:
     """Infer predictions on the data."""
-    predictions = model.predict(X)
-    return predictions
+    X, y = load_x_and_y(
+        dataset=dataset,
+        split="test",
+    )
+
+    predictions = model.predict(manifest, X)
+
+    df = DataFrame(predictions)
+
+    return df
 ```
+
+### `utils.py`
+
+It contains the supporting methods from the original models' code to facilitate the `model.py`.
 
 ## Backends
 
@@ -197,14 +188,11 @@ class SageMakerPathLayout:
     TRAINING_JOB_PATH: Path = PREFIX / "input" / "data" / "training" / "dataset.zip"
     """Path to training data."""
 
-    MODEL_CARD_PATH: PAth = PREFIX / "input" / "config" / "model_card.md"
-    """Path to the model card."""
-
-    MODEL_PATH: Path = Path("/model.pkl")
-    """Model path."""
+    MANIFEST_PATH: Path = PREFIX / "input" / "data" / "manifest" / "manifest.toml"
+    """Path to the model manifest."""
 
     OUTPUT_PATH = PREFIX / "output"
-    """Output path"""
+    """Path to the output, such as the result data frames."""
 ```
 
 For example, to persist the score for a given dataset and model as csv:

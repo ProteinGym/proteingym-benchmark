@@ -3,16 +3,28 @@ from esm.data import Alphabet
 from tqdm import tqdm
 import pandas as pd
 from esm import pretrained
-from pg2_model_esm.utils import compute_pppl, label_row
-from pg2_benchmark.manifest import Manifest
 from pg2_dataset.dataset import Dataset
+from pg2_benchmark.manifest import Manifest
 from pg2_model_esm.preprocess import encode
+from pg2_model_esm.utils import compute_pppl, label_row
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-def load_model(manifest: Manifest) -> tuple[torch.nn.Module, Alphabet]:
+def load(manifest: Manifest) -> tuple[torch.nn.Module, Alphabet]:
+    """Load and configure an ESM model and its alphabet.
+
+    Loads a pretrained ESM model from the location specified in the manifest,
+    sets it to evaluation mode, and optionally transfers it to GPU if available
+    and not disabled.
+
+    Args:
+        manifest: Configuration object containing model location and GPU settings
+
+    Returns:
+        tuple: The loaded ESM model and its corresponding alphabet
+    """
     model, alphabet = pretrained.load_model_and_alphabet(
         manifest.hyper_params["location"]
     )
@@ -25,12 +37,31 @@ def load_model(manifest: Manifest) -> tuple[torch.nn.Module, Alphabet]:
     return model, alphabet
 
 
-def predict_model(
+def predict(
     dataset: Dataset,
     manifest: Manifest,
     model: torch.nn.Module,
     alphabet: Alphabet,
 ) -> pd.DataFrame:
+    """Generate predictions for protein mutations using an ESM model.
+
+    Computes fitness scores for protein mutations using one of three scoring
+    strategies: wild-type marginals, masked marginals, or pseudo-perplexity.
+    The scoring strategy is determined by the manifest configuration.
+
+    Args:
+        dataset: Dataset containing assay data with mutations to score
+        manifest: Configuration object specifying scoring strategy and parameters
+        model: The loaded ESM model for computing predictions
+        alphabet: ESM alphabet for token encoding/decoding
+
+    Returns:
+        pd.DataFrame: DataFrame with predictions added in 'pred' column and
+                     target column renamed to 'test'
+
+    Raises:
+        ValueError: If an unrecognized scoring strategy is specified
+    """
     assays = dataset.assays.meta.assays
     targets = list(dataset.assays.meta.assays.keys())
 
