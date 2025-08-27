@@ -1,0 +1,44 @@
+vars:
+  - params.yaml
+  
+  - datasets:
+    - name: ranganathan
+      container_path: /datasets/ranganathan/dataset.zip
+      local_path: ../../datasets/ranganathan/dataset.zip
+
+  - models:
+    - name: esm
+      container_path: /models/esm/manifest.toml
+      local_path: ../../models/esm/manifest.toml
+      dockerfile: ../../models/esm/Dockerfile
+
+stages:
+  create_training_job:
+    matrix: 
+      dataset: ${datasets}
+      model: ${models}
+    
+    cmd: 
+      - docker build --build-arg GIT_CACHE_BUST=${git.git_cache_bust} --secret id=git_auth,src=../git-auth.txt -f ${item.model.dockerfile} -t ${item.model.name}:latest ../..
+      - docker run --rm -v $(realpath ${source.datasets_dir}):/datasets -v $(realpath ${source.models_dir}):/models -v $(realpath ${destination.output_dir}):/opt/ml/model ${item.model.name}:latest train --dataset-file ${item.dataset.container_path} --model-toml-file ${item.model.container_path}
+      - docker image prune -a -f
+
+    deps:
+      - ${item.dataset.local_path}
+      - ${item.model.local_path}
+      - ${item.model.dockerfile}
+    outs:
+      - ${destination.output_dir}/${item.dataset.name}_${item.model.name}.csv:
+          cache: true
+
+  calculate_metric:
+    matrix: 
+      dataset: ${datasets}
+      model: ${models}
+    
+    cmd: uv run pg2-benchmark metric calc --output-path ${destination.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric-path ${destination.metric_dir}/${item.dataset.name}_${item.model.name}.csv
+    deps:
+      - ${destination.output_dir}/${item.dataset.name}_${item.model.name}.csv
+    outs:
+      - ${destination.metric_dir}/${item.dataset.name}_${item.model.name}.csv:
+          cache: true

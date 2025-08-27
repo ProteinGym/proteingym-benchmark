@@ -14,8 +14,8 @@ https://username:token@github.com
 
 There are two games to benchmark: supervised and zero-shot. Each game has its selected list of models and datasets defined in `dvc.yaml`.
 
-- Supervised game is defined in this [dvc.yaml](supervised/dvc.yaml)
-- Zero-shot game is defined in this [dvc.yaml](zero_shot/dvc.yaml)
+- Supervised game is defined in this [dvc.yaml](supervised/local/dvc.yaml)
+- Zero-shot game is defined in this [dvc.yaml](zero_shot/local/dvc.yaml)
 
 The models and datasets are defined in `vars` at the top, and DVC translates `vars` into a matrix, which is namely a loop defined as the following pseudo-code:
 
@@ -33,14 +33,14 @@ for dataset in datasets:
 
 You can benchmark a group of supervised models:
 ```shell
-dvc repro supervised/dvc.yaml
+dvc repro supervised/local/dvc.yaml
 ```
 
 #### Zero-shot
 
 You can benchmark a group of zero-shot models:
 ```shell
-dvc repro zero_shot/dvc.yaml
+dvc repro zero_shot/local/dvc.yaml
 ```
 
 ### AWS environment
@@ -58,20 +58,19 @@ The difference of the AWS environment is that:
 > 2. Fill in the required fields, especially: "Default client Region" is "us-east-1".
 > 3. You can find your account ID and profile by executing `cat ~/.aws/config`.
 > 4. Finally, you can run `dvc repro` with environment variables in each game: `AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro`.
-> 5. Before you run `dvc repro`, you need to change the filename of `dvc.aws.yaml` to `dvc.yaml`.
 
 #### Supervised
 
 You can benchmark a group of supervised models:
 ```shell
-AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro supervised/dvc.yaml
+AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro supervised/aws/dvc.yaml
 ```
 
 #### Zero-shot
 
 You can benchmark a group of zero-shot models:
 ```shell
-AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro zero_shot/dvc.yaml
+AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro zero_shot/aws/dvc.yaml
 ```
 
 ## Generate dummy data

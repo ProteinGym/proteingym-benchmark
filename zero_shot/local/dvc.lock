@@ -1,0 +1,41 @@
+schema: '2.0'
+stages:
+  create_training_job@dataset0-model0:
+    cmd:
+    - docker build --build-arg GIT_CACHE_BUST=1 --secret id=git_auth,src=../git-auth.txt
+      -f ../../models/esm/Dockerfile -t esm:latest ../..
+    - docker run --rm -v $(realpath ../../datasets):/datasets -v $(realpath ../../models):/models
+      -v $(realpath output):/opt/ml/model esm:latest train --dataset-file /datasets/ranganathan/dataset.zip
+      --model-toml-file /models/esm/manifest.toml
+    - docker image prune -a -f
+    deps:
+    - path: ../../datasets/ranganathan/dataset.zip
+      hash: md5
+      md5: b7c8410bc7d34c92e8d11d8b0064fbc7
+      size: 39040
+    - path: ../../models/esm/Dockerfile
+      hash: md5
+      md5: 7f13567daf55f157ab05f23602a1f53e
+      size: 1138
+    - path: ../../models/esm/manifest.toml
+      hash: md5
+      md5: a8939829e644ac1b53b66a4fe6bd149e
+      size: 125
+    outs:
+    - path: output/ranganathan_esm.csv
+      hash: md5
+      md5: 39b2dea9bd44e696936e6b3e4f1a4a4c
+      size: 195883
+  calculate_metric@dataset0-model0:
+    cmd: uv run pg2-benchmark metric calc --output-path output/ranganathan_esm.csv
+      --metric-path metric/ranganathan_esm.csv
+    deps:
+    - path: output/ranganathan_esm.csv
+      hash: md5
+      md5: 39b2dea9bd44e696936e6b3e4f1a4a4c
+      size: 195883
+    outs:
+    - path: metric/ranganathan_esm.csv
+      hash: md5
+      md5: f38bb057ff25591c67c5985a58af8d1f
+      size: 1588
