@@ -33,14 +33,14 @@ for dataset in datasets:
 
 You can benchmark a group of supervised models:
 ```shell
-dvc repro supervised/local/dvc.yaml
+dvc repro benchmark/supervised/local/dvc.yaml
 ```
 
 #### Zero-shot
 
 You can benchmark a group of zero-shot models:
 ```shell
-dvc repro zero_shot/local/dvc.yaml
+dvc repro benchmark/zero_shot/local/dvc.yaml
 ```
 
 ### AWS environment
@@ -63,14 +63,14 @@ The difference of the AWS environment is that:
 
 You can benchmark a group of supervised models:
 ```shell
-AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro supervised/aws/dvc.yaml
+AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro benchmark/supervised/aws/dvc.yaml
 ```
 
 #### Zero-shot
 
 You can benchmark a group of zero-shot models:
 ```shell
-AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro zero_shot/aws/dvc.yaml
+AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro benchmark/zero_shot/aws/dvc.yaml
 ```
 
 ## Generate dummy data
