@@ -27,13 +27,13 @@ manifest = Manifest.from_path(model_toml_file)
 
 Finally, inside this `train` method:
 
-* For a **supervised** model, like [esm](esm/), it calls `load_model` and `predict_model` in order:
-    * `load_model` uses `manifest` as input, and returns a model object as output.
-    * `predict_model` uses `dataset`, `manifest` and the model object as input, and returns the inferred predictions in a data frame as output.
+* For a **supervised** model, like [esm](esm/), it calls `load` and `infer` in order:
+    * `load` uses `manifest` as input, and returns a model object as output.
+    * `infer` uses `dataset`, `manifest` and the model object as input, and returns the inferred predictions in a data frame as output.
 
-* For a **zero-shot** model, like [pls](pls/), it calls `train_model` and `predict_model` in order:
-    * `train_model` uses `dataset` and `manifest` as input, and returns a model object as output.
-    * `predict_model` uses `dataset`, `manifest` and the model object as input, and returns the inferred predictions in a data frame as output.
+* For a **zero-shot** model, like [pls](pls/), it calls `train` and `infer` in order:
+    * `train` uses `dataset` and `manifest` as input, and returns a model object as output.
+    * `infer` uses `dataset`, `manifest` and the model object as input, and returns the inferred predictions in a data frame as output.
 
 The result data frame is saved on the disk in the local environment and stored in AWS S3 in the cloud environment. After the container is destroyed, the result data frame is persisted for the later metric calculation.
 
@@ -73,12 +73,12 @@ def train(
 
     # For a supervised model
     model = load(manifest)
-    df = predict(dataset, manifest, model)
+    df = infer(dataset, manifest, model)
     df.to_csv(...)
 
     # For a zero-shot model
     model = train(dataset, manifest)
-    df = predict(dataset, manifest, model)
+    df = infer(dataset, manifest, model)
     df.to_csv(...)
 
 
@@ -105,8 +105,8 @@ following code structure:
 ### `__main__.py` 
 
 The `__main__.py` contains the `train` entrypoint as shown above.
-The code loads the dataset and model (card) before passing it to the `load_model`, `train_model`
-or `predict_model` methods.
+The code loads the dataset and model (card) before passing it to the `load`, `train`
+or `infer` methods.
 
 ### `preprocess.py`
 
@@ -150,7 +150,7 @@ def load(manifest: Manifest) -> Any:
 ```
 
 ``` python
-def predict(dataset: Dataset, manifest: Manifest, model: Any) -> DataFrame:
+def infer(dataset: Dataset, manifest: Manifest, model: Any) -> DataFrame:
     """Infer predictions on the data."""
     X, y = load_x_and_y(
         dataset=dataset,
