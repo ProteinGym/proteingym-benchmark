@@ -1,3 +1,8 @@
+# DVC
+output
+metric
+logs
+
 # Python-generated files
 __pycache__/
 .pytest_cache/
