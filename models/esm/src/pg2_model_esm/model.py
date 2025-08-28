@@ -37,7 +37,7 @@ def load(manifest: Manifest) -> tuple[torch.nn.Module, Alphabet]:
     return model, alphabet
 
 
-def predict(
+def infer(
     dataset: Dataset,
     manifest: Manifest,
     model: torch.nn.Module,

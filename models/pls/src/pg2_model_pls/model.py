@@ -46,7 +46,7 @@ def train(
     return model
 
 
-def predict(
+def infer(
     dataset: Dataset,
     manifest: Manifest,
     model: PLSRegression,

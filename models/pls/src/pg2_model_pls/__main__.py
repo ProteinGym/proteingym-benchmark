@@ -2,7 +2,7 @@ from typing import Annotated
 from pathlib import Path
 from rich.console import Console
 from pg2_dataset.dataset import Dataset
-from pg2_model_pls.model import train as train_model, predict
+from pg2_model_pls.model import train as train_model, infer
 from pg2_benchmark.manifest import Manifest
 
 import typer
@@ -47,7 +47,7 @@ def train(
         manifest=manifest,
     )
 
-    df = predict(
+    df = infer(
         dataset=dataset,
         manifest=manifest,
         model=model,

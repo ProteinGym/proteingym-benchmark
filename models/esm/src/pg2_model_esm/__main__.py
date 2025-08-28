@@ -3,7 +3,7 @@ from pathlib import Path
 import typer
 from rich.console import Console
 from pg2_dataset.dataset import Dataset
-from pg2_model_esm.model import load, predict
+from pg2_model_esm.model import load, infer
 from pg2_benchmark.manifest import Manifest
 
 
@@ -44,7 +44,7 @@ def train(
 
     model, alphabet = load(manifest)
 
-    df = predict(
+    df = infer(
         dataset=dataset,
         manifest=manifest,
         model=model,
