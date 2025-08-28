@@ -1,7 +1,0 @@
-name = "esm"
-
-[hyper_params]
-location = "esm2_t30_150M_UR50D"
-scoring_strategy = "wt-marginals"
-nogpu = false
-offset_idx = 24

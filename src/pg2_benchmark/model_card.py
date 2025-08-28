@@ -1,14 +1,14 @@
+import frontmatter
 from pydantic import BaseModel, Field, ConfigDict
 from pathlib import Path
 from typing import Self, Any
-import toml
 
 
-class Manifest(BaseModel):
-    """A manifest representing configuration for a protein language model.
+class ModelCard(BaseModel):
+    """A model card representing configuration for a protein language model.
 
-    This class loads and validates model configuration from TOML files, containing
-    model metadata and hyperparameters for benchmarking tasks.
+    This class loads and validates model configuration from markdown files, containing
+    model metadata and hyperparameters in the front matter for benchmarking tasks.
 
     Attributes:
         name: The name of the model
@@ -24,5 +24,8 @@ class Manifest(BaseModel):
     hyper_params: dict[str, Any] = Field(default_factory=dict)
 
     @classmethod
-    def from_path(cls, toml_file: Path) -> Self:
-        return cls.model_validate(toml.load(toml_file))
+    def from_path(cls, path: Path) -> Self:
+        with path.open("r", encoding="utf-8") as file:
+            model_card = frontmatter.load(file)
+
+        return cls.model_validate(model_card.metadata)

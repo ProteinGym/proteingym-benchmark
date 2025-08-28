@@ -1,39 +1,14 @@
-# pg2-model-pls
+---
+name: "pls"
 
-This is the model built from the cookie-cutter template: https://github.com/ProteinGym2/pg2-model
+hyper_params:
+    n_components: 2
+    aa_alphabet: ["A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y"]
+    aa_alphabet_length: 20
+---
 
-You can create your own model repo by: 
-```
-uvx cookiecutter https://github.com/ProteinGym2/pg2-model.git
-```
+# Model Card for PLS Regression
 
-> [!TIP]
-> You can install `uv` by this guide: https://docs.astral.sh/uv/getting-started/installation/
+Partial Least Squares (PLS) regression is a dimensionality reduction technique that finds linear combinations of input variables that best explain the variance in both predictors and response variables. This model uses `PLSRegression` from `sklearn.cross_decomposition` to build predictive models for protein fitness prediction tasks.
 
-## Getting started
-
-1. Create a `git-auth.txt` file in the root path with the following content:
-
-```
-https://username:token@github.com
-```
-
-2. After you've created your project, you can run the following commands to build and score your model:
-
-Build a model:
-```shell
-docker build \
---secret id=git_auth,src=git-auth.txt \
--t test-model .
-```
-
-Score a model:
-```shell
-docker run --rm -v $(pwd)/data:/data test-model \
-    predict \
-    --dataset-toml-file /data/dataset.toml \
-    --model-toml-file /data/model.toml
-```
-
-> [!TIP]
-> You can check the commands with help: `docker run --rm test-model --help`
+PLS is particularly useful when dealing with high-dimensional data where the number of features exceeds the number of observations, making it well-suited for protein sequence analysis where amino acid features can be numerous relative to available experimental data.

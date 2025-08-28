@@ -25,7 +25,7 @@ stages:
   upload_to_s3:
     cmd:
       - aws s3 cp ${source.datasets_dir}/ s3://${aws.s3_training_data_prefix}/datasets --recursive --exclude "*" --include "*.zip"
-      - aws s3 cp ${source.models_dir}/ s3://${aws.s3_training_data_prefix}/models --recursive --exclude "*" --include "*.toml"
+      - aws s3 cp ${source.models_dir}/ s3://${aws.s3_training_data_prefix}/models --recursive --exclude "*" --include "README.md"
       - echo "Upload completed at $(date)" > logs/s3_upload_complete.txt
     deps:
       - logs/setup.txt

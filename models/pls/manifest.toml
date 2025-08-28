@@ -1,6 +1,0 @@
-name = "pls"
-
-[hyper_params]
-n_components = 2
-aa_alphabet = ["A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y"]
-aa_alphabet_length = 20

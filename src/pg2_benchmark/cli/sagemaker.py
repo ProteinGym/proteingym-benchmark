@@ -21,7 +21,7 @@ def create_training_job(
     instance_type: str = typer.Option(help="EC2 instance type"),
     volume_size: int = typer.Option(help="EC2 volume size in Gigabytes"),
     dataset_prefix: str = typer.Option(help="Dataset prefix"),
-    model_prefix: str = typer.Option(help="Model TOML file"),
+    model_prefix: str = typer.Option(help="Model card file"),
 ):
     """Create and start SageMaker training job"""
 
@@ -64,7 +64,7 @@ def create_training_job(
                 },
             },
             {
-                "ChannelName": "manifest",
+                "ChannelName": "model_card",
                 "DataSource": {
                     "S3DataSource": {
                         "S3DataType": "S3Prefix",
