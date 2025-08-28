@@ -11,13 +11,9 @@ git:
   git_cache_bust: 1
 
 source:
-  datasets_dir: ../datasets
-  models_dir: ../models
+  datasets_dir: ../../../datasets
+  models_dir: ../../../models
   
 destination:
-  aws:
-    output_dir: output/aws
-    metric_dir: metric/aws
-  local:
-    output_dir: output/local
-    metric_dir: metric/local
+  output_dir: output
+  metric_dir: metric

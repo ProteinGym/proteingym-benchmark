@@ -1,0 +1,97 @@
+schema: '2.0'
+stages:
+  create_training_job@dataset0-model0:
+    cmd:
+    - docker build --build-arg GIT_CACHE_BUST=1 --secret id=git_auth,src=../git-auth.txt
+      -f ../../../models/pls/Dockerfile -t pls:latest ../../..
+    - docker run --rm -v $(realpath ../../../datasets):/datasets -v $(realpath ../../../models):/models
+      -v $(realpath output):/opt/ml/model pls:latest train --dataset-file /datasets/dummy/dataset.zip
+      --model-toml-file /models/pls/manifest.toml
+    - docker image prune -a -f
+    deps:
+    - path: ../../../datasets/dummy/dataset.zip
+      hash: md5
+      md5: 6efa993ab1d169974759032feae3f93c
+      size: 33985
+    - path: ../../../models/pls/Dockerfile
+      hash: md5
+      md5: 901a42e51cf4a14665099985ee9c30de
+      size: 1138
+    - path: ../../../models/pls/manifest.toml
+      hash: md5
+      md5: 751569f65bbbc4d796ddc02a70dce809
+      size: 185
+    - path: logs/setup.txt
+      hash: md5
+      md5: c861b0c201d5e28492f5dff8fab634f5
+      size: 26
+    outs:
+    - path: output/charge_ladder_pls.csv
+      hash: md5
+      md5: 24c58ef7387c61823caab5308d78c3ba
+      size: 13770
+  create_training_job@dataset1-model0:
+    cmd:
+    - docker build --build-arg GIT_CACHE_BUST=1 --secret id=git_auth,src=../git-auth.txt
+      -f ../../../models/pls/Dockerfile -t pls:latest ../../..
+    - docker run --rm -v $(realpath ../../../datasets):/datasets -v $(realpath ../../../models):/models
+      -v $(realpath output):/opt/ml/model pls:latest train --dataset-file /datasets/neime/dataset.zip
+      --model-toml-file /models/pls/manifest.toml
+    - docker image prune -a -f
+    deps:
+    - path: ../../../datasets/neime/dataset.zip
+      hash: md5
+      md5: 45524cd511a606635ea0ba0b84ce7b55
+      size: 8375
+    - path: ../../../models/pls/Dockerfile
+      hash: md5
+      md5: 901a42e51cf4a14665099985ee9c30de
+      size: 1138
+    - path: ../../../models/pls/manifest.toml
+      hash: md5
+      md5: 751569f65bbbc4d796ddc02a70dce809
+      size: 185
+    - path: logs/setup.txt
+      hash: md5
+      md5: c861b0c201d5e28492f5dff8fab634f5
+      size: 26
+    outs:
+    - path: output/neime_pls.csv
+      hash: md5
+      md5: ea6cb8d915611f962ee44dbf07bbe086
+      size: 35152
+  calculate_metric@dataset0-model0:
+    cmd: uv run pg2-benchmark metric calc --output-path output/charge_ladder_pls.csv
+      --metric-path metric/charge_ladder_pls.csv
+    deps:
+    - path: output/charge_ladder_pls.csv
+      hash: md5
+      md5: 24c58ef7387c61823caab5308d78c3ba
+      size: 13770
+    outs:
+    - path: metric/charge_ladder_pls.csv
+      hash: md5
+      md5: 82e59e4f463f6613ab5dffe732f09e59
+      size: 1457
+  calculate_metric@dataset1-model0:
+    cmd: uv run pg2-benchmark metric calc --output-path output/neime_pls.csv --metric-path
+      metric/neime_pls.csv
+    deps:
+    - path: output/neime_pls.csv
+      hash: md5
+      md5: ea6cb8d915611f962ee44dbf07bbe086
+      size: 35152
+    outs:
+    - path: metric/neime_pls.csv
+      hash: md5
+      md5: 54bba84b8baed2ab0bdf634da18c2747
+      size: 1620
+  setup:
+    cmd:
+    - mkdir -p logs output metric
+    - echo "Created local directories" > logs/setup.txt
+    outs:
+    - path: logs/setup.txt
+      hash: md5
+      md5: c861b0c201d5e28492f5dff8fab634f5
+      size: 26
