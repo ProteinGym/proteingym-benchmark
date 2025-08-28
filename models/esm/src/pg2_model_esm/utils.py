@@ -14,17 +14,17 @@ def label_row(
     mutant amino acid versus the wildtype amino acid at a given sequence position.
 
     Args:
-        row (str): A mutation string in the format "WT{position}MT" where:
+        row: A mutation string in the format "WT{position}MT" where:
                   - WT is the wildtype amino acid (single letter)
                   - {position} is the 1-indexed position in the sequence
                   - MT is the mutant amino acid (single letter)
                   Example: "A123V" means Alanine at position 123 mutated to Valine
-        sequence (str): The reference protein sequence used to validate the wildtype amino acid
-        token_probs (torch.Tensor): Log probability tensor with shape (batch_size, seq_len + 1, vocab_size)
+        sequence: The reference protein sequence used to validate the wildtype amino acid
+        token_probs: Log probability tensor with shape (batch_size, seq_len + 1, vocab_size)
                                    where seq_len + 1 accounts for the BOS (Beginning of Sequence) token
         alphabet: An alphabet object with a get_idx() method that returns the vocabulary index
                  for a given amino acid character
-        offset_idx (int): Offset to convert from 1-indexed position notation to 0-indexed sequence indexing
+        offset_idx: Offset to convert from 1-indexed position notation to 0-indexed sequence indexing
 
     Returns:
         float: The mutation effect score calculated as:
@@ -65,19 +65,19 @@ def compute_pppl(
     can predict the mutated sequence.
 
     Args:
-        row (str): A mutation string in the format "WT{position}MT" where:
+        row: A mutation string in the format "WT{position}MT" where:
                   - WT is the wildtype amino acid (single letter)
                   - {position} is the 1-indexed position in the sequence
                   - MT is the mutant amino acid (single letter)
                   Example: "A123V" means Alanine at position 123 mutated to Valine
-        sequence (str): The reference protein sequence to be mutated
+        sequence: The reference protein sequence to be mutated
         model: A protein language model (e.g., ESM) that can predict masked amino acids.
                Must have a forward method that returns a dictionary with "logits" key
         alphabet: An alphabet object with methods:
                  - get_batch_converter(): returns a batch converter for tokenization
                  - get_idx(aa): returns vocabulary index for amino acid
                  - mask_idx: attribute containing the mask token index
-        offset_idx (int): Offset to convert from 1-indexed position notation to 0-indexed sequence indexing
+        offset_idx: Offset to convert from 1-indexed position notation to 0-indexed sequence indexing
 
     Returns:
         float: The sum of log probabilities across all positions in the mutated sequence.
