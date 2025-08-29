@@ -24,7 +24,7 @@ The datasets are included in the [dataset](datasets/) folder.
 
 ## Benchmark
 
-The benchmark is defined in the [benchmark](benchmark/) folder, where each dataset occupies a subfolder.
+The benchmark is defined in the [benchmark](benchmark/) folder, where there exist two games: supervised and zero-shot.
 
 In order to build the archived file for each dataset, [pg2-dataset](https://github.com/ProteinGym2/pg2-dataset) is used.
 
@@ -108,3 +108,4 @@ You can generate dummy data by the following command:
 ```shell
 uv run pg2-benchmark dataset generate-dummy-data supervised/data/dummy/charge_ladder.csv --n-rows 5 --sequence-length 100
 ```
+
