@@ -1,9 +1,13 @@
 ---
+# Model identifier used for referencing this model in the benchmark system
 name: "pls"
 
 hyper_params:
+    # Number of PLS components to extract (dimensionality of the reduced space)
     n_components: 2
+    # Standard 20 amino acid single-letter codes
     aa_alphabet: ["A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y"]
+    # Total number of amino acids in the alphabet (must match aa_alphabet length)
     aa_alphabet_length: 20
 ---
 

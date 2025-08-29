@@ -1,7 +1,9 @@
-import pytest
 from pathlib import Path
-from pg2_benchmark.model_card import ModelCard
+
+import pytest
 from pydantic import ValidationError
+
+from pg2_benchmark.model_card import ModelCard
 
 
 @pytest.fixture
@@ -52,4 +54,4 @@ def test_manifest_hyper_params(model_card_path: Path) -> None:
     except ValidationError as e:
         raise ValidationError("ValidationError raised") from e
     else:
-        assert model_card.hyper_params["nogpu"] is False
+        assert not model_card.hyper_params["nogpu"]

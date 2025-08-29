@@ -8,7 +8,27 @@ Before you start, you need to create a `git-auth.txt` file in two folders respec
 https://username:token@github.com
 ```
 
+## Models
+
+The models are included in the [models](models/) folder, where each model occupies a subfolder as its repo.
+
+A model repo contains its README.md as a model card, which comes in two parts:
+- Metadata, which is a YAML section at the top, i.e., front matter.
+- Text descriptions, which is a Markdown file, including summary and descriptions of the model.
+
+For more information, you can reference Hugging Face's [model cards](https://huggingface.co/docs/hub/en/model-cards).
+
+## Datasets
+
+The datasets are included in the [dataset](datasets/) folder.
+
 ## Benchmark
+
+The benchmark is defined in the [benchmark](benchmark/) folder, where each dataset occupies a subfolder.
+
+In order to build the archived file for each dataset, [pg2-dataset](https://github.com/ProteinGym2/pg2-dataset) is used.
+
+You can reference [this guide](https://github.com/ProteinGym2/pg2-dataset?tab=readme-ov-file#archive-data) to build the archived dataset.
 
 ### Local environment
 

@@ -1,10 +1,15 @@
 ---
+# Model identifier used for referencing this model in the benchmark system
 name: "esm"
 
 hyper_params:
+    # HuggingFace model checkpoint identifier for the specific ESM-2 variant
     location: "esm2_t30_150M_UR50D"
+    # Scoring method: calculates marginal probabilities for wild-type amino acids
     scoring_strategy: "wt-marginals"
+    # Whether to disable GPU usage (false = use GPU if available)
     nogpu: false
+    # Offset index for sequence position alignment in tokenization
     offset_idx: 24
 ---
 
