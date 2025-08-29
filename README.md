@@ -20,15 +20,15 @@ For more information, you can reference Hugging Face's [model cards](https://hug
 
 ## Datasets
 
-The datasets are included in the [dataset](datasets/) folder.
-
-## Benchmark
-
-The benchmark is defined in the [benchmark](benchmark/) folder, where there exist two games: supervised and zero-shot.
+The datasets are included in the [dataset](datasets/) folder, where each dataset goes into a subfolder.
 
 In order to build the archived file for each dataset, [pg2-dataset](https://github.com/ProteinGym2/pg2-dataset) is used.
 
 You can reference [this guide](https://github.com/ProteinGym2/pg2-dataset?tab=readme-ov-file#archive-data) to build the archived dataset.
+
+## Benchmark
+
+The benchmark is defined in the [benchmark](benchmark/) folder, where there exist two games: supervised and zero-shot.
 
 ### Local environment
 
@@ -108,4 +108,5 @@ You can generate dummy data by the following command:
 ```shell
 uv run pg2-benchmark dataset generate-dummy-data supervised/data/dummy/charge_ladder.csv --n-rows 5 --sequence-length 100
 ```
+
 
