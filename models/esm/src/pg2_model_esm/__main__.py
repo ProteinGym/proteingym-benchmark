@@ -4,7 +4,7 @@ import typer
 from rich.console import Console
 from pg2_dataset.dataset import Dataset
 from pg2_model_esm.model import load, infer
-from pg2_benchmark.manifest import Manifest
+from pg2_benchmark.model_card import ModelCard
 
 
 app = typer.Typer(
@@ -18,7 +18,7 @@ console = Console()
 class SageMakerTrainingJobPath:
     PREFIX = Path("/opt/ml")
     TRAINING_JOB_PATH = PREFIX / "input" / "data" / "training" / "dataset.zip"
-    MANIFEST_PATH = PREFIX / "input" / "data" / "manifest" / "manifest.toml"
+    MODEL_CARD_PATH = PREFIX / "input" / "data" / "model_card" / "README.md"
     OUTPUT_PATH = PREFIX / "model"
 
 
@@ -30,34 +30,34 @@ def train(
             help="Path to the dataset file",
         ),
     ] = SageMakerTrainingJobPath.TRAINING_JOB_PATH,
-    model_toml_file: Annotated[
+    model_card_file: Annotated[
         Path,
         typer.Option(
-            help="Path to the model TOML file",
+            help="Path to the model card markdown file",
         ),
-    ] = SageMakerTrainingJobPath.MANIFEST_PATH,
+    ] = SageMakerTrainingJobPath.MODEL_CARD_PATH,
 ):
-    console.print(f"Loading {dataset_file} and {model_toml_file}...")
+    console.print(f"Loading {dataset_file} and {model_card_file}...")
 
     dataset = Dataset.from_path(dataset_file)
-    manifest = Manifest.from_path(model_toml_file)
+    model_card = ModelCard.from_path(model_card_file)
 
-    model, alphabet = load(manifest)
+    model, alphabet = load(model_card)
 
     df = infer(
         dataset=dataset,
-        manifest=manifest,
+        model_card=model_card,
         model=model,
         alphabet=alphabet,
     )
 
     df.to_csv(
-        f"{SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{manifest.name}.csv",
+        f"{SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}.csv",
         index=False,
     )
 
     console.print(
-        f"Saved the metrics in CSV in {SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{manifest.name}.csv"
+        f"Saved the metrics in CSV in {SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}.csv"
     )
 
 

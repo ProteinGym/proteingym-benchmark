@@ -1,39 +1,29 @@
-# pg2-model-esm
+---
+# Model identifier used for referencing this model in the benchmark system
+name: "esm"
 
-This is the model built from the cookie-cutter template: https://github.com/ProteinGym2/pg2-model
+hyper_params:
+    # HuggingFace model checkpoint identifier for the specific ESM-2 variant
+    location: "esm2_t30_150M_UR50D"
+    # Scoring method: calculates marginal probabilities for wild-type amino acids
+    scoring_strategy: "wt-marginals"
+    # Whether to disable GPU usage (false = use GPU if available)
+    nogpu: false
+    # Offset index for sequence position alignment in tokenization
+    offset_idx: 24
+---
 
-You can create your own model repo by: 
-```
-uvx cookiecutter https://github.com/ProteinGym2/pg2-model.git
-```
+# Model Card for ESM-2
 
-> [!TIP]
-> You can install `uv` by this guide: https://docs.astral.sh/uv/getting-started/installation/
+ESM-2 is a state-of-the-art protein model trained on a masked language modelling objective. It is suitable for fine-tuning on a wide range of tasks that take protein sequences as input. For detailed information on the model architecture and training data, please refer to the [accompanying paper](https://www.biorxiv.org/content/10.1101/2022.07.20.500902v2). You may also be interested in some demo notebooks ([PyTorch](https://colab.research.google.com/github/huggingface/notebooks/blob/main/examples/protein_language_modeling.ipynb), [TensorFlow](https://colab.research.google.com/github/huggingface/notebooks/blob/main/examples/protein_language_modeling-tf.ipynb)) which demonstrate how to fine-tune ESM-2 models on your tasks of interest.
 
-## Getting started
+Several ESM-2 checkpoints are available in the Hub with varying sizes. Larger sizes generally have somewhat better accuracy, but require much more memory and time to train:
 
-1. Create a `git-auth.txt` file in the root path with the following content:
-
-```
-https://username:token@github.com
-```
-
-2. After you've created your project, you can run the following commands to build and score your model:
-
-Build a model:
-```shell
-docker build \
---secret id=git_auth,src=git-auth.txt \
--t test-model .
-```
-
-Score a model:
-```shell
-docker run --rm -v $(pwd)/data:/data test-model \
-    predict \
-    --dataset-toml-file /data/dataset.toml \
-    --model-toml-file /data/model.toml
-```
-
-> [!TIP]
-> You can check the commands with help: `docker run --rm test-model --help`
+| Checkpoint name | Num layers | Num parameters |
+|------------------------------|----|----------|
+| [esm2_t48_15B_UR50D](https://huggingface.co/facebook/esm2_t48_15B_UR50D) | 48 | 15B     |
+| [esm2_t36_3B_UR50D](https://huggingface.co/facebook/esm2_t36_3B_UR50D) | 36 | 3B      | 
+| [esm2_t33_650M_UR50D](https://huggingface.co/facebook/esm2_t33_650M_UR50D) | 33 | 650M    | 
+| [esm2_t30_150M_UR50D](https://huggingface.co/facebook/esm2_t30_150M_UR50D) | 30 | 150M    | 
+| [esm2_t12_35M_UR50D](https://huggingface.co/facebook/esm2_t12_35M_UR50D) | 12 | 35M     | 
+| [esm2_t6_8M_UR50D](https://huggingface.co/facebook/esm2_t6_8M_UR50D)  | 6  | 8M      | 

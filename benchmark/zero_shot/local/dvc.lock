@@ -6,7 +6,7 @@ stages:
       -f ../../../models/esm/Dockerfile -t esm:latest ../../..
     - docker run --rm -v $(realpath ../../../datasets):/datasets -v $(realpath ../../../models):/models
       -v $(realpath output):/opt/ml/model esm:latest train --dataset-file /datasets/ranganathan/dataset.zip
-      --model-toml-file /models/esm/manifest.toml
+      --model-card-file /models/esm/README.md
     - docker image prune -a -f
     deps:
     - path: ../../../datasets/ranganathan/dataset.zip
@@ -17,10 +17,14 @@ stages:
       hash: md5
       md5: 7f13567daf55f157ab05f23602a1f53e
       size: 1138
-    - path: ../../../models/esm/manifest.toml
+    - path: ../../../models/esm/README.md
       hash: md5
-      md5: a8939829e644ac1b53b66a4fe6bd149e
-      size: 125
+      md5: 10e1bc81ab111c1023db5b3df2f77e0f
+      size: 1741
+    - path: logs/setup.txt
+      hash: md5
+      md5: c861b0c201d5e28492f5dff8fab634f5
+      size: 26
     outs:
     - path: output/ranganathan_esm.csv
       hash: md5
@@ -39,3 +43,12 @@ stages:
       hash: md5
       md5: f38bb057ff25591c67c5985a58af8d1f
       size: 1588
+  setup:
+    cmd:
+    - mkdir -p logs output metric
+    - echo "Created local directories" > logs/setup.txt
+    outs:
+    - path: logs/setup.txt
+      hash: md5
+      md5: c861b0c201d5e28492f5dff8fab634f5
+      size: 26

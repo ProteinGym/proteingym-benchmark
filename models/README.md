@@ -20,20 +20,20 @@ dataset = Dataset.from_path(dataset_file)
 
 Additionally, this entrypoint also expects a reference to a model card, e.g., loaded by `pg2-benchmark`:
 
-```
-from pg2_benchmark.manifest import Manifest
-manifest = Manifest.from_path(model_toml_file)
+```python
+from pg2_benchmark.model_card import ModelCard
+model_card = ModelCard.from_path(model_card_file)
 ```
 
 Finally, inside this `train` method:
 
 * For a **supervised** model, like [esm](esm/), it calls `load` and `infer` in order:
-    * `load` uses `manifest` as input, and returns a model object as output.
-    * `infer` uses `dataset`, `manifest` and the model object as input, and returns the inferred predictions in a data frame as output.
+    * `load` uses `model_card` as input, and returns a model object as output.
+    * `infer` uses `dataset`, `model_card` and the model object as input, and returns the inferred predictions in a data frame as output.
 
 * For a **zero-shot** model, like [pls](pls/), it calls `train` and `infer` in order:
-    * `train` uses `dataset` and `manifest` as input, and returns a model object as output.
-    * `infer` uses `dataset`, `manifest` and the model object as input, and returns the inferred predictions in a data frame as output.
+    * `train` uses `dataset` and `model_card` as input, and returns a model object as output.
+    * `infer` uses `dataset`, `model_card` and the model object as input, and returns the inferred predictions in a data frame as output.
 
 The result data frame is saved on the disk in the local environment and stored in AWS S3 in the cloud environment. After the container is destroyed, the result data frame is persisted for the later metric calculation.
 
@@ -42,8 +42,8 @@ For reference, below an example Python implementation with `typer`:
 ``` python
 # In `__main__.py`
 import typer
-from pg2_dataset import Dataset
-from pg2_benchmark import Manifest
+from pg2_dataset.dataset import Dataset
+from pg2_benchmark.model_card import ModelCard
 
 
 app = typer.Typer(
@@ -54,13 +54,13 @@ app = typer.Typer(
 
 @app.command()
 def train(
-    dataset_reference: Annotated[
+    dataset_file: Annotated[
         Path,
         typer.Option(
             help="Path to the archived dataset",
         ),
     ],
-    model_reference: Annotated[
+    model_card_file: Annotated[
         Path,
         typer.Option(
             help="Path to the model card file",
@@ -68,17 +68,17 @@ def train(
     ],
 ) -> Path:
 
-    dataset = Dataset.from_path(dataset_path)
-    manifest = Manifest.from_path(model_card_path)
+    dataset = Dataset.from_path(dataset_file)
+    model_card = ModelCard.from_path(model_card_file)
 
     # For a supervised model
-    model = load(manifest)
-    df = infer(dataset, manifest, model)
+    model = load(model_card)
+    df = infer(dataset, model_card, model)
     df.to_csv(...)
 
     # For a zero-shot model
-    model = train(dataset, manifest)
-    df = infer(dataset, manifest, model)
+    model = train(dataset, model_card)
+    df = infer(dataset, model_card, model)
     df.to_csv(...)
 
 
@@ -129,35 +129,35 @@ def train_test_split(data: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 `model.py` contains the code related with model:
 
 ``` python
-def train(dataset: Dataset, manifest: Manifest) -> Any
+def train(dataset: Dataset, model_card: ModelCard) -> Any
     """Train the model."""
     X, y = load_x_and_y(
         dataset=dataset,
         split="train",
     )
 
-    model = Model(manifest)
+    model = Model(model_card)
     model.fit(X, y)
 
     return model
 ```
 
 ``` python
-def load(manifest: Manifest) -> Any:
+def load(model_card: ModelCard) -> Any:
     """Load the model."""
-    model = Model.from_manifest(manifest)
+    model = Model(model_card)
     return model
 ```
 
 ``` python
-def infer(dataset: Dataset, manifest: Manifest, model: Any) -> DataFrame:
+def infer(dataset: Dataset, model_card: ModelCard, model: Any) -> DataFrame:
     """Infer predictions on the data."""
     X, y = load_x_and_y(
         dataset=dataset,
         split="test",
     )
 
-    predictions = model.predict(manifest, X)
+    predictions = model.predict(model_card, X)
 
     df = DataFrame(predictions)
 
@@ -188,8 +188,8 @@ class SageMakerPathLayout:
     TRAINING_JOB_PATH: Path = PREFIX / "input" / "data" / "training" / "dataset.zip"
     """Path to training data."""
 
-    MANIFEST_PATH: Path = PREFIX / "input" / "data" / "manifest" / "manifest.toml"
-    """Path to the model manifest."""
+    MODEL_CARD_PATH: Path = PREFIX / "input" / "data" / "model_card" / "README.md"
+    """Path to the model card."""
 
     OUTPUT_PATH = PREFIX / "output"
     """Path to the output, such as the result data frames."""

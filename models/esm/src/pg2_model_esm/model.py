@@ -4,7 +4,7 @@ from tqdm import tqdm
 import pandas as pd
 from esm import pretrained
 from pg2_dataset.dataset import Dataset
-from pg2_benchmark.manifest import Manifest
+from pg2_benchmark.model_card import ModelCard
 from pg2_model_esm.preprocess import encode
 from pg2_model_esm.utils import compute_pppl, label_row
 import logging
@@ -12,25 +12,25 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def load(manifest: Manifest) -> tuple[torch.nn.Module, Alphabet]:
+def load(model_card: ModelCard) -> tuple[torch.nn.Module, Alphabet]:
     """Load and configure an ESM model and its alphabet.
 
-    Loads a pretrained ESM model from the location specified in the manifest,
+    Loads a pretrained ESM model from the location specified in the model card,
     sets it to evaluation mode, and optionally transfers it to GPU if available
     and not disabled.
 
     Args:
-        manifest: Configuration object containing model location and GPU settings
+        model_card: Configuration object containing model location and GPU settings
 
     Returns:
         tuple: The loaded ESM model and its corresponding alphabet
     """
     model, alphabet = pretrained.load_model_and_alphabet(
-        manifest.hyper_params["location"]
+        model_card.hyper_params["location"]
     )
     model.eval()
 
-    if torch.cuda.is_available() and not manifest.hyper_params["nogpu"]:
+    if torch.cuda.is_available() and not model_card.hyper_params["nogpu"]:
         model = model.cuda()
         print("Transferred model to GPU")
 
@@ -39,7 +39,7 @@ def load(manifest: Manifest) -> tuple[torch.nn.Module, Alphabet]:
 
 def infer(
     dataset: Dataset,
-    manifest: Manifest,
+    model_card: ModelCard,
     model: torch.nn.Module,
     alphabet: Alphabet,
 ) -> pd.DataFrame:
@@ -47,11 +47,11 @@ def infer(
 
     Computes fitness scores for protein mutations using one of three scoring
     strategies: wild-type marginals, masked marginals, or pseudo-perplexity.
-    The scoring strategy is determined by the manifest configuration.
+    The scoring strategy is determined by the model card.
 
     Args:
         dataset: Dataset containing assay data with mutations to score
-        manifest: Configuration object specifying scoring strategy and parameters
+        model_card: Configuration object specifying scoring strategy and parameters
         model: The loaded ESM model for computing predictions
         alphabet: ESM alphabet for token encoding/decoding
 
@@ -72,7 +72,7 @@ def infer(
 
     batch_tokens = encode(sequence, alphabet)
 
-    match manifest.hyper_params["scoring_strategy"]:
+    match model_card.hyper_params["scoring_strategy"]:
         case "wt-marginals":
             with torch.no_grad():
                 token_probs = torch.log_softmax(model(batch_tokens)["logits"], dim=-1)
@@ -83,7 +83,7 @@ def infer(
                     sequence,
                     token_probs,
                     alphabet,
-                    manifest.hyper_params["offset_idx"],
+                    model_card.hyper_params["offset_idx"],
                 ),
                 axis=1,
             )
@@ -110,7 +110,7 @@ def infer(
                     sequence,
                     token_probs,
                     alphabet,
-                    manifest.hyper_params["offset_idx"],
+                    model_card.hyper_params["offset_idx"],
                 ),
                 axis=1,
             )
@@ -124,14 +124,14 @@ def infer(
                     sequence,
                     model,
                     alphabet,
-                    manifest.hyper_params["offset_idx"],
+                    model_card.hyper_params["offset_idx"],
                 ),
                 axis=1,
             )
 
         case _:
             raise ValueError(
-                f"Unrecognized scoring strategy: {manifest.hyper_params['scoring_strategy']}"
+                f"Unrecognized scoring strategy: {model_card.hyper_params['scoring_strategy']}"
             )
 
     df.rename(columns={targets[0]: "test"}, inplace=True)

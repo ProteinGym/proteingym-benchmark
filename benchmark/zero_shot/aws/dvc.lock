@@ -5,7 +5,7 @@ stages:
     - aws s3 cp ../../../datasets/ s3://mango-pe/pg2-benchmark-training-data/datasets
       --recursive --exclude "*" --include "*.zip"
     - aws s3 cp ../../../models/ s3://mango-pe/pg2-benchmark-training-data/models
-      --recursive --exclude "*" --include "*.toml"
+      --recursive --exclude "*" --include "README.md"
     - echo "Upload completed at $(date)" > logs/s3_upload_complete.txt
     deps:
     - path: ../../../datasets/
@@ -15,9 +15,9 @@ stages:
       nfiles: 7
     - path: ../../../models/
       hash: md5
-      md5: d3ad141f0c54799e8f96bd640c686b79.dir
-      size: 1381199847
-      nfiles: 48393
+      md5: 8a2a310671abbb469d6d45d56c1ec859.dir
+      size: 1381200239
+      nfiles: 48391
     - path: logs/setup.txt
       hash: md5
       md5: c861b0c201d5e28492f5dff8fab634f5
@@ -25,7 +25,7 @@ stages:
     outs:
     - path: logs/s3_upload_complete.txt
       hash: md5
-      md5: b841533c85ad082aeed20da08556f9cc
+      md5: 2de978e81f106363692c3c775ae44ecb
       size: 50
   setup:
     cmd:
