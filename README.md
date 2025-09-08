@@ -18,6 +18,21 @@ A model repo contains its README.md as a model card, which comes in two parts:
 
 For more information, you can reference Hugging Face's [model cards](https://huggingface.co/docs/hub/en/model-cards).
 
+In order to validate whether you containerise your model correclty, you can run:
+
+```shell
+uv run pg2-benchmark validate <your_model_name>
+```
+
+For example, after running `uv run pg2-benchmark validate esm`, you will get the following messages to ensure that the model [esm](models/esm/) is containerised correctly with the right model card and entrypoint:
+
+```shell
+Uninstalled 34 packages in 504ms
+Installed 34 packages in 83ms
+✅ Loaded esm with hyper parameters {'location': 'esm2_t30_150M_UR50D', 'scoring_strategy': 'wt-marginals', 'nogpu': False, 'offset_idx': 24}.
+✅ Model esm has a valid 'train' entrypoint with required params: ['dataset_file', 'model_card_file']
+```
+
 ## Datasets
 
 The datasets are included in the [dataset](datasets/) folder, where each dataset goes into a subfolder.
@@ -53,14 +68,14 @@ for dataset in datasets:
 
 You can benchmark a group of supervised models:
 ```shell
-dvc repro benchmark/supervised/local/dvc.yaml
+uv run dvc repro benchmark/supervised/local/dvc.yaml
 ```
 
 #### Zero-shot
 
 You can benchmark a group of zero-shot models:
 ```shell
-dvc repro benchmark/zero_shot/local/dvc.yaml
+uv run dvc repro benchmark/zero_shot/local/dvc.yaml
 ```
 
 ### AWS environment
@@ -92,14 +107,14 @@ The difference of the AWS environment is that:
 
 You can benchmark a group of supervised models:
 ```shell
-AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro benchmark/supervised/aws/dvc.yaml
+AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy uv run dvc repro benchmark/supervised/aws/dvc.yaml
 ```
 
 #### Zero-shot
 
 You can benchmark a group of zero-shot models:
 ```shell
-AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro benchmark/zero_shot/aws/dvc.yaml
+AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy uv run dvc repro benchmark/zero_shot/aws/dvc.yaml
 ```
 
 ## Generate dummy data
