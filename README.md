@@ -18,6 +18,8 @@ A model repo contains its README.md as a model card, which comes in two parts:
 
 For more information, you can reference Hugging Face's [model cards](https://huggingface.co/docs/hub/en/model-cards).
 
+### Model validation
+
 In order to validate whether you containerise your model correclty, you can run:
 
 ```shell
@@ -123,5 +125,6 @@ You can generate dummy data by the following command:
 ```shell
 uv run pg2-benchmark dataset generate-dummy-data supervised/data/dummy/charge_ladder.csv --n-rows 5 --sequence-length 100
 ```
+
 
 
