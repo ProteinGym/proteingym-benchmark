@@ -17,6 +17,7 @@ class ModelPath:
     PACKAGE_PREFIX = "pg2_model"
     MODEL_CARD_PATH = Path("README.md")
     MAIN_PY_PATH = Path("__main__.py")
+    APP_NAME = "app"
     COMMAND_NAME = "train"
     COMMAND_PARAMS = ["dataset_file", "model_card_file"]
 
@@ -71,60 +72,20 @@ def validate(
         raise typer.Exit(1)
 
     try:
+        validator_script = Path(__file__).parent / "model_validator.py"
+
         result = subprocess.run(
             [
                 "uv",
                 "run",
                 "--active",
                 "python",
-                "-c",
-                f"""
-import importlib.util
-import inspect
-import json
-import sys
-
-try:
-    spec = importlib.util.spec_from_file_location('{ModelPath.PACKAGE_PREFIX}_{model_name}.__main__', '{ModelPath.PACKAGE_PREFIX}_{model_name}/__main__.py')
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-
-    app = getattr(module, "app")
-        
-    entrypoint_command_found = False
-    entrypoint_params_found = False
-
-    for command in app.registered_commands:
-        if '{ModelPath.COMMAND_NAME}' == command.callback.__name__:
-            entrypoint_command_found = True
-
-            sig = inspect.signature(command.callback)
-            
-            if {ModelPath.COMMAND_PARAMS} == list(sig.parameters.keys()):
-                entrypoint_params_found = True
-            
-            break
-
-    validation_result = {{
-        'success': True,
-        'entrypoint_command_found': entrypoint_command_found,
-        'entrypoint_params_found': entrypoint_params_found,
-        'module_loaded': True
-    }}
-
-    print(json.dumps(validation_result))
-    
-except Exception as e:
-    error_result = {{
-        'success': False,
-        'entrypoint_command_found': False,
-        'entrypoint_params_found': False,
-        'module_loaded': False,
-        'error': str(e)
-    }}
-    print(json.dumps(error_result))
-    sys.exit(1)
-            """,
+                str(validator_script),
+                model_name,
+                ModelPath.PACKAGE_PREFIX,
+                ModelPath.APP_NAME,
+                ModelPath.COMMAND_NAME,
+                json.dumps(ModelPath.COMMAND_PARAMS),
             ],
             cwd=ModelPath.ROOT_PATH / model_name / ModelPath.SRC_PATH,
             capture_output=True,
