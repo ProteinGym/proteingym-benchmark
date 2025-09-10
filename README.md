@@ -29,6 +29,7 @@ uv run pg2-benchmark validate <your_model_name>
 For example, after running `uv run pg2-benchmark validate esm`, you will get the following messages to ensure that the model [esm](models/esm/) is containerised correctly with the right model card and entrypoint:
 
 ```shell
+$ uv run pg2-benchmark validate esm
 Uninstalled 34 packages in 504ms
 Installed 34 packages in 83ms
 ✅ Loaded esm with hyper parameters {'location': 'esm2_t30_150M_UR50D', 'scoring_strategy': 'wt-marginals', 'nogpu': False, 'offset_idx': 24}.
