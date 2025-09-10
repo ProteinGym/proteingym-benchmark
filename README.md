@@ -42,6 +42,17 @@ $ uv run pg2-benchmark validate model-card esm
 ✅ Loaded esm with hyper parameters {'location': 'esm2_t30_150M_UR50D', 'scoring_strategy': 'wt-marginals', 'nogpu': False, 'offset_idx': 24}.
 ```
 
+#### Model entrypoint
+
+The model entrypoint is quite fixed, it needs a `train` entrypoint for either supervised or zero-shot model. In this sense, `train` is just a function name for the entrypoint across both local and AWS environments, which does not necessarily mean "train a model".
+
+So we need to verify if the model has the required entrypoint by:
+
+```shell
+$ uv run pg2-benchmark validate model-entrypoint esm
+✅ Model esm has a valid 'train' entrypoint with required params: ['dataset_file', 'model_card_file']
+```
+
 ## Datasets
 
 The datasets are included in the [dataset](datasets/) folder, where each dataset goes into a subfolder.

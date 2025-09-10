@@ -1,3 +1,5 @@
+import json
+import subprocess
 from pathlib import Path
 from typing import Annotated
 
@@ -40,4 +42,72 @@ def model_card(
         )
     except Exception as e:
         typer.echo(f"❌ Error loading model card from {model_card_path}: {e}")
+        raise typer.Exit(1)
+
+
+@validate_app.command()
+def model_entrypoint(
+    model_name: Annotated[
+        str, typer.Argument(help="The model name listed in the `models` folder")
+    ],
+):
+    main_py_path = (
+        ModelPath.ROOT_PATH
+        / model_name
+        / ModelPath.SRC_PATH
+        / f"{ModelPath.PACKAGE_PREFIX}_{model_name}"
+        / ModelPath.MAIN_PY_PATH
+    )
+
+    if not main_py_path.exists():
+        typer.echo(
+            f"❌ Model {model_name} does not have a {ModelPath.MAIN_PY_PATH} file at {main_py_path}"
+        )
+        raise typer.Exit(1)
+
+    try:
+        validator_script = Path(__file__).parent.parent / "model_validator.py"
+
+        result = subprocess.run(
+            [
+                "uv",
+                "run",
+                "--active",
+                "python",
+                str(validator_script),
+                model_name,
+                ModelPath.PACKAGE_PREFIX,
+                ModelPath.APP_NAME,
+                ModelPath.COMMAND_NAME,
+                json.dumps(ModelPath.COMMAND_PARAMS),
+            ],
+            cwd=ModelPath.ROOT_PATH / model_name / ModelPath.SRC_PATH,
+            capture_output=True,
+            text=True,
+        )
+
+        if result.returncode == 0:
+            validation_data = json.loads(result.stdout.strip())
+
+            if not validation_data["entrypoint_command_found"]:
+                typer.echo(
+                    f"❌ Model {model_name} does not have a '{ModelPath.COMMAND_NAME}' command"
+                )
+                raise typer.Exit(1)
+
+            if not validation_data["entrypoint_params_found"]:
+                typer.echo(
+                    f"❌ Model {model_name}'s '{ModelPath.COMMAND_NAME}' command does not have the required params: {ModelPath.COMMAND_PARAMS}"
+                )
+                raise typer.Exit(1)
+
+            typer.echo(
+                f"✅ Model {model_name} has a valid '{ModelPath.COMMAND_NAME}' entrypoint with required params: {ModelPath.COMMAND_PARAMS}"
+            )
+        else:
+            typer.echo(f"❌ Error loading module {main_py_path}: {result.stderr}")
+            raise typer.Exit(1)
+
+    except Exception as e:
+        typer.echo(f"❌ Error running validation subprocess: {e}")
         raise typer.Exit(1)
