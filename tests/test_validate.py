@@ -8,7 +8,7 @@ from pg2_benchmark.cli.validate import ModelPath, validate_app
 
 
 @pytest.fixture
-def runner():
+def runner() -> CliRunner:
     """Test runner for CLI commands."""
     return CliRunner()
 
