@@ -8,6 +8,13 @@ Before you start, you need to create a `git-auth.txt` file in two folders respec
 https://username:token@github.com
 ```
 
+### Install uv
+
+We use [uv](https://docs.astral.sh/uv/) to manage our Python package and project, so it is required to install `uv`.
+
+> [!TIP]
+> You can install uv by this guide: https://docs.astral.sh/uv/getting-started/installation/
+
 ## Models
 
 The models are included in the [models](models/) folder, where each model occupies a subfolder as its repo.
@@ -17,6 +24,23 @@ A model repo contains its README.md as a model card, which comes in two parts:
 - Text descriptions, which is a Markdown file, including summary and descriptions of the model.
 
 For more information, you can reference Hugging Face's [model cards](https://huggingface.co/docs/hub/en/model-cards).
+
+### Model validation
+
+#### Model card
+
+In order to sanity check if your model works correctly with a loadable model card, you can run:
+
+```shell
+$ uv run pg2-benchmark validate model-card <your_model_name>
+```
+
+Take the [esm](models/esm/) model for example:
+
+```shell
+$ uv run pg2-benchmark validate model-card esm
+✅ Loaded esm with hyper parameters {'location': 'esm2_t30_150M_UR50D', 'scoring_strategy': 'wt-marginals', 'nogpu': False, 'offset_idx': 24}.
+```
 
 ## Datasets
 
@@ -53,14 +77,14 @@ for dataset in datasets:
 
 You can benchmark a group of supervised models:
 ```shell
-dvc repro benchmark/supervised/local/dvc.yaml
+uv run dvc repro benchmark/supervised/local/dvc.yaml
 ```
 
 #### Zero-shot
 
 You can benchmark a group of zero-shot models:
 ```shell
-dvc repro benchmark/zero_shot/local/dvc.yaml
+uv run dvc repro benchmark/zero_shot/local/dvc.yaml
 ```
 
 ### AWS environment
@@ -92,14 +116,14 @@ The difference of the AWS environment is that:
 
 You can benchmark a group of supervised models:
 ```shell
-AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro benchmark/supervised/aws/dvc.yaml
+AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy uv run dvc repro benchmark/supervised/aws/dvc.yaml
 ```
 
 #### Zero-shot
 
 You can benchmark a group of zero-shot models:
 ```shell
-AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro benchmark/zero_shot/aws/dvc.yaml
+AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy uv run dvc repro benchmark/zero_shot/aws/dvc.yaml
 ```
 
 ## Generate dummy data
