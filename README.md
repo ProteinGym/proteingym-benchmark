@@ -20,10 +20,6 @@ For more information, you can reference Hugging Face's [model cards](https://hug
 
 ### Model validation
 
-#### Model card
-
-### Model validation
-
 You can validate if your model will work with Protein Gym benchmark:
 
 ```shell
