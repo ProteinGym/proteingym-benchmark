@@ -1,6 +1,5 @@
 [project]
 name = "pg2-benchmark"
-version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -10,6 +9,7 @@ authors = [
     { name = "Henning Redestig", email = "Henning.Redestig@iff.com" },
     { name = "Karel van der Weg", email = "karel.weg@iff.com" },
 ]
+dynamic = ["version"]  # Dynamically set hatch version using git tags
 requires-python = ">=3.12"
 dependencies = [
     "typer>=0.15.2",
@@ -28,18 +28,21 @@ pg2-benchmark = "pg2_benchmark.__main__:app"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.version]
+path = "src/pg2_benchmark/__about__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pg2_benchmark"]
+
 [tool.uv.sources]
 pg2-dataset = { git = "https://github.com/ProteinGym2/pg2-dataset.git", rev = "58c327e13bade1effe1312eb2b8d5445016a5a8f" }
 
 [tool.ruff]
 line-length = 88
 
-[tool.click]
-logging_level = "INFO"
-logging_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-
 [dependency-groups]
 dev = [
+    "hatch>=1.14.1",
     "isort>=6.0.1",
     "pre-commit>=4.2.0",
     "pytest>=8.4.1",

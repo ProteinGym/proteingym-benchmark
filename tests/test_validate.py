@@ -49,23 +49,22 @@ def test_model_card_validation_success(
     model_card_file = model_dir / ModelPath.MODEL_CARD_PATH
     model_card_file.write_text(valid_model_card_content)
 
-    result = runner.invoke(app, ["validate", model_name, str(model_dir)])
+    result = runner.invoke(app, ["validate", str(model_dir)])
 
     assert result.exit_code == 0
     assert "✅ Loaded test_model" in caplog.text
     assert "learning_rate" in caplog.text and "batch_size" in caplog.text
 
 
-def test_model_card_validation_missing_file(tmp_path: Path, runner: CliRunner, caplog):
+def test_model_card_validation_missing_file(runner: CliRunner):
     """Test validation when model card file doesn't exist."""
     model_name = "nonexistent_model"
-    model_dir = tmp_path / "models" / model_name
-    model_dir.mkdir(parents=True)
 
-    result = runner.invoke(app, ["validate", model_name, str(model_dir)])
+    result = runner.invoke(app, ["validate", str(model_name)])
 
-    assert result.exit_code == 1
-    assert "❌ Model nonexistent_model does not have a model card" in caplog.text
+    # Typer returns exit code 2 for parameter validation errors
+    assert result.exit_code == 2
+    assert "does not exist" in result.output
 
 
 def test_model_card_validation_invalid_content(
@@ -79,7 +78,7 @@ def test_model_card_validation_invalid_content(
     model_card_file = model_dir / ModelPath.MODEL_CARD_PATH
     model_card_file.write_text(invalid_model_card_content)
 
-    result = runner.invoke(app, ["validate", model_name, str(model_dir)])
+    result = runner.invoke(app, ["validate", str(model_dir)])
 
     assert result.exit_code == 1
     assert "❌ Error loading model card" in caplog.text
@@ -94,7 +93,7 @@ def test_model_card_validation_empty_file(tmp_path: Path, runner: CliRunner, cap
     model_card_file = model_dir / ModelPath.MODEL_CARD_PATH
     model_card_file.write_text("")
 
-    result = runner.invoke(app, ["validate", model_name, str(model_dir)])
+    result = runner.invoke(app, ["validate", str(model_dir)])
 
     assert result.exit_code == 1
     assert "❌ Error loading model card" in caplog.text

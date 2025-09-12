@@ -5,11 +5,6 @@ import typer
 from pycm import ConfusionMatrix
 from scipy.stats import spearmanr
 
-from pg2_benchmark.logger import setup_logger
-
-setup_logger()
-logger = logging.getLogger("pg2_benchmark")
-
 metric_app = typer.Typer()
 
 
@@ -18,6 +13,7 @@ def calc(
     output_path: str = typer.Option(help="Path to the model output file"),
     metric_path: str = typer.Option(help="Path to the metric output file"),
 ):
+    logger = logging.getLogger("pg2_benchmark")
     logger.info("Calculating metrics...")
 
     df = pd.read_csv(output_path)
