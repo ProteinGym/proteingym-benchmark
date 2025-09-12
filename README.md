@@ -8,13 +8,6 @@ Before you start, you need to create a `git-auth.txt` file in two folders respec
 https://username:token@github.com
 ```
 
-### Install uv
-
-We use [uv](https://docs.astral.sh/uv/) to manage our Python package and project, so it is required to install `uv`.
-
-> [!TIP]
-> You can install uv by this guide: https://docs.astral.sh/uv/getting-started/installation/
-
 ## Models
 
 The models are included in the [models](models/) folder, where each model occupies a subfolder as its repo.
@@ -27,19 +20,10 @@ For more information, you can reference Hugging Face's [model cards](https://hug
 
 ### Model validation
 
-#### Model card
-
-In order to sanity check if your model works correctly with a loadable model card, you can run:
+You can validate if your model will work with Protein Gym benchmark:
 
 ```shell
-$ uv run pg2-benchmark validate model-card <your_model_name>
-```
-
-Take the [esm](models/esm/) model for example:
-
-```shell
-$ uv run pg2-benchmark validate model-card esm
-✅ Loaded esm with hyper parameters {'location': 'esm2_t30_150M_UR50D', 'scoring_strategy': 'wt-marginals', 'nogpu': False, 'offset_idx': 24}.
+$ uv run pg2-benchmark validate <your_model_root_path>
 ```
 
 #### Model entrypoint
@@ -143,5 +127,6 @@ You can generate dummy data by the following command:
 ```shell
 uv run pg2-benchmark dataset generate-dummy-data supervised/data/dummy/charge_ladder.csv --n-rows 5 --sequence-length 100
 ```
+
 
 
