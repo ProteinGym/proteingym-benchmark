@@ -23,18 +23,7 @@ For more information, you can reference Hugging Face's [model cards](https://hug
 You can validate if your model will work with Protein Gym benchmark:
 
 ```shell
-$ uv run pg2-benchmark validate <your_model_root_path>
-```
-
-#### Model entrypoint
-
-The model entrypoint is quite fixed, it needs a `train` entrypoint for either supervised or zero-shot model. In this sense, `train` is just a function name for the entrypoint across both local and AWS environments, which does not necessarily mean "train a model".
-
-So we need to verify if the model has the required entrypoint by:
-
-```shell
-$ uv run pg2-benchmark validate model-entrypoint esm
-✅ Model esm has a valid 'train' entrypoint with required params: ['dataset_file', 'model_card_file']
+$ uv run pg2-benchmark validate <your_model_package_path>
 ```
 
 ## Datasets
@@ -127,6 +116,7 @@ You can generate dummy data by the following command:
 ```shell
 uv run pg2-benchmark dataset generate-dummy-data supervised/data/dummy/charge_ladder.csv --n-rows 5 --sequence-length 100
 ```
+
 
 
 
