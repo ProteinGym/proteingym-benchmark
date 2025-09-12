@@ -1,7 +1,8 @@
-import frontmatter
-from pydantic import BaseModel, Field, ConfigDict
 from pathlib import Path
-from typing import Self, Any
+from typing import Any, Self
+
+import frontmatter
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelCard(BaseModel):
@@ -20,7 +21,7 @@ class ModelCard(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    name: str = ""
+    name: str
     hyper_params: dict[str, Any] = Field(default_factory=dict)
 
     @classmethod
