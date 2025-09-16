@@ -32,6 +32,7 @@ Currently, we use the *Option 3*, as it is robust and it verifies the code, inst
 - Driver 2: Work across platforms, e.g., UNIX platforms or Windows.
 - Driver 3: No hardcoded paths and entrypoint names and parameters, such as `train`.
 - Driver 4: Least assumptions, e.g., model providers are expected to write tests; model providers are expected to create a CLI application for its model entrypoints.
+- Driver 5: Robustness, meaning it is easy to perform this option with robust support, such as Docker or `uv` is actively maintained.
 
 ## Considered Options
 
