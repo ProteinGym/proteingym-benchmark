@@ -24,7 +24,7 @@ Given the above three constraints, we can import the Python module directly from
 
 ## Decision
 
-Only validate the model project for model card and list its entrypoints from source code's main module.
+Currently, we use the *Option 3*, as it is robust and it verifies the code, instead of the data.
 
 ## Decision Drivers
 
@@ -79,7 +79,7 @@ result = subprocess.run(
 
 ### Option 2: Validate only the source code.
 
-The benefit is that we only check the source code without extra dependencies and with less assumptions.
+The benefit is that we only need to check the source code with less assumptions, whereas the downside is that we still need to install the dependencies of the model, e.g., `torch`, which will interfere with the current Python environment. To avoid this, we need to create a separate virtual environment to run the model, which is also the driving force in the first place that we want to containerise the model to expose its entrypoints in a uniform way.
 
 #### Example
 
@@ -103,7 +103,7 @@ sys.path.remove(str(src_path))
 
 ### Option 3: Install the model's package with runtime dependencies in a virtual env
 
-The benefit is that in addition to checking the source code, it also checks whether the package can be installed properly. The drawback is that it has more dependencies, such as using `uv` to create the virtual env and install the package. Additionally, it expects a CLI application, such as Typer or Click.
+The benefit is that in addition to checking the source code, it also checks whether the package can be installed properly and it will be more robust for future usage of the model. The drawback is that it has more dependencies, such as using `uv` to create the virtual env and install the package. Additionally, it expects a CLI application, such as Typer or Click.
 
 #### Example
 
@@ -125,13 +125,24 @@ result = subprocess.run(
 )
 ```
 
+### Option 4: Only verify its exposed Docker entrypoints
+
+The benefit is that we verify it from end to end using the prepared sample data and check if the returned data conforms to our data contract. Besides, it has the least assumptions, as it is more high-level, and it works across all platforms. The downside is that it has more dependencies, such as Docker and the sample data.
+
+#### Example
+
+```shell
+docker run --rm ... model-image entrypoint --params ...
+```
+
 ## Decision matrix
 
-| Option            | Least dependencies | Work across platforms | No hardcoded paths and names | Least assumptions  |
-| ----------------- | ------------------ | --------------------- | ---------------------------- | ------------------ |
-| `pytest`          | :white_check_mark: | :white_check_mark:    | :white_check_mark:           |                    |
-| only check src    | :white_check_mark: | :white_check_mark:    | :white_check_mark:           | :white_check_mark: |
-| install and check |                    | :white_check_mark:    |                              |                    |
+| Option            | Least dependencies | Work across platforms | No hardcoded paths and names | Least assumptions  | Robust             |
+| ----------------- | ------------------ | --------------------- | ---------------------------- | ------------------ | -------------------|
+| `pytest`          |                    | :white_check_mark:    | :white_check_mark:           |                    |                    |
+| only check src    |                    | :white_check_mark:    |                              |                    |                    |
+| install and check |                    | :white_check_mark:    |                              |                    | :white_check_mark: |
+| docker            | :white_check_mark: | :white_check_mark:    |                              | :white_check_mark: | :white_check_mark: |
 
 ## Consequences
 
