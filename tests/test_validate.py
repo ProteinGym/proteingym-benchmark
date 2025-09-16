@@ -1,5 +1,4 @@
 import json
-import tarfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -41,30 +40,44 @@ invalid_yaml: [
 """
 
 
-def create_package_tarball(
-    tmp_path: Path, model_card_content: str, package_name: str = "test_package-1.0.0"
+@pytest.fixture
+def valid_pyproject_content() -> str:
+    """Valid pyproject.toml content for testing."""
+    return """[project]
+name = "test_model"
+version = "1.0.0"
+description = "Test model package"
+"""
+
+
+def create_model_project(
+    tmp_path: Path,
+    model_card_content: str,
+    pyproject_content: str,
+    project_name: str = "test_model",
 ) -> Path:
-    """Helper function to create a package tarball with given content."""
-    package_dir = tmp_path / package_name
-    package_dir.mkdir(parents=True)
+    """Helper function to create a model project directory with given content."""
+    project_dir = tmp_path / project_name
+    project_dir.mkdir(parents=True)
 
     # Create the model card file
-    (package_dir / ModelPath.MODEL_CARD_PATH).write_text(model_card_content)
-    (package_dir / "setup.py").write_text("from setuptools import setup; setup()")
+    (project_dir / ModelPath.MODEL_CARD_PATH).write_text(model_card_content)
+    # Create the pyproject.toml file
+    (project_dir / ModelPath.PYPROJECT_PATH).write_text(pyproject_content)
 
-    tarball_path = tmp_path / f"{package_name}.tar.gz"
-    with tarfile.open(tarball_path, "w:gz") as tar:
-        tar.add(package_dir, arcname=package_name)
-
-    return tarball_path
+    return project_dir
 
 
 def test_model_card_validation_success(
-    tmp_path: Path, valid_model_card_content: str, runner: CliRunner, caplog
+    tmp_path: Path,
+    valid_model_card_content: str,
+    valid_pyproject_content: str,
+    runner: CliRunner,
+    caplog,
 ):
     """Test successful model card validation."""
-    tarball_path = create_package_tarball(
-        tmp_path, valid_model_card_content, "test_model-1.0.0"
+    project_path = create_model_project(
+        tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
     )
 
     with patch("subprocess.run") as mock_run:
@@ -80,7 +93,7 @@ def test_model_card_validation_success(
         )
         mock_run.return_value = mock_result
 
-        result = runner.invoke(app, ["validate", str(tarball_path)])
+        result = runner.invoke(app, ["validate", str(project_path)])
 
         assert result.exit_code == 0
         assert "✅ Loaded test_model" in caplog.text
@@ -91,51 +104,63 @@ def test_model_card_validation_success(
 
 
 def test_model_card_validation_missing_file(runner: CliRunner):
-    """Test validation when tarball file doesn't exist."""
-    nonexistent_tarball = "nonexistent_model.tar.gz"
+    """Test validation when project directory doesn't exist."""
+    nonexistent_project = "nonexistent_model"
 
-    result = runner.invoke(app, ["validate", str(nonexistent_tarball)])
+    result = runner.invoke(app, ["validate", str(nonexistent_project)])
 
     # Typer returns exit code 2 for parameter validation errors
     assert result.exit_code == 2
 
 
 def test_model_card_validation_invalid_content(
-    tmp_path: Path, invalid_model_card_content: str, runner: CliRunner, caplog
+    tmp_path: Path,
+    invalid_model_card_content: str,
+    valid_pyproject_content: str,
+    runner: CliRunner,
+    caplog,
 ):
     """Test validation with invalid model card content."""
-    tarball_path = create_package_tarball(
-        tmp_path, invalid_model_card_content, "invalid_model-1.0.0"
+    project_path = create_model_project(
+        tmp_path, invalid_model_card_content, valid_pyproject_content, "invalid_model"
     )
 
-    result = runner.invoke(app, ["validate", str(tarball_path)])
+    result = runner.invoke(app, ["validate", str(project_path)])
 
     assert result.exit_code == 1
     assert "❌ Error loading model card" in caplog.text
 
 
-def test_model_card_validation_empty_file(tmp_path: Path, runner: CliRunner, caplog):
+def test_model_card_validation_empty_file(
+    tmp_path: Path, valid_pyproject_content: str, runner: CliRunner, caplog
+):
     """Test validation with empty model card file."""
-    tarball_path = create_package_tarball(tmp_path, "", "empty_model-1.0.0")
+    project_path = create_model_project(
+        tmp_path, "", valid_pyproject_content, "empty_model"
+    )
 
-    result = runner.invoke(app, ["validate", str(tarball_path)])
+    result = runner.invoke(app, ["validate", str(project_path)])
 
     assert result.exit_code == 1
     assert "❌ Error loading model card" in caplog.text
 
 
 def test_entrypoint_validation_subprocess_failure(
-    tmp_path: Path, valid_model_card_content: str, runner: CliRunner, caplog
+    tmp_path: Path,
+    valid_model_card_content: str,
+    valid_pyproject_content: str,
+    runner: CliRunner,
+    caplog,
 ):
     """Test validation when subprocess execution fails."""
-    tarball_path = create_package_tarball(
-        tmp_path, valid_model_card_content, "test_model-1.0.0"
+    project_path = create_model_project(
+        tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
     )
 
     with patch("subprocess.run") as mock_run:
         mock_run.side_effect = Exception("Subprocess failed")
 
-        result = runner.invoke(app, ["validate", str(tarball_path)])
+        result = runner.invoke(app, ["validate", str(project_path)])
 
         assert result.exit_code == 1
         assert (
@@ -144,11 +169,15 @@ def test_entrypoint_validation_subprocess_failure(
 
 
 def test_entrypoint_validation_model_failed_to_load(
-    tmp_path: Path, valid_model_card_content: str, runner: CliRunner, caplog
+    tmp_path: Path,
+    valid_model_card_content: str,
+    valid_pyproject_content: str,
+    runner: CliRunner,
+    caplog,
 ):
     """Test validation when model fails to load."""
-    tarball_path = create_package_tarball(
-        tmp_path, valid_model_card_content, "test_model-1.0.0"
+    project_path = create_model_project(
+        tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
     )
 
     mock_result = MagicMock()
@@ -161,36 +190,44 @@ def test_entrypoint_validation_model_failed_to_load(
     )
 
     with patch("subprocess.run", return_value=mock_result):
-        result = runner.invoke(app, ["validate", str(tarball_path)])
+        result = runner.invoke(app, ["validate", str(project_path)])
 
         assert result.exit_code == 1
         assert "❌ Model test_model failed to load: Module import failed" in caplog.text
 
 
 def test_entrypoint_validation_empty_entrypoints(
-    tmp_path: Path, valid_model_card_content: str, runner: CliRunner, caplog
+    tmp_path: Path,
+    valid_model_card_content: str,
+    valid_pyproject_content: str,
+    runner: CliRunner,
+    caplog,
 ):
     """Test validation when model loads but has no entrypoints."""
-    tarball_path = create_package_tarball(
-        tmp_path, valid_model_card_content, "test_model-1.0.0"
+    project_path = create_model_project(
+        tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
     )
 
     mock_result = MagicMock()
     mock_result.stdout = json.dumps({"module_loaded": True, "entry_points_found": []})
 
     with patch("subprocess.run", return_value=mock_result):
-        result = runner.invoke(app, ["validate", str(tarball_path)])
+        result = runner.invoke(app, ["validate", str(project_path)])
 
         assert result.exit_code == 1
         assert "❌ Model test_model loaded with empty entrypoints." in caplog.text
 
 
 def test_entrypoint_validation_success(
-    tmp_path: Path, valid_model_card_content: str, runner: CliRunner, caplog
+    tmp_path: Path,
+    valid_model_card_content: str,
+    valid_pyproject_content: str,
+    runner: CliRunner,
+    caplog,
 ):
     """Test successful entrypoint validation."""
-    tarball_path = create_package_tarball(
-        tmp_path, valid_model_card_content, "test_model-1.0.0"
+    project_path = create_model_project(
+        tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
     )
 
     mock_result = MagicMock()
@@ -205,7 +242,7 @@ def test_entrypoint_validation_success(
     )
 
     with patch("subprocess.run", return_value=mock_result):
-        result = runner.invoke(app, ["validate", str(tarball_path)])
+        result = runner.invoke(app, ["validate", str(project_path)])
 
         assert result.exit_code == 0
         assert (
@@ -215,18 +252,22 @@ def test_entrypoint_validation_success(
 
 
 def test_entrypoint_validation_json_parse_error(
-    tmp_path: Path, valid_model_card_content: str, runner: CliRunner, caplog
+    tmp_path: Path,
+    valid_model_card_content: str,
+    valid_pyproject_content: str,
+    runner: CliRunner,
+    caplog,
 ):
     """Test validation when JSON parsing fails."""
-    tarball_path = create_package_tarball(
-        tmp_path, valid_model_card_content, "test_model-1.0.0"
+    project_path = create_model_project(
+        tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
     )
 
     mock_result = MagicMock()
     mock_result.stdout = "invalid json"
 
     with patch("subprocess.run", return_value=mock_result):
-        result = runner.invoke(app, ["validate", str(tarball_path)])
+        result = runner.invoke(app, ["validate", str(project_path)])
 
         assert result.exit_code == 1
         assert "❌ Error running validation subprocess:" in caplog.text

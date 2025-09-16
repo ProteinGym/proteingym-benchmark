@@ -1,13 +1,11 @@
 import json
 import logging
 import subprocess
-import tarfile
-import tempfile
 from pathlib import Path
 from typing import Annotated
 
+import toml
 import typer
-from packaging.utils import parse_sdist_filename
 
 from pg2_benchmark.__about__ import __version__
 from pg2_benchmark.cli.dataset import dataset_app
@@ -35,6 +33,9 @@ class ModelPath:
 
     MODEL_CARD_PATH = Path("README.md")
     """Default location for model card files relative to model root directory."""
+
+    PYPROJECT_PATH = Path("pyproject.toml")
+    """Default location for pyproject.toml configuration files relative to model root directory."""
 
 
 def setup_logger(*, level: int = logging.CRITICAL) -> None:
@@ -90,7 +91,7 @@ def main(
 
 @app.command()
 def validate(
-    sdist_path: Annotated[
+    project_path: Annotated[
         Path,
         typer.Argument(
             help="Root path to the model package containting the model source code and model card",
@@ -103,66 +104,57 @@ def validate(
 
     validator_script = Path(__file__).parent / "model_validator.py"
 
-    package_name, package_version = parse_sdist_filename(Path(sdist_path).name)
-    package_path = Path(f"{package_name.replace('-', '_')}-{package_version}")
+    model_card_path = project_path / ModelPath.MODEL_CARD_PATH
+    pyproject_path = project_path / ModelPath.PYPROJECT_PATH
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmpdir_path = Path(tmpdir)
+    # First: Validate model card
+    try:
+        model_card = ModelCard.from_path(model_card_path)
+        logger.info(
+            f"✅ Loaded {model_card.name} with hyper parameters {model_card.hyper_params}."
+        )
+    except Exception as e:
+        logger.error(f"❌ Error loading model card from {str(model_card_path)}: {e}")
+        raise typer.Exit(1)
 
-        with tarfile.open(sdist_path, "r:gz") as tar:
-            tar.extractall(tmpdir, filter="data")
+    # Second: Validate model entrypoints
+    try:
+        project_data = toml.load(pyproject_path)
+        project_name = project_data["project"]["name"]
 
-        model_card_path = tmpdir_path / package_path / ModelPath.MODEL_CARD_PATH
+        result = subprocess.run(
+            [
+                "uv",
+                "run",
+                "--active",
+                "python",
+                str(validator_script),
+                project_name,
+            ],
+            cwd=project_path,
+            capture_output=True,
+            text=True,
+        )
 
-        # First: Validate model card
-        try:
-            model_card = ModelCard.from_path(model_card_path)
-            logger.info(
-                f"✅ Loaded {model_card.name} with hyper parameters {model_card.hyper_params}."
-            )
-        except Exception as e:
+        validation_data = json.loads(result.stdout.strip())
+
+        if not validation_data["module_loaded"]:
             logger.error(
-                f"❌ Error loading model card from {str(model_card_path)}: {e}"
+                f"❌ Model {model_card.name} failed to load: {validation_data['error']}"
             )
             raise typer.Exit(1)
 
-        # Second: Validate model entrypoints
-        try:
-            result = subprocess.run(
-                [
-                    "uv",
-                    "run",
-                    "--active",
-                    "python",
-                    str(validator_script),
-                    package_name,
-                ],
-                cwd=tmpdir_path / package_path,
-                capture_output=True,
-                text=True,
-            )
-
-            validation_data = json.loads(result.stdout.strip())
-
-            if not validation_data["module_loaded"]:
-                logger.error(
-                    f"❌ Model {model_card.name} failed to load: {validation_data['error']}"
-                )
-                raise typer.Exit(1)
-
-            if not validation_data["entry_points_found"]:
-                logger.error(
-                    f"❌ Model {model_card.name} loaded with empty entrypoints."
-                )
-                raise typer.Exit(1)
-
-            logger.info(
-                f"✅ Model {model_card.name} loaded successfully with entrypoints: {validation_data['entry_points_found']}"
-            )
-
-        except Exception as e:
-            logger.error(f"❌ Error running validation subprocess: {e}")
+        if not validation_data["entry_points_found"]:
+            logger.error(f"❌ Model {model_card.name} loaded with empty entrypoints.")
             raise typer.Exit(1)
+
+        logger.info(
+            f"✅ Model {model_card.name} loaded successfully with entrypoints: {validation_data['entry_points_found']}"
+        )
+
+    except Exception as e:
+        logger.error(f"❌ Error running validation subprocess: {e}")
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":
