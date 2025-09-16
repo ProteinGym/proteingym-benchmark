@@ -94,7 +94,7 @@ def validate(
     project_path: Annotated[
         Path,
         typer.Argument(
-            help="Root path to the model package containting the model source code and model card",
+            help="Root path to the model project containting the model source code and model card",
             exists=True,
             resolve_path=True,
         ),
