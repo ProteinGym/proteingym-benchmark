@@ -2,39 +2,39 @@ vars:
   - params.yaml
 
   - datasets:
-    - name: charge_ladder
-      container_path: /datasets/dummy/dataset.zip
-      local_path: ../../../datasets/dummy/dataset.zip
-
-    - name: neime
-      container_path: /datasets/neime/dataset.zip
-      local_path: ../../../datasets/neime/dataset.zip
+{%- for dataset in datasets %}
+    - name: {{ dataset.name }}
+      container_path: {{ dataset.container_path }}
+      local_path: {{ dataset.local_path }}
+{%- endfor %}
 
   - models:
-    - name: pls
-      container_path: /models/pls/README.md
-      local_path: ../../../models/pls/README.md
-      dockerfile: ../../../models/pls/Dockerfile
+{%- for model in models %}
+    - name: {{ model.name }}
+      container_path: {{ model.container_path }}
+      local_path: {{ model.local_path }}
+      dockerfile: {{ model.dockerfile }}
+{%- endfor %}
 
 stages:
 
   setup:
-    cmd: 
+    cmd:
       - mkdir -p logs ${destination.output_dir} ${destination.metric_dir}
       - echo "Created local directories" > logs/setup.txt
     outs:
       - logs/setup.txt
-    
+
   create_training_job:
-    matrix: 
+    matrix:
       dataset: ${datasets}
       model: ${models}
 
-    cmd: 
+    cmd:
       - docker build --build-arg GIT_CACHE_BUST=${git.git_cache_bust} --secret id=git_auth,src=../git-auth.txt -f ${item.model.dockerfile} -t ${item.model.name}:latest ../../..
       - docker run --rm -v $(realpath ${source.datasets_dir}):/datasets -v $(realpath ${source.models_dir}):/models -v $(realpath ${destination.output_dir}):/opt/ml/model ${item.model.name}:latest train --dataset-file ${item.dataset.container_path} --model-card-file ${item.model.container_path}
       - docker image prune -a -f
-    
+
     deps:
       - logs/setup.txt
       - ${item.dataset.local_path}
@@ -45,7 +45,7 @@ stages:
           cache: true
 
   calculate_metric:
-    matrix: 
+    matrix:
       dataset: ${datasets}
       model: ${models}
 

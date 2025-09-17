@@ -1,24 +1,28 @@
-vars:  
+vars:
   - params.yaml
-  
+
   - datasets:
-    - name: ranganathan
-      aws_prefix: ranganathan
+{%- for dataset in datasets %}
+    - name: {{ dataset.name }}
+      aws_prefix: {{ dataset.aws_prefix }}
+{%- endfor %}
 
   - models:
-    - name: esm
-      aws_prefix: esm
-      dockerfile: ../../../models/esm/Dockerfile
+{%- for model in models %}
+    - name: {{ model.name }}
+      aws_prefix: {{ model.aws_prefix }}
+      dockerfile: {{ model.dockerfile }}
+{%- endfor %}
 
 stages:
 
   setup:
-    cmd: 
+    cmd:
       - mkdir -p logs ${destination.output_dir} ${destination.metric_dir}
       - echo "Created local directories" > logs/setup.txt
     outs:
       - logs/setup.txt
-  
+
   upload_to_s3:
     cmd:
       - aws s3 cp ${source.datasets_dir}/ s3://${aws.s3_training_data_prefix}/datasets --recursive --exclude "*" --include "*.zip"
@@ -31,7 +35,7 @@ stages:
     outs:
       - logs/s3_upload_complete.txt:
           cache: true
-  
+
   deploy_to_ecr:
     matrix:
       model: ${models}
@@ -51,10 +55,10 @@ stages:
           cache: true
 
   create_training_job:
-    matrix: 
+    matrix:
       dataset: ${datasets}
       model: ${models}
-    
+
     cmd: >
       uv run pg2-benchmark sagemaker create-training-job
       --model-name ${item.model.name}
@@ -74,35 +78,35 @@ stages:
       - logs/s3_upload_complete.txt
       - logs/ecr_push_complete.txt
       - logs/image_uri.txt
-    
+
     outs:
       - logs/create_job_${item.dataset.name}_${item.model.name}.txt:
           cache: true
-  
+
   monitor_training_job:
-    matrix: 
+    matrix:
       dataset: ${datasets}
       model: ${models}
-    
+
     cmd: >
       uv run pg2-benchmark sagemaker monitor-training-job
       --region-name ${aws.region_name}
       --job-name $(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)
       > logs/monitor_job_${item.dataset.name}_${item.model.name}.txt
-    
+
     deps:
       - ../../../src/pg2_benchmark/cli/sagemaker.py
       - logs/create_job_${item.dataset.name}_${item.model.name}.txt
-    
+
     outs:
      - logs/monitor_job_${item.dataset.name}_${item.model.name}.txt:
           cache: true
 
   calculate_metric:
-    matrix: 
+    matrix:
       dataset: ${datasets}
       model: ${models}
-    
+
     cmd:
       - aws s3 cp s3://${aws.s3_output_prefix}/$(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)/output/model.tar.gz ${destination.output_dir}/
       - tar -xzf ${destination.output_dir}/model.tar.gz -C ${destination.output_dir}/

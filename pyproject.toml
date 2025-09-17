@@ -19,6 +19,7 @@ dependencies = [
     "dvc>=3.59.2",
     "boto3>=1.38.27",
     "python-frontmatter>=1.1.0",
+    "jinja2>=3.1.6",
 ]
 
 [project.scripts]

@@ -38,12 +38,23 @@ You can reference [this guide](https://github.com/ProteinGym2/pg2-dataset?tab=re
 
 The benchmark is defined in the [benchmark](benchmark/) folder, where there exist two games: supervised and zero-shot.
 
+First of all, you need to select the models and datasets for each game as below command before running DVC:
+
+- `-g` or `--game`: You can choose either `supervised` or `zero_shot` for the game.
+- `-e` or `--env`: You can choose either `local` or `aws` environment to run the benchmarking.
+
+```
+$ uv run pg2-benchmark select models datasets -g supervised -e local
+```
+
+It is an interactive tool for you to choose the model and dataset permutations. Once you confirm your choice, `dvc.yaml` and `params.yaml`, which are standard DVC configurations, will be generated in the defined location for different environments, e.g., `benchmark/<game>/<env>` folder.
+
 ### Local environment
 
-There are two games to benchmark: supervised and zero-shot. Each game has its selected list of models and datasets defined in `dvc.yaml`.
+There are two games to benchmark: supervised and zero-shot. Each game has its selected list of models and datasets defined in [benchmark/models](benchmark/models) and [benchmark/datasets](benchmark/datasets).
 
-- Supervised game is defined in this [dvc.yaml](supervised/local/dvc.yaml)
-- Zero-shot game is defined in this [dvc.yaml](zero_shot/local/dvc.yaml)
+- Supervised game is defined in this Jinja template: [dvc.yaml.jinja](benchmark/supervised/local/dvc.yaml.jinja)
+- Zero-shot game is defined in this Jinja template: [dvc.yaml.jinja](benchmark/zero_shot/local/dvc.yaml.jinja))
 
 The models and datasets are defined in `vars` at the top, and DVC translates `vars` into a matrix, which is namely a loop defined as the following pseudo-code:
 
