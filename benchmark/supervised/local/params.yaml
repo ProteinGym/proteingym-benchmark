@@ -1,0 +1,10 @@
+git:
+  git_cache_bust: 1
+
+source:
+  datasets_dir: ../../../datasets
+  models_dir: ../../../models
+  
+destination:
+  output_dir: output
+  metric_dir: metric
