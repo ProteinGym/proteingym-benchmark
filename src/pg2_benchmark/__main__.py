@@ -328,6 +328,66 @@ def select(
         with open(file, "w") as f:
             f.write(rendered_content)
 
+    def render_dvc_yaml(dvc_file: Path, env: EnvType) -> None:
+        jinja_env = Environment(loader=FileSystemLoader(dvc_file.parent))
+
+        dvc_template = jinja_env.get_template(f"{BenchmarkPath.DVC_FILE}.jinja")
+
+        updated_datasets = []
+        updated_models = []
+
+        if env == EnvType.LOCAL:
+            for dataset in selected_datasets:
+                dataset_entry = {
+                    "name": dataset.name,
+                    "container_path": f"/{DatasetPath.ROOT_PATH}/{dataset.root_path}/{DatasetPath.DATASET_FILE}",
+                    "local_path": f"{relative_datasets_path}/{dataset.root_path}/{DatasetPath.DATASET_FILE}",
+                }
+                updated_datasets.append(dataset_entry)
+
+            for model in selected_models:
+                model_entry = {
+                    "name": model.name,
+                    "container_path": f"/{ModelPath.ROOT_PATH}/{model.root_path}/{ModelPath.MODEL_CARD_PATH}",
+                    "local_path": f"{relative_models_path}/{model.root_path}/{ModelPath.MODEL_CARD_PATH}",
+                    "dockerfile": f"{relative_models_path}/{model.root_path}/Dockerfile",
+                }
+                updated_models.append(model_entry)
+
+        elif env == EnvType.AWS:
+            for dataset in selected_datasets:
+                dataset_entry = {
+                    "name": dataset.name,
+                    "aws_prefix": dataset.name,
+                }
+                updated_datasets.append(dataset_entry)
+
+            for model in selected_models:
+                model_entry = {
+                    "name": model.name,
+                    "aws_prefix": model.name,
+                    "dockerfile": f"{relative_models_path}/{model.root_path}/Dockerfile",
+                }
+                updated_models.append(model_entry)
+
+        dvc_rendered_content = dvc_template.render(
+            datasets=updated_datasets, models=updated_models
+        )
+
+        write_rendered_content(dvc_file, dvc_rendered_content)
+
+    def render_params_yaml(params_file: Path) -> None:
+        jinja_env = Environment(loader=FileSystemLoader(params_file.parent))
+
+        params_template = jinja_env.get_template(f"{BenchmarkPath.PARAMS_FILE}.jinja")
+
+        params_rendered_content = params_template.render(
+            datasets_dir=str(relative_datasets_path),
+            models_dir=str(relative_models_path),
+        )
+
+        write_rendered_content(params_file, params_rendered_content)
+
     try:
         available_datasets = get_available_items(datasets_path, ItemType.DATASETS)
         available_models = get_available_items(models_path, ItemType.MODELS)
@@ -354,55 +414,7 @@ def select(
 
         if typer.confirm(f"\nUpdate {dvc_file} and {params_file}?"):
             try:
-                # Setup Jinja environment for template rendering
-                template_dir = dvc_file.parent
-                jinja_env = Environment(loader=FileSystemLoader(template_dir))
-
-                # Render content for dvc.yaml
-                dvc_template = jinja_env.get_template(f"{BenchmarkPath.DVC_FILE}.jinja")
-
-                updated_datasets = []
-                updated_models = []
-
-                if env == EnvType.LOCAL:
-                    for dataset in selected_datasets:
-                        dataset_entry = {
-                            "name": dataset.name,
-                            "container_path": f"/{DatasetPath.ROOT_PATH}/{dataset.root_path}/{DatasetPath.DATASET_FILE}",
-                            "local_path": f"{relative_datasets_path}/{dataset.root_path}/{DatasetPath.DATASET_FILE}",
-                        }
-                        updated_datasets.append(dataset_entry)
-
-                    for model in selected_models:
-                        model_entry = {
-                            "name": model.name,
-                            "container_path": f"/{ModelPath.ROOT_PATH}/{model.root_path}/{ModelPath.MODEL_CARD_PATH}",
-                            "local_path": f"{relative_models_path}/{model.root_path}/{ModelPath.MODEL_CARD_PATH}",
-                            "dockerfile": f"{relative_models_path}/{model.root_path}/Dockerfile",
-                        }
-                        updated_models.append(model_entry)
-
-                elif env == EnvType.AWS:
-                    for dataset in selected_datasets:
-                        dataset_entry = {
-                            "name": dataset.name,
-                            "aws_prefix": dataset.name,
-                        }
-                        updated_datasets.append(dataset_entry)
-
-                    for model in selected_models:
-                        model_entry = {
-                            "name": model.name,
-                            "aws_prefix": model.name,
-                            "dockerfile": f"{relative_models_path}/{model.root_path}/Dockerfile",
-                        }
-                        updated_models.append(model_entry)
-
-                dvc_rendered_content = dvc_template.render(
-                    datasets=updated_datasets, models=updated_models
-                )
-
-                write_rendered_content(dvc_file, dvc_rendered_content)
+                render_dvc_yaml(dvc_file, env)
 
                 typer.echo(f"✅ Updated {dvc_file} with selected models and datasets")
                 logger.info(
@@ -410,16 +422,7 @@ def select(
                 )
 
                 # Render content for params.yaml
-                params_template = jinja_env.get_template(
-                    f"{BenchmarkPath.PARAMS_FILE}.jinja"
-                )
-
-                params_rendered_content = params_template.render(
-                    datasets_dir=str(relative_datasets_path),
-                    models_dir=str(relative_models_path),
-                )
-
-                write_rendered_content(params_file, params_rendered_content)
+                render_params_yaml(params_file)
 
                 typer.echo(f"✅ Updated {params_file} source paths")
                 logger.info(f"Successfully updated {params_file} source section")
