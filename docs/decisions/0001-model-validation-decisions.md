@@ -26,7 +26,7 @@ Given the above context, in the model validation, we now only consider the follo
 - [ ] [Optional] The model exposes its entrypoints by CLI, such as when executing `pg2-model`, we can list its entrypoints.
 - [ ] [Optional] The model benchmarker can also use this model validation tool to validate all the models. Then it is a debate between static check, execution in venv or only data check.
 
-Given the above three constraints, we can import the Python module directly from the model to carry out a quick sanity check.
+Given the above constraints, we will list the options below. The goal of model validation is first set for a model builder to do a self check themselves in their execution environment.
 
 ## Decision
 
