@@ -6,19 +6,25 @@ Status: WIP
 ## Context and Problem Statement
 
 There are two roles in a model benchmarking system:
-* Model provider: They either provide a model with a GitHub repo, a distribution package or a Docker image, or only share its API for a remote call.
-* The person who benchmarks a select list of models: They need a uniform API to call each model to get the same format of result in return, so they can compare them on a equal basis.
+* Model provider or builder: They either provide a model with a GitHub repo, a distribution package or a Docker image, or only share its API for a remote call.
+* The person who benchmarks models: They need a uniform API to call each model to get the same format of result in return, so they can compare them on a equal basis.
 
 In order for a benchmarking repo to work for a variety of models, we need to validate the models to sanity check if these models conform to a certain standard, such as:
 * If they have the model card defined as expected, so we can load the model's hyperparamters.
 * If they have the mandatory entrypoint, with expected input and output.
 
-In the model validation, we now only consider the following constraints:
+It is worth being aware that these model validations are also performed from two perspectives:
+* Model provider or builder: They want to sanity check their models at first hand to see if they can be integrated in the `pg2-benchark` universe.
+* The person who benchmarks models: They want to check for all models, if they provide the same format of input and output, given the same entrypoint. If so, they can list their models in the `pg2-benchmark` websites with their defined model cards.
+
+Given the above context, in the model validation, we now only consider the following constraints:
 - [x] The model is implemented in Python.
 - [x] The model provides its source code.
 - [x] The model project has a [src layout](https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/).
+- [x] The model providers or builders can use this `pg2-benchmark` model validation tool to validate models themselves for a feeling of confidence.
 - [ ] [Optional] The model is containerised which comes with its Dockerfile.
 - [ ] [Optional] The model exposes its entrypoints by CLI, such as when executing `pg2-model`, we can list its entrypoints.
+- [ ] [Optional] The model benchmarker can also use this model validation tool to validate all the models. Then it is a debate between static check, execution in venv or only data check.
 
 Given the above three constraints, we can import the Python module directly from the model to carry out a quick sanity check.
 
