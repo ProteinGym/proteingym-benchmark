@@ -145,7 +145,28 @@ docker run --rm ... model-image entrypoint --params ...
 | install and check |                    | :white_check_mark:    |                              |                    | :white_check_mark: |
 | docker            | :white_check_mark: | :white_check_mark:    |                              | :white_check_mark: | :white_check_mark: |
 
-## Option 5: Just use the entry_points.txt
+## Option 5: Only verify the distribution package and its entrypoints
+
+There are two major [package formats](https://packaging.python.org/en/latest/discussions/package-formats/): `wheel` and `sdist`. Both of them have the entrypoints and metadata defined in files inside the package:
+* For `wheel`, it is in `entry_points.txt` and `METADATA`.
+* For `sdist`, it is in `PKG-INFO`.
+
+The benefit of only checking these files is that we don't need to load the package and its dependencies in the execution envinronment. We only roughly check the definition, referenced from [importlib.metadata – Accessing package metadata](https://docs.python.org/3/library/importlib.metadata.html#entry-points). The downside is that it only checks the entrypoints literally, not on the execution level. Besides, the entrypoints listed in the file are not detailed enough, such as:
+
+```txt
+[console_scripts]
+pg2-model = pg2_model_esm.__main__:app
+```
+
+#### Example
+
+```python
+from importlib.metadata import Distribution
+from pathlib import Path
+
+dist = Distribution(Path("dist/my_package-0.1.0-py3-none-any.whl"))
+print(dist.entry_points)
+```
 
 ## Consequences
 
