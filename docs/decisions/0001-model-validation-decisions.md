@@ -33,6 +33,7 @@ Currently, we use the *Option 3*, as it is robust and it verifies the code, inst
 - Driver 3: No hardcoded paths and entrypoint names and parameters, such as `train`.
 - Driver 4: Least assumptions, e.g., model providers are expected to write tests; model providers are expected to create a CLI application for its model entrypoints.
 - Driver 5: Robustness, meaning it is easy to perform this option with robust support, such as Docker or `uv` is actively maintained.
+- Driver 6: Usefulness, meaning it can capture the failures as early as possible, and be a strong indicator that the model will work or not for the benchmarking system.
 
 ## Considered Options
 
@@ -136,16 +137,7 @@ The benefit is that we verify it from end to end using the prepared sample data 
 docker run --rm ... model-image entrypoint --params ...
 ```
 
-## Decision matrix
-
-| Option            | Least dependencies | Work across platforms | No hardcoded paths and names | Least assumptions  | Robust             |
-| ----------------- | ------------------ | --------------------- | ---------------------------- | ------------------ | -------------------|
-| `pytest`          |                    | :white_check_mark:    | :white_check_mark:           |                    |                    |
-| only check src    |                    | :white_check_mark:    |                              |                    |                    |
-| install and check |                    | :white_check_mark:    |                              |                    | :white_check_mark: |
-| docker            | :white_check_mark: | :white_check_mark:    |                              | :white_check_mark: | :white_check_mark: |
-
-## Option 5: Only verify the distribution package and its entrypoints
+### Option 5: Only verify the distribution package and its entrypoints
 
 There are two major [package formats](https://packaging.python.org/en/latest/discussions/package-formats/): `wheel` and `sdist`. Both of them have the entrypoints and metadata defined in files inside the package:
 * For `wheel`, it is in `entry_points.txt` and `METADATA`.
@@ -167,6 +159,16 @@ from pathlib import Path
 dist = Distribution(Path("dist/my_package-0.1.0-py3-none-any.whl"))
 print(dist.entry_points)
 ```
+
+## Decision matrix
+
+| Option               | Least dependencies | Work across platforms | No hardcoded paths and names | Least assumptions  | Robust             | Usefulness         |
+| -------------------- | ------------------ | --------------------- | ---------------------------- | ------------------ | -------------------| ------------------ |
+| `pytest`             |                    | :white_check_mark:    | :white_check_mark:           |                    |                    |
+| only check src       |                    | :white_check_mark:    |                              |                    |                    |
+| install and check    |                    | :white_check_mark:    |                              |                    | :white_check_mark: | :white_check_mark: |
+| docker               | :white_check_mark: | :white_check_mark:    |                              | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| `importlib.metadata` | :white_check_mark: | :white_check_mark:    | :white_check_mark:           | :white_check_mark: | :white_check_mark: |                    |
 
 ## Consequences
 
