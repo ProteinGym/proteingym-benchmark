@@ -78,7 +78,7 @@ result = subprocess.run(
 )
 ```
 
-### Option 2: Validate only the source code.
+### Option 2: Validate only the source code (with its dependencies)
 
 The benefit is that we only need to check the source code with less assumptions, whereas the downside is that we still need to install the dependencies of the model, e.g., `torch`, which will interfere with the current Python environment. To avoid this, we need to create a separate virtual environment to run the model, which is also the driving force in the first place that we want to containerise the model to expose its entrypoints in a uniform way.
 
@@ -144,6 +144,8 @@ docker run --rm ... model-image entrypoint --params ...
 | only check src    |                    | :white_check_mark:    |                              |                    |                    |
 | install and check |                    | :white_check_mark:    |                              |                    | :white_check_mark: |
 | docker            | :white_check_mark: | :white_check_mark:    |                              | :white_check_mark: | :white_check_mark: |
+
+## Option 5: Just use the entry_points.txt
 
 ## Consequences
 
