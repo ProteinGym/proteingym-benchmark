@@ -1,6 +1,4 @@
-import json
 import logging
-import subprocess
 from pathlib import Path
 from typing import Annotated
 
@@ -11,7 +9,7 @@ from pg2_benchmark.__about__ import __version__
 from pg2_benchmark.cli.dataset import dataset_app
 from pg2_benchmark.cli.metric import metric_app
 from pg2_benchmark.cli.sagemaker import sagemaker_app
-from pg2_benchmark.model_card import ModelCard
+from pg2_benchmark.model import ModelCard, validate_model_entrypoint
 
 app = typer.Typer(
     name="benchmark",
@@ -102,8 +100,6 @@ def validate(
 ):
     logger = logging.getLogger("pg2_benchmark")
 
-    validator_script = Path(__file__).parent / "model_validator.py"
-
     model_card_path = project_path / ModelPath.MODEL_CARD_PATH
     pyproject_path = project_path / ModelPath.PYPROJECT_PATH
 
@@ -122,38 +118,22 @@ def validate(
         project_data = toml.load(pyproject_path)
         project_name = project_data["project"]["name"]
 
-        result = subprocess.run(
-            [
-                "uv",
-                "run",
-                "--active",
-                "python",
-                str(validator_script),
-                project_name,
-            ],
-            cwd=project_path,
-            capture_output=True,
-            text=True,
-        )
+        result = validate_model_entrypoint(project_name)
 
-        validation_data = json.loads(result.stdout.strip())
-
-        if not validation_data["module_loaded"]:
-            logger.error(
-                f"❌ Model {model_card.name} failed to load: {validation_data['error']}"
-            )
+        if not result.module_loaded:
+            logger.error(f"❌ Model {model_card.name} failed to load: {result.error}")
             raise typer.Exit(1)
 
-        if not validation_data["entry_points_found"]:
+        if not result.entry_points:
             logger.error(f"❌ Model {model_card.name} loaded with empty entrypoints.")
             raise typer.Exit(1)
 
         logger.info(
-            f"✅ Model {model_card.name} loaded successfully with entrypoints: {validation_data['entry_points_found']}"
+            f"✅ Model {model_card.name} loaded successfully with entrypoints: {result.entry_points}"
         )
 
     except Exception as e:
-        logger.error(f"❌ Error running validation subprocess: {e}")
+        logger.error(f"❌ Error running validation: {e}")
         raise typer.Exit(1)
 
 

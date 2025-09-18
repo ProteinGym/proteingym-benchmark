@@ -1,11 +1,11 @@
-import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from typer.testing import CliRunner
 
 from pg2_benchmark.__main__ import ModelPath, app
+from pg2_benchmark.model import EntryPoint, ValidationResult
 
 
 @pytest.fixture
@@ -80,18 +80,15 @@ def test_model_card_validation_success(
         tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
     )
 
-    with patch("subprocess.run") as mock_run:
-        mock_result = MagicMock()
-        mock_result.stdout = json.dumps(
-            {
-                "module_loaded": True,
-                "entry_points_found": [
-                    {"name": "train", "params": ["data_path", "model_path"]},
-                    {"name": "predict", "params": ["model_path", "input_path"]},
-                ],
-            }
+    with patch("pg2_benchmark.__main__.validate_model_entrypoint") as mock_validate:
+        mock_validate.return_value = ValidationResult(
+            module_loaded=True,
+            entry_points=[
+                EntryPoint(name="train", params=["data_path", "model_path"]),
+                EntryPoint(name="predict", params=["model_path", "input_path"]),
+            ],
+            error="",
         )
-        mock_run.return_value = mock_result
 
         result = runner.invoke(app, ["validate", str(project_path)])
 
@@ -145,29 +142,6 @@ def test_model_card_validation_empty_file(
     assert "❌ Error loading model card" in caplog.text
 
 
-def test_entrypoint_validation_subprocess_failure(
-    tmp_path: Path,
-    valid_model_card_content: str,
-    valid_pyproject_content: str,
-    runner: CliRunner,
-    caplog,
-):
-    """Test validation when subprocess execution fails."""
-    project_path = create_model_project(
-        tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
-    )
-
-    with patch("subprocess.run") as mock_run:
-        mock_run.side_effect = Exception("Subprocess failed")
-
-        result = runner.invoke(app, ["validate", str(project_path)])
-
-        assert result.exit_code == 1
-        assert (
-            "❌ Error running validation subprocess: Subprocess failed" in caplog.text
-        )
-
-
 def test_entrypoint_validation_model_failed_to_load(
     tmp_path: Path,
     valid_model_card_content: str,
@@ -180,16 +154,10 @@ def test_entrypoint_validation_model_failed_to_load(
         tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
     )
 
-    mock_result = MagicMock()
-    mock_result.stdout = json.dumps(
-        {
-            "module_loaded": False,
-            "entry_points_found": [],
-            "error": "Module import failed",
-        }
-    )
-
-    with patch("subprocess.run", return_value=mock_result):
+    with patch("pg2_benchmark.__main__.validate_model_entrypoint") as mock_validate:
+        mock_validate.return_value = ValidationResult(
+            module_loaded=False, entry_points=[], error="Module import failed"
+        )
         result = runner.invoke(app, ["validate", str(project_path)])
 
         assert result.exit_code == 1
@@ -208,10 +176,10 @@ def test_entrypoint_validation_empty_entrypoints(
         tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
     )
 
-    mock_result = MagicMock()
-    mock_result.stdout = json.dumps({"module_loaded": True, "entry_points_found": []})
-
-    with patch("subprocess.run", return_value=mock_result):
+    with patch("pg2_benchmark.__main__.validate_model_entrypoint") as mock_validate:
+        mock_validate.return_value = ValidationResult(
+            module_loaded=True, entry_points=[], error=""
+        )
         result = runner.invoke(app, ["validate", str(project_path)])
 
         assert result.exit_code == 1
@@ -230,18 +198,15 @@ def test_entrypoint_validation_success(
         tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
     )
 
-    mock_result = MagicMock()
-    mock_result.stdout = json.dumps(
-        {
-            "module_loaded": True,
-            "entry_points_found": [
-                {"name": "train", "params": ["data_path", "model_path"]},
-                {"name": "predict", "params": ["model_path", "input_path"]},
+    with patch("pg2_benchmark.__main__.validate_model_entrypoint") as mock_validate:
+        mock_validate.return_value = ValidationResult(
+            module_loaded=True,
+            entry_points=[
+                EntryPoint(name="train", params=["data_path", "model_path"]),
+                EntryPoint(name="predict", params=["model_path", "input_path"]),
             ],
-        }
-    )
-
-    with patch("subprocess.run", return_value=mock_result):
+            error="",
+        )
         result = runner.invoke(app, ["validate", str(project_path)])
 
         assert result.exit_code == 0
@@ -249,25 +214,3 @@ def test_entrypoint_validation_success(
             "✅ Model test_model loaded successfully with entrypoints:" in caplog.text
         )
         assert "train" in caplog.text and "predict" in caplog.text
-
-
-def test_entrypoint_validation_json_parse_error(
-    tmp_path: Path,
-    valid_model_card_content: str,
-    valid_pyproject_content: str,
-    runner: CliRunner,
-    caplog,
-):
-    """Test validation when JSON parsing fails."""
-    project_path = create_model_project(
-        tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
-    )
-
-    mock_result = MagicMock()
-    mock_result.stdout = "invalid json"
-
-    with patch("subprocess.run", return_value=mock_result):
-        result = runner.invoke(app, ["validate", str(project_path)])
-
-        assert result.exit_code == 1
-        assert "❌ Error running validation subprocess:" in caplog.text

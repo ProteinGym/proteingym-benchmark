@@ -1,11 +1,12 @@
-from typing import Annotated
 from pathlib import Path
-import typer
-from rich.console import Console
-from pg2_dataset.dataset import Dataset
-from pg2_model_esm.model import load, infer
-from pg2_benchmark.model_card import ModelCard
+from typing import Annotated
 
+import typer
+from pg2_dataset.dataset import Dataset
+from pg2_model_esm.model import infer, load
+from rich.console import Console
+
+from pg2_benchmark.model import ModelCard
 
 app = typer.Typer(
     help="ProteinGym2 - Model CLI",
