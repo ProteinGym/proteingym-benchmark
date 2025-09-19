@@ -58,6 +58,7 @@ class ModelProject(BaseModel):
     )
 
     project_path: Path
+    """The root path to the model project directory containing pyproject.toml and model configuration."""
 
     @computed_field
     @property
