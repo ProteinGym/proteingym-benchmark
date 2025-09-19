@@ -142,26 +142,6 @@ def test_validation_missing_project_directory(runner: CliRunner):
     assert result.exit_code == 2
 
 
-def test_validation_missing_pyproject_file(
-    tmp_path: Path,
-    valid_model_card_content: str,
-    runner: CliRunner,
-    caplog,
-):
-    """Test validation when pyproject.toml file is missing."""
-    project_dir = tmp_path / "test_model"
-    project_dir.mkdir(parents=True)
-
-    # Only create model card, no pyproject.toml
-    (project_dir / "README.md").write_text(valid_model_card_content)
-
-    result = runner.invoke(app, ["validate", str(project_dir)])
-
-    assert result.exit_code == 1
-    assert "❌ Validation failed: File does not exist:" in caplog.text
-    assert "pyproject.toml" in caplog.text
-
-
 def test_validation_pyproject_missing_project_section(
     tmp_path: Path,
     valid_model_card_content: str,
@@ -246,28 +226,3 @@ def test_validation_empty_model_card(
 
         assert result.exit_code == 1
         assert "❌ Validation failed: 1 validation error for ModelCard" in caplog.text
-
-
-def test_validation_empty_entry_points(
-    tmp_path: Path,
-    valid_model_card_content,
-    valid_pyproject_content,
-    runner: CliRunner,
-    caplog,
-):
-    """Test validation when no entry points are found for the project."""
-    project_path = create_model_project(
-        tmp_path, valid_model_card_content, valid_pyproject_content
-    )
-
-    with patch("pg2_benchmark.model.metadata.entry_points") as mock_entry_points:
-        # Mock empty entry points - no console_scripts for this project
-        mock_entry_points.return_value = []
-
-        result = runner.invoke(app, ["validate", str(project_path)])
-
-        assert result.exit_code == 1
-        assert (
-            "❌ Validation failed: No entry points found for project: test_model"
-            in caplog.text
-        )

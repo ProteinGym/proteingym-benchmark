@@ -1,4 +1,5 @@
 import inspect
+from dataclasses import dataclass, field
 from importlib import metadata
 from pathlib import Path
 from typing import Any, Generator, Self
@@ -34,13 +35,14 @@ class ModelCard(BaseModel):
         return cls.model_validate(model_card.metadata)
 
 
-class EntryPoint(BaseModel):
+@dataclass
+class EntryPoint:
     """Represents a model entry point with its name and parameters."""
 
     name: str
     """The name of the entry point function or command."""
 
-    params: list[str] = Field(default_factory=list)
+    params: list[str] = field(default_factory=list)
     """List of parameter names that the entry point accepts."""
 
 
@@ -76,13 +78,6 @@ class ModelProject(BaseModel):
     @property
     def project_name(self) -> str:
         """Project name extracted from pyproject.toml with validation."""
-
-        if not self.pyproject_path.exists():
-            raise ValueError(f"File does not exist: {self.pyproject_path}")
-
-        if not self.pyproject_path.is_file():
-            raise ValueError(f"Path is not a file: {self.pyproject_path}")
-
         project_data = toml.load(self.pyproject_path)
 
         # Check if file contains a project header
@@ -144,9 +139,6 @@ class ModelProject(BaseModel):
 
         entry_points = []
         entry_points.extend(self._filter_typer_entry_points(*console_scripts))
-
-        if not entry_points:
-            raise ValueError(f"No entry points found for project: {self.project_name}")
 
         return entry_points
 
