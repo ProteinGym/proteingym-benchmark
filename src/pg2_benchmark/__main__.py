@@ -2,14 +2,13 @@ import logging
 from pathlib import Path
 from typing import Annotated
 
-import toml
 import typer
 
 from pg2_benchmark.__about__ import __version__
 from pg2_benchmark.cli.dataset import dataset_app
 from pg2_benchmark.cli.metric import metric_app
 from pg2_benchmark.cli.sagemaker import sagemaker_app
-from pg2_benchmark.model import ModelCard, validate_model_entrypoint
+from pg2_benchmark.model import ModelCard, ModelProject
 
 app = typer.Typer(
     name="benchmark",
@@ -20,20 +19,6 @@ app = typer.Typer(
 app.add_typer(dataset_app, name="dataset", help="Dataset operations")
 app.add_typer(metric_app, name="metric", help="Metric operations")
 app.add_typer(sagemaker_app, name="sagemaker", help="SageMaker operations")
-
-
-class ModelPath:
-    """Configuration class for model-related file paths.
-
-    This class defines standard paths used throughout the benchmark system
-    for locating model-related files and configurations.
-    """
-
-    MODEL_CARD_PATH = Path("README.md")
-    """Default location for model card files relative to model root directory."""
-
-    PYPROJECT_PATH = Path("pyproject.toml")
-    """Default location for pyproject.toml configuration files relative to model root directory."""
 
 
 def setup_logger(*, level: int = logging.CRITICAL) -> None:
@@ -100,40 +85,21 @@ def validate(
 ):
     logger = logging.getLogger("pg2_benchmark")
 
-    model_card_path = project_path / ModelPath.MODEL_CARD_PATH
-    pyproject_path = project_path / ModelPath.PYPROJECT_PATH
-
-    # First: Validate model card
     try:
-        model_card = ModelCard.from_path(model_card_path)
+        model_project = ModelProject.from_path(project_path)
+        logger.info(
+            f"✅ Model {model_project.project_name} loaded successfully with entry points: {model_project.entry_points}"
+        )
+
+        model_card = ModelCard.from_path(model_project.model_card_path)
         logger.info(
             f"✅ Loaded {model_card.name} with hyper parameters {model_card.hyper_params}."
         )
-    except Exception as e:
-        logger.error(f"❌ Error loading model card from {str(model_card_path)}: {e}")
+    except ValueError as e:
+        logger.error(f"❌ Validation failed: {str(e)}")
         raise typer.Exit(1)
-
-    # Second: Validate model entrypoints
-    try:
-        project_data = toml.load(pyproject_path)
-        project_name = project_data["project"]["name"]
-
-        result = validate_model_entrypoint(project_name)
-
-        if not result.module_loaded:
-            logger.error(f"❌ Model {model_card.name} failed to load: {result.error}")
-            raise typer.Exit(1)
-
-        if not result.entry_points:
-            logger.error(f"❌ Model {model_card.name} loaded with empty entrypoints.")
-            raise typer.Exit(1)
-
-        logger.info(
-            f"✅ Model {model_card.name} loaded successfully with entrypoints: {result.entry_points}"
-        )
-
     except Exception as e:
-        logger.error(f"❌ Error running validation: {e}")
+        logger.error("❌ Error running validation", exc_info=e)
         raise typer.Exit(1)
 
 

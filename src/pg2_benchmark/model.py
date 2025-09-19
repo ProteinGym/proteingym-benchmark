@@ -1,10 +1,11 @@
 import inspect
-from importlib.metadata import entry_points
+from importlib import metadata
 from pathlib import Path
-from typing import Any, Self
+from typing import Any, Generator, Self
 
 import frontmatter
-from pydantic import BaseModel, ConfigDict, Field
+import toml
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
 class ModelCard(BaseModel):
@@ -13,10 +14,6 @@ class ModelCard(BaseModel):
     This class loads and validates model configuration from markdown files, containing
     model metadata and hyperparameters in the front matter for benchmarking tasks.
 
-    Attributes:
-        name: The name of the model
-        hyper_params: Dictionary containing model hyperparameters and configuration
-
     The model allows extra fields beyond the defined attributes to accommodate
     varying model configurations.
     """
@@ -24,7 +21,10 @@ class ModelCard(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     name: str
+    """The name of the model."""
+
     hyper_params: dict[str, Any] = Field(default_factory=dict)
+    """Dictionary containing model hyperparameters and configuration."""
 
     @classmethod
     def from_path(cls, path: Path) -> Self:
@@ -35,69 +35,141 @@ class ModelCard(BaseModel):
 
 
 class EntryPoint(BaseModel):
-    """Represents a model entry point with its name and parameters.
-
-    An entry point is a callable function or command that serves as an interface
-    to the model package, typically used for training, evaluation, or inference.
-
-    Attributes:
-        name: The name of the entry point function or command
-        params: List of parameter names that the entry point accepts
-    """
+    """Represents a model entry point with its name and parameters."""
 
     name: str
+    """The name of the entry point function or command."""
+
     params: list[str] = Field(default_factory=list)
+    """List of parameter names that the entry point accepts."""
 
 
-class ValidationResult(BaseModel):
-    """Result of validating a model package's entry points.
+class ModelProject(BaseModel):
+    """A model project containing configuration and entry points.
 
-    This class contains the outcome of validating whether a model package
-    has the required entry points and can be properly loaded for benchmarking.
-
-    Attributes:
-        module_loaded: Whether the model package was successfully loaded
-        entry_points: List of discovered entry points in the package
-        error: Error message if validation failed, empty string if successful
+    This class loads and validates model project configuration from a project
+    directory, validating the pyproject.toml file and discovering entry points
+    for benchmarking tasks.
     """
 
-    module_loaded: bool
-    entry_points: list[EntryPoint] = Field(default_factory=list)
-    error: str = ""
-
-
-def validate_model_entrypoint(package_name: str) -> ValidationResult:
-    """Validate if a model package has the required 'train' entrypoint."""
-
-    result = ValidationResult(
-        module_loaded=True,
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
     )
 
-    try:
-        # Get all entry points and filter by package name
-        eps = entry_points()
+    project_path: Path
 
-        package_entrypoints = [ep for ep in eps if ep.dist.name == package_name]
+    @computed_field
+    @property
+    def pyproject_path(self) -> Path:
+        """Default path to the pyproject.toml file relative to the project path."""
+        return self.project_path / "pyproject.toml"
 
-        # Look for console_scripts entry points (where typer apps are typically registered)
-        for ep in package_entrypoints:
-            if ep.group == "console_scripts":
-                # Load the entry point to get the typer app
-                app = ep.load()
+    @computed_field
+    @property
+    def model_card_path(self) -> Path:
+        """Default path to the model card file relative to the project path."""
+        return self.project_path / "README.md"
 
-                if hasattr(app, "registered_commands"):
-                    for command in app.registered_commands:
-                        sig = inspect.signature(command.callback)
+    @computed_field
+    @property
+    def project_name(self) -> str:
+        """Project name extracted from pyproject.toml with validation."""
 
-                        entry_point = EntryPoint(
-                            name=command.callback.__name__,
-                            params=list(sig.parameters.keys()),
-                        )
+        if not self.pyproject_path.exists():
+            raise ValueError(f"File does not exist: {self.pyproject_path}")
 
-                        result.entry_points.append(entry_point)
-        return result
+        if not self.pyproject_path.is_file():
+            raise ValueError(f"Path is not a file: {self.pyproject_path}")
 
-    except Exception as e:
-        result.module_loaded = False
-        result.error = str(e)
-        return result
+        project_data = toml.load(self.pyproject_path)
+
+        # Check if file contains a project header
+        if "project" not in project_data:
+            raise ValueError(
+                f"File does not contain a project header: {self.pyproject_path}"
+            )
+
+        # Check if the project header contains a name
+        project_section = project_data["project"]
+        if not isinstance(project_section, dict):
+            raise ValueError(
+                f"Project header is not a valid dictionary: {self.pyproject_path}"
+            )
+
+        if "name" not in project_section:
+            raise ValueError(
+                f"The project header does not contain a name: {self.pyproject_path}"
+            )
+
+        project_name = project_section["name"]
+        if not isinstance(project_name, str) or not project_name.strip():
+            raise ValueError(
+                f"Project name is not a valid non-empty string: {self.pyproject_path}"
+            )
+
+        return project_name
+
+    def _filter_typer_entry_points(
+        self, *entry_points: metadata.EntryPoint
+    ) -> Generator[EntryPoint, None, None]:
+        """Filter and extract typer entry points from metadata entry points."""
+        for ep in entry_points:
+            app = ep.load()
+            is_typer_entry_point = hasattr(app, "registered_commands")
+
+            if not is_typer_entry_point:
+                continue
+
+            for command in app.registered_commands:
+                sig = inspect.signature(command.callback)
+                entry_point = EntryPoint(
+                    name=command.callback.__name__,
+                    params=list(sig.parameters.keys()),
+                )
+                yield entry_point
+
+    @computed_field
+    @property
+    def entry_points(self) -> list[EntryPoint]:
+        """Discover entry points for the project based on project_name."""
+
+        # Filter by package name and group
+        console_scripts = [
+            ep
+            for ep in metadata.entry_points()
+            if ep.dist.name == self.project_name and ep.group == "console_scripts"
+        ]
+
+        entry_points = []
+        entry_points.extend(self._filter_typer_entry_points(*console_scripts))
+
+        if not entry_points:
+            raise ValueError(f"No entry points found for project: {self.project_name}")
+
+        return entry_points
+
+    @classmethod
+    def from_path(cls, project_path: Path) -> "ModelProject":
+        """Create a ModelProject from a project directory path.
+
+        Validates the pyproject.toml file in the project directory and
+        discovers available entry points via computed fields.
+
+        Args:
+            project_path: The root path to the model project directory
+
+        Returns:
+            ModelProject: The model project with validated configuration and entry points
+
+        Raises:
+            ValueError: If the project path or pyproject.toml validation fails
+        """
+        if not project_path.exists():
+            raise ValueError(f"Project path does not exist: {project_path}")
+
+        if not project_path.is_dir():
+            raise ValueError(f"Project path is not a directory: {project_path}")
+
+        # Create the instance - all validation and discovery happens via computed fields
+        return cls(project_path=project_path)

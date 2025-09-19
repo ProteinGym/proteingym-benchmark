@@ -1,11 +1,10 @@
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from typer.testing import CliRunner
 
-from pg2_benchmark.__main__ import ModelPath, app
-from pg2_benchmark.model import EntryPoint, ValidationResult
+from pg2_benchmark.__main__ import app
 
 
 @pytest.fixture
@@ -50,6 +49,47 @@ description = "Test model package"
 """
 
 
+@pytest.fixture
+def invalid_pyproject_content_missing_project() -> str:
+    """Invalid pyproject.toml content for testing."""
+    return """[build-system]
+requires = ["setuptools"]
+# Missing [project] section
+"""
+
+
+@pytest.fixture
+def invalid_pyproject_content_missing_name() -> str:
+    """Invalid pyproject.toml content for testing."""
+    return """[project]
+version = "1.0.0"
+description = "Test model package"
+# Missing name
+"""
+
+
+@pytest.fixture
+def mock_valid_entry_points():
+    """Context manager fixture for mocking valid entry points."""
+    mock_ep = Mock()
+    mock_ep.dist.name = "test_model"
+    mock_ep.group = "console_scripts"
+
+    mock_app = Mock()
+    mock_command = Mock()
+    mock_command.callback.__name__ = "train"
+
+    # Create a real function to get signature from
+    def mock_train_func(dataset: str, model_path: str):
+        pass
+
+    mock_command.callback = mock_train_func
+    mock_app.registered_commands = [mock_command]
+    mock_ep.load.return_value = mock_app
+
+    return patch("pg2_benchmark.model.metadata.entry_points", return_value=[mock_ep])
+
+
 def create_model_project(
     tmp_path: Path,
     model_card_content: str,
@@ -61,46 +101,38 @@ def create_model_project(
     project_dir.mkdir(parents=True)
 
     # Create the model card file
-    (project_dir / ModelPath.MODEL_CARD_PATH).write_text(model_card_content)
+    (project_dir / "README.md").write_text(model_card_content)
     # Create the pyproject.toml file
-    (project_dir / ModelPath.PYPROJECT_PATH).write_text(pyproject_content)
+    (project_dir / "pyproject.toml").write_text(pyproject_content)
 
     return project_dir
 
 
-def test_model_card_validation_success(
+def test_validation_success(
     tmp_path: Path,
     valid_model_card_content: str,
     valid_pyproject_content: str,
+    mock_valid_entry_points,
     runner: CliRunner,
     caplog,
 ):
-    """Test successful model card validation."""
+    """Test successful model validation with valid entry points and model card."""
+
     project_path = create_model_project(
-        tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
+        tmp_path, valid_model_card_content, valid_pyproject_content
     )
 
-    with patch("pg2_benchmark.__main__.validate_model_entrypoint") as mock_validate:
-        mock_validate.return_value = ValidationResult(
-            module_loaded=True,
-            entry_points=[
-                EntryPoint(name="train", params=["data_path", "model_path"]),
-                EntryPoint(name="predict", params=["model_path", "input_path"]),
-            ],
-            error="",
-        )
-
+    with mock_valid_entry_points:
         result = runner.invoke(app, ["validate", str(project_path)])
 
         assert result.exit_code == 0
-        assert "✅ Loaded test_model" in caplog.text
-        assert "learning_rate" in caplog.text and "batch_size" in caplog.text
         assert (
-            "✅ Model test_model loaded successfully with entrypoints:" in caplog.text
+            "✅ Model test_model loaded successfully with entry points:" in caplog.text
         )
+        assert "✅ Loaded test_model with hyper parameters" in caplog.text
 
 
-def test_model_card_validation_missing_file(runner: CliRunner):
+def test_validation_missing_project_directory(runner: CliRunner):
     """Test validation when project directory doesn't exist."""
     nonexistent_project = "nonexistent_model"
 
@@ -110,107 +142,132 @@ def test_model_card_validation_missing_file(runner: CliRunner):
     assert result.exit_code == 2
 
 
-def test_model_card_validation_invalid_content(
+def test_validation_missing_pyproject_file(
     tmp_path: Path,
-    invalid_model_card_content: str,
-    valid_pyproject_content: str,
+    valid_model_card_content: str,
     runner: CliRunner,
     caplog,
 ):
-    """Test validation with invalid model card content."""
+    """Test validation when pyproject.toml file is missing."""
+    project_dir = tmp_path / "test_model"
+    project_dir.mkdir(parents=True)
+
+    # Only create model card, no pyproject.toml
+    (project_dir / "README.md").write_text(valid_model_card_content)
+
+    result = runner.invoke(app, ["validate", str(project_dir)])
+
+    assert result.exit_code == 1
+    assert "❌ Validation failed: File does not exist:" in caplog.text
+    assert "pyproject.toml" in caplog.text
+
+
+def test_validation_pyproject_missing_project_section(
+    tmp_path: Path,
+    valid_model_card_content: str,
+    invalid_pyproject_content_missing_project: str,
+    runner: CliRunner,
+    caplog,
+):
+    """Test validation when pyproject.toml is missing [project] section."""
     project_path = create_model_project(
-        tmp_path, invalid_model_card_content, valid_pyproject_content, "invalid_model"
+        tmp_path,
+        valid_model_card_content,
+        invalid_pyproject_content_missing_project,
     )
 
     result = runner.invoke(app, ["validate", str(project_path)])
 
     assert result.exit_code == 1
-    assert "❌ Error loading model card" in caplog.text
+    assert (
+        "❌ Validation failed: File does not contain a project header:" in caplog.text
+    )
 
 
-def test_model_card_validation_empty_file(
-    tmp_path: Path, valid_pyproject_content: str, runner: CliRunner, caplog
+def test_validation_pyproject_missing_name(
+    tmp_path: Path,
+    valid_model_card_content: str,
+    invalid_pyproject_content_missing_name: str,
+    runner: CliRunner,
+    caplog,
+):
+    """Test validation when pyproject.toml is missing name under [project] section."""
+    project_path = create_model_project(
+        tmp_path,
+        valid_model_card_content,
+        invalid_pyproject_content_missing_name,
+    )
+
+    result = runner.invoke(app, ["validate", str(project_path)])
+
+    assert result.exit_code == 1
+    assert (
+        "❌ Validation failed: The project header does not contain a name:"
+        in caplog.text
+    )
+
+
+def test_validation_invalid_model_card(
+    tmp_path: Path,
+    invalid_model_card_content: str,
+    valid_pyproject_content: str,
+    mock_valid_entry_points,
+    runner: CliRunner,
+    caplog,
+):
+    """Test validation with invalid model card content."""
+    project_path = create_model_project(
+        tmp_path,
+        invalid_model_card_content,
+        valid_pyproject_content,
+    )
+
+    with mock_valid_entry_points:
+        result = runner.invoke(app, ["validate", str(project_path)])
+
+        assert result.exit_code == 1
+        assert "❌ Error running validation" in caplog.text
+
+
+def test_validation_empty_model_card(
+    tmp_path: Path,
+    valid_pyproject_content: str,
+    mock_valid_entry_points,
+    runner: CliRunner,
+    caplog,
 ):
     """Test validation with empty model card file."""
     project_path = create_model_project(
         tmp_path, "", valid_pyproject_content, "empty_model"
     )
 
-    result = runner.invoke(app, ["validate", str(project_path)])
-
-    assert result.exit_code == 1
-    assert "❌ Error loading model card" in caplog.text
-
-
-def test_entrypoint_validation_model_failed_to_load(
-    tmp_path: Path,
-    valid_model_card_content: str,
-    valid_pyproject_content: str,
-    runner: CliRunner,
-    caplog,
-):
-    """Test validation when model fails to load."""
-    project_path = create_model_project(
-        tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
-    )
-
-    with patch("pg2_benchmark.__main__.validate_model_entrypoint") as mock_validate:
-        mock_validate.return_value = ValidationResult(
-            module_loaded=False, entry_points=[], error="Module import failed"
-        )
+    with mock_valid_entry_points:
         result = runner.invoke(app, ["validate", str(project_path)])
 
         assert result.exit_code == 1
-        assert "❌ Model test_model failed to load: Module import failed" in caplog.text
+        assert "❌ Validation failed: 1 validation error for ModelCard" in caplog.text
 
 
-def test_entrypoint_validation_empty_entrypoints(
+def test_validation_empty_entry_points(
     tmp_path: Path,
-    valid_model_card_content: str,
-    valid_pyproject_content: str,
+    valid_model_card_content,
+    valid_pyproject_content,
     runner: CliRunner,
     caplog,
 ):
-    """Test validation when model loads but has no entrypoints."""
+    """Test validation when no entry points are found for the project."""
     project_path = create_model_project(
-        tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
+        tmp_path, valid_model_card_content, valid_pyproject_content
     )
 
-    with patch("pg2_benchmark.__main__.validate_model_entrypoint") as mock_validate:
-        mock_validate.return_value = ValidationResult(
-            module_loaded=True, entry_points=[], error=""
-        )
+    with patch("pg2_benchmark.model.metadata.entry_points") as mock_entry_points:
+        # Mock empty entry points - no console_scripts for this project
+        mock_entry_points.return_value = []
+
         result = runner.invoke(app, ["validate", str(project_path)])
 
         assert result.exit_code == 1
-        assert "❌ Model test_model loaded with empty entrypoints." in caplog.text
-
-
-def test_entrypoint_validation_success(
-    tmp_path: Path,
-    valid_model_card_content: str,
-    valid_pyproject_content: str,
-    runner: CliRunner,
-    caplog,
-):
-    """Test successful entrypoint validation."""
-    project_path = create_model_project(
-        tmp_path, valid_model_card_content, valid_pyproject_content, "test_model"
-    )
-
-    with patch("pg2_benchmark.__main__.validate_model_entrypoint") as mock_validate:
-        mock_validate.return_value = ValidationResult(
-            module_loaded=True,
-            entry_points=[
-                EntryPoint(name="train", params=["data_path", "model_path"]),
-                EntryPoint(name="predict", params=["model_path", "input_path"]),
-            ],
-            error="",
-        )
-        result = runner.invoke(app, ["validate", str(project_path)])
-
-        assert result.exit_code == 0
         assert (
-            "✅ Model test_model loaded successfully with entrypoints:" in caplog.text
+            "❌ Validation failed: No entry points found for project: test_model"
+            in caplog.text
         )
-        assert "train" in caplog.text and "predict" in caplog.text
