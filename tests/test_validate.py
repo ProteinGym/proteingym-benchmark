@@ -35,7 +35,19 @@ def invalid_model_card_content() -> str:
 invalid_yaml: [
 ---
 
-# Invalid Model Card
+# Invalid model card format
+"""
+
+
+@pytest.fixture
+def empty_model_card_content() -> str:
+    return """---
+hyper_params:
+    learning_rate: 0.001
+    batch_size: 32
+---
+
+# Empty model card with a missing name
 """
 
 
@@ -69,6 +81,26 @@ description = "Test model package"
 
 
 @pytest.fixture
+def model_project(request, tmp_path: Path) -> Path:
+    """Indirect fixture that creates model projects with specified content."""
+    model_card_fixture_name, pyproject_fixture_name, project_name = request.param
+
+    # Get the actual content from the fixture names
+    model_card_content = request.getfixturevalue(model_card_fixture_name)
+    pyproject_content = request.getfixturevalue(pyproject_fixture_name)
+
+    project_dir = tmp_path / project_name
+    project_dir.mkdir(parents=True)
+
+    # Create the model card file
+    (project_dir / "README.md").write_text(model_card_content)
+    # Create the pyproject.toml file
+    (project_dir / "pyproject.toml").write_text(pyproject_content)
+
+    return project_dir
+
+
+@pytest.fixture
 def mock_valid_entry_points():
     """Context manager fixture for mocking valid entry points."""
     mock_ep = Mock()
@@ -90,40 +122,22 @@ def mock_valid_entry_points():
     return patch("pg2_benchmark.model.metadata.entry_points", return_value=[mock_ep])
 
 
-def create_model_project(
-    tmp_path: Path,
-    model_card_content: str,
-    pyproject_content: str,
-    project_name: str = "test_model",
-) -> Path:
-    """Helper function to create a model project directory with given content."""
-    project_dir = tmp_path / project_name
-    project_dir.mkdir(parents=True)
-
-    # Create the model card file
-    (project_dir / "README.md").write_text(model_card_content)
-    # Create the pyproject.toml file
-    (project_dir / "pyproject.toml").write_text(pyproject_content)
-
-    return project_dir
-
-
+@pytest.mark.parametrize(
+    "model_project",
+    [
+        ("valid_model_card_content", "valid_pyproject_content", "test_model"),
+    ],
+    indirect=True,
+)
 def test_validation_success(
-    tmp_path: Path,
-    valid_model_card_content: str,
-    valid_pyproject_content: str,
+    model_project: Path,
     mock_valid_entry_points,
     runner: CliRunner,
     caplog,
 ):
     """Test successful model validation with valid entry points and model card."""
-
-    project_path = create_model_project(
-        tmp_path, valid_model_card_content, valid_pyproject_content
-    )
-
     with mock_valid_entry_points:
-        result = runner.invoke(app, ["validate", str(project_path)])
+        result = runner.invoke(app, ["validate", str(model_project)])
 
         assert result.exit_code == 0
         assert (
@@ -142,21 +156,24 @@ def test_validation_missing_project_directory(runner: CliRunner):
     assert result.exit_code == 2
 
 
+@pytest.mark.parametrize(
+    "model_project",
+    [
+        (
+            "valid_model_card_content",
+            "invalid_pyproject_content_missing_project",
+            "test_model",
+        ),
+    ],
+    indirect=True,
+)
 def test_validation_pyproject_missing_project_section(
-    tmp_path: Path,
-    valid_model_card_content: str,
-    invalid_pyproject_content_missing_project: str,
+    model_project: Path,
     runner: CliRunner,
     caplog,
 ):
     """Test validation when pyproject.toml is missing [project] section."""
-    project_path = create_model_project(
-        tmp_path,
-        valid_model_card_content,
-        invalid_pyproject_content_missing_project,
-    )
-
-    result = runner.invoke(app, ["validate", str(project_path)])
+    result = runner.invoke(app, ["validate", str(model_project)])
 
     assert result.exit_code == 1
     assert (
@@ -164,21 +181,24 @@ def test_validation_pyproject_missing_project_section(
     )
 
 
+@pytest.mark.parametrize(
+    "model_project",
+    [
+        (
+            "valid_model_card_content",
+            "invalid_pyproject_content_missing_name",
+            "test_model",
+        ),
+    ],
+    indirect=True,
+)
 def test_validation_pyproject_missing_name(
-    tmp_path: Path,
-    valid_model_card_content: str,
-    invalid_pyproject_content_missing_name: str,
+    model_project: Path,
     runner: CliRunner,
     caplog,
 ):
     """Test validation when pyproject.toml is missing name under [project] section."""
-    project_path = create_model_project(
-        tmp_path,
-        valid_model_card_content,
-        invalid_pyproject_content_missing_name,
-    )
-
-    result = runner.invoke(app, ["validate", str(project_path)])
+    result = runner.invoke(app, ["validate", str(model_project)])
 
     assert result.exit_code == 1
     assert (
@@ -187,42 +207,43 @@ def test_validation_pyproject_missing_name(
     )
 
 
+@pytest.mark.parametrize(
+    "model_project",
+    [
+        ("invalid_model_card_content", "valid_pyproject_content", "test_model"),
+    ],
+    indirect=True,
+)
 def test_validation_invalid_model_card(
-    tmp_path: Path,
-    invalid_model_card_content: str,
-    valid_pyproject_content: str,
+    model_project: Path,
     mock_valid_entry_points,
     runner: CliRunner,
     caplog,
 ):
     """Test validation with invalid model card content."""
-    project_path = create_model_project(
-        tmp_path,
-        invalid_model_card_content,
-        valid_pyproject_content,
-    )
-
     with mock_valid_entry_points:
-        result = runner.invoke(app, ["validate", str(project_path)])
+        result = runner.invoke(app, ["validate", str(model_project)])
 
         assert result.exit_code == 1
         assert "❌ Error running validation" in caplog.text
 
 
+@pytest.mark.parametrize(
+    "model_project",
+    [
+        ("empty_model_card_content", "valid_pyproject_content", "test_model"),
+    ],
+    indirect=True,
+)
 def test_validation_empty_model_card(
-    tmp_path: Path,
-    valid_pyproject_content: str,
+    model_project: Path,
     mock_valid_entry_points,
     runner: CliRunner,
     caplog,
 ):
     """Test validation with empty model card file."""
-    project_path = create_model_project(
-        tmp_path, "", valid_pyproject_content, "empty_model"
-    )
-
     with mock_valid_entry_points:
-        result = runner.invoke(app, ["validate", str(project_path)])
+        result = runner.invoke(app, ["validate", str(model_project)])
 
         assert result.exit_code == 1
         assert "❌ Validation failed: 1 validation error for ModelCard" in caplog.text
