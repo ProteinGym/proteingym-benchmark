@@ -23,7 +23,7 @@ For more information, you can reference Hugging Face's [model cards](https://hug
 You can validate if your model will work with Protein Gym benchmark:
 
 ```shell
-$ uv run pg2-benchmark validate <your_model_root_path>
+$ uv run pg2-benchmark validate <your_model_package_path>
 ```
 
 ## Datasets
@@ -116,6 +116,7 @@ You can generate dummy data by the following command:
 ```shell
 uv run pg2-benchmark dataset generate-dummy-data supervised/data/dummy/charge_ladder.csv --n-rows 5 --sequence-length 100
 ```
+
 
 
 

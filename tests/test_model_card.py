@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from pg2_benchmark.model_card import ModelCard
+from pg2_benchmark.model import ModelCard
 
 
 @pytest.fixture

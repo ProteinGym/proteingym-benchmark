@@ -1,12 +1,12 @@
-from sklearn.cross_decomposition import PLSRegression
-import polars as pl
-
-from pg2_dataset.dataset import Dataset
-from pg2_dataset.splits.abstract_split_strategy import TrainTestValid
-from pg2_benchmark.model_card import ModelCard
-from pg2_model_pls.preprocess import encode, load_x_and_y
 import logging
 
+import polars as pl
+from pg2_dataset.dataset import Dataset
+from pg2_dataset.splits.abstract_split_strategy import TrainTestValid
+from pg2_model_pls.preprocess import encode, load_x_and_y
+from sklearn.cross_decomposition import PLSRegression
+
+from pg2_benchmark.model import ModelCard
 
 logger = logging.getLogger(__name__)
 

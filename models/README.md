@@ -21,7 +21,7 @@ dataset = Dataset.from_path(dataset_file)
 Additionally, this entrypoint also expects a reference to a model card, e.g., loaded by `pg2-benchmark`:
 
 ```python
-from pg2_benchmark.model_card import ModelCard
+from pg2_benchmark.model import ModelCard
 model_card = ModelCard.from_path(model_card_file)
 ```
 
@@ -43,7 +43,7 @@ For reference, below an example Python implementation with `typer`:
 # In `__main__.py`
 import typer
 from pg2_dataset.dataset import Dataset
-from pg2_benchmark.model_card import ModelCard
+from pg2_benchmark.model import ModelCard
 
 
 app = typer.Typer(
