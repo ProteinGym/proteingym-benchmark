@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 import pytest
 from typer.testing import CliRunner
 
-from pg2_benchmark.__main__ import app
+from proteingym.benchmark.__main__ import app
 
 
 @pytest.fixture
