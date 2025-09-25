@@ -28,7 +28,7 @@ proteingym-base = { path = "dist/proteingym_base-0.1.0b1-py3-none-any.whl" }
 proteingym-benchmark = { path = "dist/proteingym_benchmark-0.1.0b1-py3-none-any.whl" }
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/proteingym"]
+packages = ["src/"]
 
 [tool.ruff]
 line-length = 88
