@@ -119,7 +119,7 @@ def mock_valid_entry_points():
     mock_app.registered_commands = [mock_command]
     mock_ep.load.return_value = mock_app
 
-    return patch("pg2_benchmark.model.metadata.entry_points", return_value=[mock_ep])
+    return patch("proteingym.benchmark.model.metadata.entry_points", return_value=[mock_ep])
 
 
 @pytest.mark.parametrize(
