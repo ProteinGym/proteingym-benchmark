@@ -23,16 +23,16 @@ For more information, you can reference Hugging Face's [model cards](https://hug
 You can validate if your model will work with Protein Gym benchmark:
 
 ```shell
-$ uv run pg2-benchmark validate <your_model_package_path>
+$ uv run proteingym-benchmark validate <your_model_package_path>
 ```
 
 ## Datasets
 
 The datasets are included in the [dataset](datasets/) folder, where each dataset goes into a subfolder.
 
-In order to build the archived file for each dataset, [pg2-dataset](https://github.com/ProteinGym2/pg2-dataset) is used.
+In order to build the archived file for each dataset, [proteingym-base](https://github.com/ProteinGym/proteingym-base) is used.
 
-You can reference [this guide](https://github.com/ProteinGym2/pg2-dataset?tab=readme-ov-file#archive-data) to build the archived dataset.
+You can reference [this guide](https://github.com/ProteinGym/proteingym-base?tab=readme-ov-file#archive-data) to build the archived dataset.
 
 ## Benchmark
 
@@ -114,7 +114,7 @@ AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy uv run dvc repro benchmark/zero_shot/aws/dvc.
 
 You can generate dummy data by the following command:
 ```shell
-uv run pg2-benchmark dataset generate-dummy-data supervised/data/dummy/charge_ladder.csv --n-rows 5 --sequence-length 100
+uv run proteingym-benchmark dataset generate-dummy-data supervised/data/dummy/charge_ladder.csv --n-rows 5 --sequence-length 100
 ```
 
 
