@@ -35,7 +35,7 @@ path = "src/proteingym/benchmark/__about__.py"
 packages = ["src/"]
 
 [tool.uv.sources]
-pg2-dataset = { git = "https://github.com/ProteinGym2/pg2-dataset.git", rev = "58c327e13bade1effe1312eb2b8d5445016a5a8f" }
+proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base", rev = "58c327e13bade1effe1312eb2b8d5445016a5a8f" }
 
 [tool.ruff]
 line-length = 88
