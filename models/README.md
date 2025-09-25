@@ -1,49 +1,51 @@
 # Model
 
-This README details how to add a model to the benchmark.
+This document details the requirements and suggestions for implementing a model.
 
-## Entrypoints
+## Entrypoint
 
-A model requires only one entrypoint: the `train` method, which you can reference from below two models:
+A model requires at minimum an entrypoint for training: `train`.  The benchmark
+framework accesses models via the `train` entrypoint, for example:
+- [models/esm/src/proteingym/models/esm/__main__.py]
+- [models/pls/src/proteingym/models/pls/__main__.py]
 
-* [models/esm/src/proteingym/models/esm/__main__.py]
-* [models/pls/src/proteingym/models/pls/__main__.py]
+> [!NOTE]
+> The `train` entrypoint is convention for ProteinGym benchmark. And, required
+> by AWS SageMaker.
 
-Both **supervised** models and **zero-shot** models call this `train` method, because it is the glue method to glue the packages: `pg2-dataset`, `pg2-benchmark` and the models' original source code together. The method is named `train`, because for SageMaker, it looks for the `train` method as a entrypoint, thus it becomes the common method for both environments: local and AWS.
-
-This entrypoint expects a reference to a dataset, e.g., loaded by `pg2-dataset`: 
-
-```python
-from pg2_dataset.dataset import Dataset
-dataset = Dataset.from_path(dataset_file)
-```
-
-Additionally, this entrypoint also expects a reference to a model card, e.g., loaded by `pg2-benchmark`:
+The `train` entrypoint expects a reference to a dataset archive, e.g., loaded by
+`proteingym.base.Dataset`:
 
 ```python
-from pg2_benchmark.model import ModelCard
-model_card = ModelCard.from_path(model_card_file)
+from proteingym.base import Dataset
+dataset = Dataset.from_path(dataset_path)
 ```
 
-Finally, inside this `train` method:
+Additionally, the `train` entrypoint expects a reference to a model card, e.g., 
+loaded by `proteingym.benchmark.model.ModelCard`:
 
-* For a **supervised** model, like [esm](esm/), it calls `load` and `infer` in order:
-    * `load` uses `model_card` as input, and returns a model object as output.
-    * `infer` uses `dataset`, `model_card` and the model object as input, and returns the inferred predictions in a data frame as output.
+```python
+from proteingym.benchmark.model import ModelCard
+model_card = ModelCard.from_path(model_card_path)
+```
 
-* For a **zero-shot** model, like [pls](pls/), it calls `train` and `infer` in order:
-    * `train` uses `dataset` and `model_card` as input, and returns a model object as output.
-    * `infer` uses `dataset`, `model_card` and the model object as input, and returns the inferred predictions in a data frame as output.
+Finally, common logic in the `train` method:
 
-The result data frame is saved on the disk in the local environment and stored in AWS S3 in the cloud environment. After the container is destroyed, the result data frame is persisted for the later metric calculation.
+- For a **supervised** model, like [esm](models/esm/), it calls `load` and `infer` in order: 
+  - `load` uses `model_card` as input, and returns a model object as output.  
+  - `infer` uses `dataset`, `model_card` and the model object as input, and returns the inferred predictions in a data frame as output.
+
+- For a **zero-shot** model, like [pls](models/pls/), it calls `train` and `infer` in order:
+    - `train` uses `dataset` and `model_card` as input, and returns a model object as output.
+    - `infer` uses `dataset`, `model_card` and the model object as input, and returns the inferred predictions in a data frame as output.
 
 For reference, below an example Python implementation with `typer`:
 
 ``` python
 # In `__main__.py`
 import typer
-from pg2_dataset.dataset import Dataset
-from pg2_benchmark.model import ModelCard
+from proteingym.base import Dataset
+from proteingym.benchmark.model import ModelCard
 
 
 app = typer.Typer(
@@ -87,10 +89,17 @@ if __name__ == "__main__":
 
 ```
 
+## Output
+
+The framework runs ephemeral containers for each model-dataset pair. Therefore,
+the resulting data frame is persisted on disk in the local environment or stored
+in AWS S3 bucket in the cloud environment, so that the data frame can be later used
+for metric calculation.
+
 ## Suggested code structure
 
 > [!NOTE]
-> Python examples below translates to other languages too.
+> Python examples below translates to other languages.
 
 In addition to the [**required** entrypoints](#entrypoints), we suggest the
 following code structure:
@@ -166,7 +175,8 @@ def infer(dataset: Dataset, model_card: ModelCard, model: Any) -> DataFrame:
 
 ### `utils.py`
 
-It contains the supporting methods from the original models' code to facilitate the `model.py`.
+It contains the supporting methods from the original models' code to facilitate
+the `model.py`.
 
 ## Backends
 
