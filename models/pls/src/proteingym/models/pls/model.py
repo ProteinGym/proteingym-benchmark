@@ -1,12 +1,12 @@
 import logging
 
 import polars as pl
-from pg2_dataset.dataset import Dataset
-from pg2_dataset.splits.abstract_split_strategy import TrainTestValid
-from pg2_model_pls.preprocess import encode, load_x_and_y
+from proteingym.base import Dataset
+from proteingym.benchmark.model import ModelCard
 from sklearn.cross_decomposition import PLSRegression
 
-from pg2_benchmark.model import ModelCard
+from .preprocess import encode, load_x_and_y
+
 
 logger = logging.getLogger(__name__)
 

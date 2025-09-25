@@ -1,31 +1,32 @@
 [project]
-name = "pg2-model-pls"
+name = "proteingym-models-pls"
 version = "0.1.0"
-description = "Project to be submitted to ProteinGym2"
+description = "PLS model submitted to ProteinGym"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "typer~=0.16.0",
     "numpy~=2.2.5",
     "scikit-learn~=1.7.0",
-    "pg2-dataset[biopython]",
-    "pg2-benchmark",
+    "proteingym-base[biopython]",
+    "proteingym-benchmark",
     "polars[pyarrow]~=1.31.0",
 ]
 
 [project.scripts]
-pg2-model = "pg2_model_pls.__main__:app"
+pg2-model = "proteingym.benchmark.models.pls.__main__:app"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv.sources]
-pg2-dataset = { git = "https://github.com/ProteinGym2/pg2-dataset.git", rev = "58c327e13bade1effe1312eb2b8d5445016a5a8f" }
-pg2-benchmark = { git = "https://github.com/ProteinGym2/pg2-benchmark.git", rev = "main" }
+# TODO: After proteingym-base and proteingym-benchmark are public repositories, below reference can be updated
+proteingym-base = { path = "dist/proteingym_base-0.1.0b1-py3-none-any.whl" }
+proteingym-benchmark = { path = "dist/proteingym_benchmark-0.1.0b1-py3-none-any.whl" }
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/pg2_model_pls"]
+packages = ["src/"]
 
 [tool.ruff]
 line-length = 88
