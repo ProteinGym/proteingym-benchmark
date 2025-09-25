@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # In order to install the private repo: pg2-dataset, PAT is needed for now.
+      # In order to install the private repo: proteingym-base, PAT is needed for now.
       - name: Configure git credentials with PAT
         run: git config --global url."https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
