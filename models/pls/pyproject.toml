@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-pg2-model = "proteingym.benchmark.models.pls.__main__:app"
+pls = "proteingym.benchmark.models.pls.__main__:app"
 
 [build-system]
 requires = ["hatchling"]
