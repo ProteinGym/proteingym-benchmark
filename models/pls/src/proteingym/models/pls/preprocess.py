@@ -1,10 +1,8 @@
 import logging
-
-import numpy as np
 from typing import Any
 
+import numpy as np
 from proteingym.base.dataset import Dataset
-
 
 logger = logging.getLogger(__name__)
 
@@ -41,15 +39,15 @@ def load_x_and_y(dataset: Dataset, split) -> tuple[list[list[Any]], list[Any]]:
     # )
 
     match split:
-        case TrainTestValid.train:
+        case 1:
             split_X = dataset.assays.train(targets=targets).x.iloc[:, 0].tolist()
             split_Y = dataset.assays.train(targets=targets).y.iloc[:, 0].tolist()
 
-        case TrainTestValid.valid:
+        case 2:
             split_X = dataset.assays.valid(targets=targets).x.iloc[:, 0].tolist()
             split_Y = dataset.assays.valid(targets=targets).y.iloc[:, 0].tolist()
 
-        case TrainTestValid.test:
+        case 3:
             split_X = dataset.assays.test(targets=targets).x.iloc[:, 0].tolist()
             split_Y = dataset.assays.test(targets=targets).y.iloc[:, 0].tolist()
 

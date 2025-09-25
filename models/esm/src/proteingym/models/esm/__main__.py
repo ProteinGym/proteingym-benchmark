@@ -2,11 +2,11 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+from esm.model import infer, load
 from proteingym.base import Dataset
-from proteingym.benchmark.model import ModelCard
 from rich.console import Console
 
-from esm.model import infer, load
+from proteingym.benchmark.model import ModelCard
 
 app = typer.Typer(
     help="ProteinGym2 - Model CLI",

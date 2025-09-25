@@ -5,12 +5,12 @@ import torch
 from esm import pretrained
 from esm.data import Alphabet
 from proteingym.base import Dataset
-from proteingym.benchmark.model import ModelCard
 from tqdm import tqdm
+
+from proteingym.benchmark.model import ModelCard
 
 from .preprocess import encode
 from .utils import compute_pppl, label_row
-
 
 logger = logging.getLogger(__name__)
 

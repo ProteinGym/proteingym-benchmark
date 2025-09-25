@@ -1,8 +1,9 @@
+import time
+from datetime import datetime
+
+import boto3
 import typer
 from rich.console import Console
-import boto3
-from datetime import datetime
-import time
 
 sagemaker_app = typer.Typer()
 

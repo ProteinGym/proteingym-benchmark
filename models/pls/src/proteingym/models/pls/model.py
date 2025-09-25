@@ -2,11 +2,11 @@ import logging
 
 import polars as pl
 from proteingym.base import Dataset
-from proteingym.benchmark.model import ModelCard
 from sklearn.cross_decomposition import PLSRegression
 
-from .preprocess import encode, load_x_and_y
+from proteingym.benchmark.model import ModelCard
 
+from .preprocess import encode, load_x_and_y
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ def train(
     """
     train_X, train_Y = load_x_and_y(
         dataset=dataset,
-        split=TrainTestValid.train,
+        split=1,  # TODO: Update split
     )
 
     logger.info(f"Loaded {len(train_Y)} training records and start the training...")
@@ -69,7 +69,7 @@ def infer(
     """
     test_X, test_Y = load_x_and_y(
         dataset=dataset,
-        split=TrainTestValid.valid,
+        split=2,  # TODO: Update split
     )
 
     logger.info(f"Loaded {len(test_Y)} test records and start the scoring...")

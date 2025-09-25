@@ -1,14 +1,14 @@
-import typer
-from typing import Annotated
 from pathlib import Path
+from typing import Annotated
+
+import typer
 
 from proteingym.benchmark.dummy_data import (
-    charge_ladder_dataset,
     adjust_target_with_two_dummy_features,
+    charge_ladder_dataset,
 )
 
 dataset_app = typer.Typer()
-
 
 
 @dataset_app.command()
