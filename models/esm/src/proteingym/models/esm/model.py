@@ -4,12 +4,13 @@ import pandas as pd
 import torch
 from esm import pretrained
 from esm.data import Alphabet
-from pg2_dataset.dataset import Dataset
-from pg2_model_esm.preprocess import encode
-from pg2_model_esm.utils import compute_pppl, label_row
+from proteingym.base import Dataset
+from proteingym.benchmark.model import ModelCard
 from tqdm import tqdm
 
-from pg2_benchmark.model import ModelCard
+from .preprocess import encode
+from .utils import compute_pppl, label_row
+
 
 logger = logging.getLogger(__name__)
 
