@@ -6,8 +6,8 @@ This README details how to add a model to the benchmark.
 
 A model requires only one entrypoint: the `train` method, which you can reference from below two models:
 
-* [esm/src/pg2_model_esm/__main__.py](esm/src/pg2_model_esm/__main__.py)
-* [pls/src/pg2_model_pls/__main__.py](pls/src/pg2_model_pls/__main__.py)
+* [models/esm/src/proteingym/models/esm/__main__.py]
+* [models/pls/src/proteingym/models/pls/__main__.py]
 
 Both **supervised** models and **zero-shot** models call this `train` method, because it is the glue method to glue the packages: `pg2-dataset`, `pg2-benchmark` and the models' original source code together. The method is named `train`, because for SageMaker, it looks for the `train` method as a entrypoint, thus it becomes the common method for both environments: local and AWS.
 
