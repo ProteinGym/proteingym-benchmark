@@ -204,3 +204,71 @@ scores.to_csv(
     index=False,
 )
 ```
+
+## Building the Dockerfile
+
+A Dockerfile is a text file that contains instructions for building a Docker image - think of it as a recipe that tells Docker how to create a consistent, isolated environment for your model. This ensures your model runs the same way across different machines and environments. Docker solves the "it works on my machine" problem, allowing to run models identically on various hardware and configurations for optimal reproducibility. 
+
+### Basic Dockerfile Structure
+
+Every model needs a Dockerfile that follows this pattern:
+
+```dockerfile
+# 1. Start with a base Python image
+FROM python:3.12-slim-bookworm
+
+# 2. Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# 3. Install uv (fast Python package manager)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# 4. Set working directory
+# We specifically use /opt/program as AWS expect the files to be present in this location.
+WORKDIR /opt/program
+
+# 5. Copy benchmark framework
+COPY ./README.md ./pg2-benchmark/README.md
+COPY ./pyproject.toml ./pg2-benchmark/pyproject.toml
+COPY ./src ./pg2-benchmark/src
+
+# 6. Copy your model's configuration
+COPY ./models/YOUR_MODEL/README.md ./README.md
+COPY ./models/YOUR_MODEL/pyproject.toml ./pyproject.toml
+
+# 7. Handle private repository access (if needed)
+ARG GIT_CACHE_BUST=1
+RUN --mount=type=secret,id=git_auth \
+    git config --global credential.helper store && \
+    cat /run/secrets/git_auth > ~/.git-credentials && \
+    chmod 600 ~/.git-credentials
+
+# 8. Install Python dependencies
+RUN uv sync --no-cache
+
+# 9. Copy your model's source code
+COPY ./models/YOUR_MODEL/src ./src
+
+# 10. Set the entry point
+ENTRYPOINT ["uv", "run", "pg2-model"]
+```
+
+### Building and Testing
+
+To build your Docker image:
+
+```bash
+# From the project root directory
+docker build -f models/YOUR_MODEL/Dockerfile -t your-model .
+```
+
+To test it locally:
+
+```bash
+docker run --rm your-model train --help
+```
+
