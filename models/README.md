@@ -4,7 +4,7 @@ This README details how to add a model to the benchmark.
 
 ## Entrypoints
 
-A model requires only one entrypoint: the `train` method, which you can referecen from below two models:
+A model requires only one entrypoint: the `train` method, which you can reference from below two models:
 
 * [esm/src/pg2_model_esm/__main__.py](esm/src/pg2_model_esm/__main__.py)
 * [pls/src/pg2_model_pls/__main__.py](pls/src/pg2_model_pls/__main__.py)
