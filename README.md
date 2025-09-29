@@ -42,8 +42,8 @@ The benchmark is defined in the [benchmark](benchmark/) folder, where there exis
 
 There are two games to benchmark: supervised and zero-shot. Each game has its selected list of models and datasets defined in `dvc.yaml`.
 
-- Supervised game is defined in this [dvc.yaml](supervised/local/dvc.yaml)
-- Zero-shot game is defined in this [dvc.yaml](zero_shot/local/dvc.yaml)
+- Supervised game is defined in this [dvc.yaml](benchmark/supervised/local/dvc.yaml)
+- Zero-shot game is defined in this [dvc.yaml](benchmark/zero_shot/local/dvc.yaml)
 
 The models and datasets are defined in `vars` at the top, and DVC translates `vars` into a matrix, which is namely a loop defined as the following pseudo-code:
 
@@ -89,12 +89,13 @@ The difference of the AWS environment is that:
 >   c. SSO region: `us-east-1`.
 >   d. SSO registration scopes: Leave empty.
 >   e. Login via browser.
-> 2. Select the account: `ifflabdev`.
+> 3. Select the account: `ifflabdev`.
 >   a. Default client Region is `us-east-1`.
 >   b. CLI default ouptut: Leave empty.
 >   c. Profile name: `pg2benchmark`.
 > 4. You can find your account ID and profile by executing `cat ~/.aws/config`.
 > 5. Finally, you can run `dvc repro` with environment variables in each game: `AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro`
+> 6. After first setup you can authenticate through CLI: `aws sso login --profile <profile_name>`
 
 #### Supervised
 
