@@ -1,0 +1,105 @@
+schema: '2.0'
+stages:
+  setup:
+    cmd:
+    - mkdir -p logs output metric
+    - echo "Created local directories" > logs/setup.txt
+    outs:
+    - path: logs/setup.txt
+      hash: md5
+      md5: c861b0c201d5e28492f5dff8fab634f5
+      size: 26
+  create_training_job@dataset0-model0:
+    cmd:
+    - docker build --build-arg GIT_CACHE_BUST=1 --secret id=git_auth,src=../git-auth.txt
+      -f /Users/nezumikozo/Documents/protein/pg2-benchmark/models/pls/Dockerfile -t
+      pls:latest ../../..
+    - docker run --rm -v $(realpath 
+      /Users/nezumikozo/Documents/protein/pg2-benchmark/datasets/dummy/charge_ladder.pgdata):/charge_ladder.pgdata
+      -v $(realpath /Users/nezumikozo/Documents/protein/pg2-benchmark/models/pls):/pls
+      -v $(realpath output):/opt/ml/model pls:latest train --dataset-file /charge_ladder.pgdata
+      --model-card-file /pls/README.md
+    - docker image prune -a -f
+    deps:
+    - path: ../../../datasets/dummy/charge_ladder.pgdata
+      hash: md5
+      md5: 30c67f4245f30ef4c318b0a595912cf3
+      size: 59817
+    - path: ../../../models/pls
+      hash: md5
+      md5: 08f62ab9c4dce40feffead546765473e.dir
+      size: 551238557
+      nfiles: 17869
+    - path: ../../../models/pls/Dockerfile
+      hash: md5
+      md5: 901a42e51cf4a14665099985ee9c30de
+      size: 1138
+    - path: logs/setup.txt
+      hash: md5
+      md5: c861b0c201d5e28492f5dff8fab634f5
+      size: 26
+    outs:
+    - path: output/charge_ladder_pls.csv
+      hash: md5
+      md5: 0176ddd5445381fd46cade1946f38359
+      size: 1414
+  create_training_job@dataset1-model0:
+    cmd:
+    - docker build --build-arg GIT_CACHE_BUST=1 --secret id=git_auth,src=../git-auth.txt
+      -f /Users/nezumikozo/Documents/protein/pg2-benchmark/models/pls/Dockerfile -t
+      pls:latest ../../..
+    - docker run --rm -v $(realpath 
+      /Users/nezumikozo/Documents/protein/pg2-benchmark/datasets/neime/NEIME_2019.pgdata):/NEIME_2019.pgdata
+      -v $(realpath /Users/nezumikozo/Documents/protein/pg2-benchmark/models/pls):/pls
+      -v $(realpath output):/opt/ml/model pls:latest train --dataset-file /NEIME_2019.pgdata
+      --model-card-file /pls/README.md
+    - docker image prune -a -f
+    deps:
+    - path: ../../../datasets/neime/NEIME_2019.pgdata
+      hash: md5
+      md5: d28eaccefaaf7cf658c76d7257c9354b
+      size: 1331845
+    - path: ../../../models/pls
+      hash: md5
+      md5: 08f62ab9c4dce40feffead546765473e.dir
+      size: 551238557
+      nfiles: 17869
+    - path: ../../../models/pls/Dockerfile
+      hash: md5
+      md5: 901a42e51cf4a14665099985ee9c30de
+      size: 1138
+    - path: logs/setup.txt
+      hash: md5
+      md5: c861b0c201d5e28492f5dff8fab634f5
+      size: 26
+    outs:
+    - path: output/NEIME_2019_pls.csv
+      hash: md5
+      md5: 61c0be2ac761af9491a14fb94a6f3ae8
+      size: 1940
+  calculate_metric@dataset0-model0:
+    cmd: uv run pg2-benchmark metric calc --output-path output/charge_ladder_pls.csv
+      --metric-path metric/charge_ladder_pls.csv
+    deps:
+    - path: output/charge_ladder_pls.csv
+      hash: md5
+      md5: 0176ddd5445381fd46cade1946f38359
+      size: 1414
+    outs:
+    - path: metric/charge_ladder_pls.csv
+      hash: md5
+      md5: b9434f5f024f4845c8fc0ba1cd06874e
+      size: 1416
+  calculate_metric@dataset1-model0:
+    cmd: uv run pg2-benchmark metric calc --output-path output/NEIME_2019_pls.csv
+      --metric-path metric/NEIME_2019_pls.csv
+    deps:
+    - path: output/NEIME_2019_pls.csv
+      hash: md5
+      md5: 61c0be2ac761af9491a14fb94a6f3ae8
+      size: 1940
+    outs:
+    - path: metric/NEIME_2019_pls.csv
+      hash: md5
+      md5: 4bcdbb77b172c0257a9708377281192a
+      size: 1416

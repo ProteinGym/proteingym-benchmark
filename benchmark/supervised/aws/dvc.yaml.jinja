@@ -1,13 +1,13 @@
 vars:
-  - params.yaml
+- params.yaml
 
-  - datasets:
+- datasets
 {%- for dataset in datasets %}
     - name: {{ dataset.name }}
       local_path: {{ dataset.local_path }}
 {%- endfor %}
 
-  - models:
+- models
 {%- for model in models %}
     - name: {{ model.name }}
       local_path: {{ model.local_path }}
@@ -63,7 +63,7 @@ stages:
       model: ${models}
 
     cmd: >
-      uv run pg2-benchmark sagemaker create-training-job
+      uv run proteingym-benchmark sagemaker create-training-job
       --model-name ${item.model.name}
       --region-name ${aws.region_name}
       --sagemaker-role-name ${aws.sagemaker_role_name}
@@ -77,7 +77,7 @@ stages:
       > logs/create_job_${item.dataset.name}_${item.model.name}.txt
 
     deps:
-      - ../../../src/pg2_benchmark/cli/sagemaker.py
+      - ../../../src/proteingym/benchmark/cli/sagemaker.py
       - logs/s3_upload_complete.txt
       - logs/ecr_push_complete.txt
       - logs/image_uri.txt
@@ -92,13 +92,13 @@ stages:
       model: ${models}
 
     cmd: >
-      uv run pg2-benchmark sagemaker monitor-training-job
+      uv run proteingym-benchmark sagemaker monitor-training-job
       --region-name ${aws.region_name}
       --job-name $(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)
       > logs/monitor_job_${item.dataset.name}_${item.model.name}.txt
 
     deps:
-      - ../../../src/pg2_benchmark/cli/sagemaker.py
+      - ../../../src/proteingym/benchmark/cli/sagemaker.py
       - logs/create_job_${item.dataset.name}_${item.model.name}.txt
 
     outs:
@@ -114,7 +114,7 @@ stages:
       - aws s3 cp s3://${aws.s3_output_prefix}/$(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)/output/model.tar.gz ${target.output_dir}/
       - tar -xzf ${target.output_dir}/model.tar.gz -C ${target.output_dir}/
       - rm ${target.output_dir}/model.tar.gz
-      - uv run pg2-benchmark metric calc --output-path ${target.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric-path ${target.metric_dir}/${item.dataset.name}_${item.model.name}.csv
+      - uv run proteingym-benchmark metric calc --output-path ${target.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric-path ${target.metric_dir}/${item.dataset.name}_${item.model.name}.csv
 
     deps:
       - logs/monitor_job_${item.dataset.name}_${item.model.name}.txt
