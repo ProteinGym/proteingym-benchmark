@@ -37,4 +37,3 @@ repos:
   hooks:
     - id: uv-lock
     - id: uv-sync
-    
