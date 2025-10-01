@@ -3,55 +3,57 @@ vars:
 
   - datasets:
 {%- for dataset in datasets %}
-    - name: {{ dataset.name }}
-      container_path: {{ dataset.container_path }}
-      local_path: {{ dataset.local_path }}
+  - name: {{ dataset.name }}
+    container_path: {{ dataset.container_path }}
+    local_path: {{ dataset.local_path }}
 {%- endfor %}
-
-  - models:
+- models:
 {%- for model in models %}
-    - name: {{ model.name }}
-      container_path: {{ model.container_path }}
-      local_path: {{ model.local_path }}
-      dockerfile: {{ model.dockerfile }}
+  - name: {{ model.name }}
+    container_path: {{ model.container_path }}
+    container_model_card: {{ model.container_model_card }}
+    local_path: {{ model.local_path }}
+    local_dockerfile: {{ model.local_dockerfile }}
 {%- endfor %}
 
 stages:
 
   setup:
     cmd:
-      - mkdir -p logs ${destination.output_dir} ${destination.metric_dir}
+      - mkdir -p logs ${target.output_path} ${target.metric_path}
       - echo "Created local directories" > logs/setup.txt
     outs:
       - logs/setup.txt
-
+  
   create_training_job:
     matrix:
       dataset: ${datasets}
       model: ${models}
-
     cmd:
-      - docker build --build-arg GIT_CACHE_BUST=${git.git_cache_bust} --secret id=git_auth,src=../git-auth.txt -f ${item.model.dockerfile} -t ${item.model.name}:latest ../../..
-      - docker run --rm -v $(realpath ${source.datasets_dir}):/datasets -v $(realpath ${source.models_dir}):/models -v $(realpath ${destination.output_dir}):/opt/ml/model ${item.model.name}:latest train --dataset-file ${item.dataset.container_path} --model-card-file ${item.model.container_path}
+      - docker build --build-arg GIT_CACHE_BUST=${git.git_cache_bust} --secret id=git_auth,src=../git-auth.txt
+        -f ${item.model.local_dockerfile} -t ${item.model.name}:latest ../../..
+      - docker run --rm -v $(realpath ${item.dataset.local_path}):${item.dataset.container_path} -v $(realpath
+        ${item.model.local_path}):${item.model.container_path} -v $(realpath ${target.output_path}):/opt/ml/model
+        ${item.model.name}:latest train --dataset-file ${item.dataset.container_path}
+        --model-card-file ${item.model.container_model_card}
       - docker image prune -a -f
-
     deps:
       - logs/setup.txt
       - ${item.dataset.local_path}
       - ${item.model.local_path}
-      - ${item.model.dockerfile}
+      - ${item.model.local_dockerfile}
     outs:
-      - ${destination.output_dir}/${item.dataset.name}_${item.model.name}.csv:
+      - ${target.output_path}/${item.dataset.name}_${item.model.name}.csv:
           cache: true
-
+  
   calculate_metric:
     matrix:
       dataset: ${datasets}
       model: ${models}
-
-    cmd: uv run pg2-benchmark metric calc --output-path ${destination.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric-path ${destination.metric_dir}/${item.dataset.name}_${item.model.name}.csv
+    cmd: uv run pg2-benchmark metric calc --output-path ${target.output_path}/${item.dataset.name}_${item.model.name}.csv
+      --metric-path ${target.metric_path}/${item.dataset.name}_${item.model.name}.csv
     deps:
-      - ${destination.output_dir}/${item.dataset.name}_${item.model.name}.csv
+      - ${target.output_path}/${item.dataset.name}_${item.model.name}.csv
     outs:
-      - ${destination.metric_dir}/${item.dataset.name}_${item.model.name}.csv:
+      - ${target.metric_path}/${item.dataset.name}_${item.model.name}.csv:
           cache: true

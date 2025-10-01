@@ -1,0 +1,6 @@
+git:
+  git_cache_bust: 1
+
+target:
+  output_path: output
+  metric_path: metric
