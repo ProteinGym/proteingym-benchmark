@@ -1,0 +1,14 @@
+[
+  {
+    "name": "charge_ladder",
+    "path": "/Users/nezumikozo/Documents/protein/pg2-benchmark/datasets/dummy/charge_ladder.pgdata"
+  },
+  {
+    "name": "NEIME_2019",
+    "path": "/Users/nezumikozo/Documents/protein/pg2-benchmark/datasets/neime/NEIME_2019.pgdata"
+  },
+  {
+    "name": "ranganathan",
+    "path": "/Users/nezumikozo/Documents/protein/pg2-benchmark/datasets/ranganathan/ranganathan.pgdata"
+  }
+]
