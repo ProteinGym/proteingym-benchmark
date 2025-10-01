@@ -37,9 +37,4 @@ repos:
   hooks:
     - id: uv-lock
     - id: uv-sync
-
-- repo: https://github.com/Riverside-Healthcare/djlint
-  rev: v1.36.2
-  hooks:
-    - id: djlint-jinja
-      files: \.(jinja|j2)$
+    
