@@ -47,9 +47,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure git credentials with PAT
-        run: git config --global url."https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/".insteadOf "https://github.com/"
-
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
