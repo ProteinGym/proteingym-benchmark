@@ -13,7 +13,7 @@ dynamic = ["version"]  # Dynamically set hatch version using git tags
 requires-python = ">=3.12"
 dependencies = [
     "typer>=0.15.2",
-    "proteingym-base[biopython]",
+    "proteingym-base",
     "pycm>=4.3",
     "scipy>=1.15.3",
     "dvc>=3.59.2",
@@ -35,7 +35,7 @@ path = "src/proteingym/benchmark/__about__.py"
 packages = ["src/"]
 
 [tool.uv.sources]
-proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base", rev = "58c327e13bade1effe1312eb2b8d5445016a5a8f" }
+proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base", tag = "v0.1.0rc0" }
 
 [tool.ruff]
 line-length = 88
