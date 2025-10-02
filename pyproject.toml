@@ -32,7 +32,7 @@ build-backend = "hatchling.build"
 path = "src/proteingym/benchmark/__about__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/"]
+packages = ["src/proteingym"]
 
 [tool.uv.sources]
 proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base", tag = "v0.1.0rc0" }
