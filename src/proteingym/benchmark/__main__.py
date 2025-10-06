@@ -4,11 +4,11 @@ from typing import Annotated
 
 import typer
 
-from pg2_benchmark.__about__ import __version__
-from pg2_benchmark.cli.dataset import dataset_app
-from pg2_benchmark.cli.metric import metric_app
-from pg2_benchmark.cli.sagemaker import sagemaker_app
-from pg2_benchmark.model import ModelCard, ModelProject
+from .__about__ import __version__
+from .cli.dataset import dataset_app
+from .cli.metric import metric_app
+from .cli.sagemaker import sagemaker_app
+from .model import ModelCard, ModelProject
 
 app = typer.Typer(
     name="benchmark",
@@ -27,7 +27,7 @@ def setup_logger(*, level: int = logging.CRITICAL) -> None:
     Args:
         log_level (int): The logging level to set. Defaults to `logging.CRITICAL`.
     """
-    logger = logging.getLogger("pg2_benchmark")
+    logger = logging.getLogger("proteingym.benchmark")
     logger.setLevel(level)
 
     stream_handler = logging.StreamHandler()
@@ -68,7 +68,7 @@ def main(
         raise typer.Exit()
 
     if not ctx.invoked_subcommand:
-        typer.echo("Welcome to the PG2 Dataset CLI!")
+        typer.echo("Welcome to the ProteinGym benchmark CLI!")
         typer.echo("Use --help to see available commands.")
 
 
@@ -83,7 +83,7 @@ def validate(
         ),
     ],
 ):
-    logger = logging.getLogger("pg2_benchmark")
+    logger = logging.getLogger("proteingym.benchmark")
 
     try:
         model_project = ModelProject.from_path(project_path)

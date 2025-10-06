@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 import pytest
 from typer.testing import CliRunner
 
-from pg2_benchmark.__main__ import app
+from proteingym.benchmark.__main__ import app
 
 
 @pytest.fixture
@@ -119,7 +119,9 @@ def mock_valid_entry_points():
     mock_app.registered_commands = [mock_command]
     mock_ep.load.return_value = mock_app
 
-    return patch("pg2_benchmark.model.metadata.entry_points", return_value=[mock_ep])
+    return patch(
+        "proteingym.benchmark.model.metadata.entry_points", return_value=[mock_ep]
+    )
 
 
 @pytest.mark.parametrize(

@@ -1,6 +1,6 @@
-from pg2_benchmark.dummy_data import (
-    charge_ladder_dataset,
+from proteingym.benchmark.dummy_data import (
     adjust_target_with_two_dummy_features,
+    charge_ladder_dataset,
 )
 
 

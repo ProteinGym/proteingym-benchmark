@@ -13,7 +13,7 @@ def calc(
     output_path: str = typer.Option(help="Path to the model output file"),
     metric_path: str = typer.Option(help="Path to the metric output file"),
 ):
-    logger = logging.getLogger("pg2_benchmark")
+    logger = logging.getLogger("proteingym.benchmark")
     logger.info("Calculating metrics...")
 
     df = pd.read_csv(output_path)

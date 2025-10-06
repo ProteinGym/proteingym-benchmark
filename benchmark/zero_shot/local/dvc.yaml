@@ -45,7 +45,7 @@ stages:
       dataset: ${datasets}
       model: ${models}
     
-    cmd: uv run pg2-benchmark metric calc --output-path ${destination.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric-path ${destination.metric_dir}/${item.dataset.name}_${item.model.name}.csv
+    cmd: uv run proteingym-benchmark metric calc --output-path ${destination.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric-path ${destination.metric_dir}/${item.dataset.name}_${item.model.name}.csv
     deps:
       - ${destination.output_dir}/${item.dataset.name}_${item.model.name}.csv
     outs:

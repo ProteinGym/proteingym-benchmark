@@ -1,5 +1,5 @@
 [project]
-name = "pg2-benchmark"
+name = "proteingym-benchmark"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -13,29 +13,30 @@ dynamic = ["version"]  # Dynamically set hatch version using git tags
 requires-python = ">=3.12"
 dependencies = [
     "typer>=0.15.2",
-    "pg2-dataset[biopython]",
+    "proteingym-base",
     "pycm>=4.3",
     "scipy>=1.15.3",
     "dvc>=3.59.2",
     "boto3>=1.38.27",
     "python-frontmatter>=1.1.0",
+    "pandas>=2.2.0",  # TODO: Remove when dummy dataset is removed
 ]
 
 [project.scripts]
-pg2-benchmark = "pg2_benchmark.__main__:app"
+proteingym-benchmark = "proteingym.benchmark.__main__:app"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "src/pg2_benchmark/__about__.py"
+path = "src/proteingym/benchmark/__about__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/pg2_benchmark"]
+packages = ["src/proteingym"]
 
 [tool.uv.sources]
-pg2-dataset = { git = "https://github.com/ProteinGym2/pg2-dataset.git", rev = "58c327e13bade1effe1312eb2b8d5445016a5a8f" }
+proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base", tag = "v0.1.0rc0" }
 
 [tool.ruff]
 line-length = 88

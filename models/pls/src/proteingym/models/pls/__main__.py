@@ -2,15 +2,16 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
-from pg2_dataset.dataset import Dataset
-from pg2_model_pls.model import infer
-from pg2_model_pls.model import train as train_model
+from proteingym.base import Dataset
 from rich.console import Console
 
-from pg2_benchmark.model import ModelCard
+from proteingym.benchmark.model import ModelCard
+
+from .model import infer
+from .model import train as train_model
 
 app = typer.Typer(
-    help="ProteinGym2 - Model CLI",
+    help="PLS model CLI",
     add_completion=True,
 )
 

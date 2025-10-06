@@ -25,7 +25,7 @@ jobs:
         env:
           repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          # Configure PAT to git clone the private repo: pg2-dataset
+          # Configure PAT to git clone the private repo: proteingym-base
           git config --global credential.helper store
           echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ~/.git-credentials
           uv sync
