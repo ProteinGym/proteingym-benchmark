@@ -11,8 +11,7 @@ COPY dist/proteingym*.whl dist/
 # Copy and install dependencies
 COPY README.md README.md
 COPY pyproject.toml pyproject.toml
-RUN uv sync --no-cache
-
 COPY src/ src/
+RUN uv sync --no-cache
 
 ENTRYPOINT ["uv", "run", "pls"]

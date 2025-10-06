@@ -2,12 +2,12 @@ import logging
 from typing import Any
 
 import numpy as np
-from proteingym.base.dataset import Dataset
+from proteingym.base import Dataset
 
 logger = logging.getLogger(__name__)
 
 
-def load_x_and_y(dataset: Dataset, split) -> tuple[list[list[Any]], list[Any]]:
+def load_x_and_y(dataset: Dataset, split) -> tuple[list[Any], list[Any]]:
     """Load feature and target data from a dataset archive file for a specified split.
 
     This function applies the configured split strategy for the dataset,
@@ -19,8 +19,8 @@ def load_x_and_y(dataset: Dataset, split) -> tuple[list[list[Any]], list[Any]]:
         split: The data split to load (train, validation, or test).
 
     Returns:
-        tuple[list[list[Any]], list[Any]]: A tuple containing:
-            - split_X (list[list[Any]]): Feature data for the specified split, where each
+        tuple[list[Any], list[Any]]: A tuple containing:
+            - split_X (list[Any]): Feature data for the specified split, where each
                 inner list represents features for a single sample.
             - split_Y (list[Any]): Target values for the specified split.
 
@@ -30,26 +30,45 @@ def load_x_and_y(dataset: Dataset, split) -> tuple[list[list[Any]], list[Any]]:
         - Multiple targets and features support is planned for future implementation.
     """
 
-    targets = list(dataset.assays.meta.assays.keys())
-
     # TODO: Update split below
     # dataset.assays.add_split(
     #     split_strategy=SPLIT_STRATEGY_MAPPING[dataset.assays.meta.split_strategy](),
     #     targets=targets,
     # )
 
+    # TODO: Remove dummy split with even split size
+    split_size = len(dataset.assays[0].records) // 3
+
     match split:
         case 1:
-            split_X = dataset.assays.train(targets=targets).x.iloc[:, 0].tolist()
-            split_Y = dataset.assays.train(targets=targets).y.iloc[:, 0].tolist()
+            split_X = [
+                str(seq.value) for seq, _ in dataset.assays[0].records[:split_size]
+            ]
+            split_Y = [
+                target["target"] for _, target in dataset.assays[0].records[:split_size]
+            ]
 
         case 2:
-            split_X = dataset.assays.valid(targets=targets).x.iloc[:, 0].tolist()
-            split_Y = dataset.assays.valid(targets=targets).y.iloc[:, 0].tolist()
+            split_X = [
+                str(seq.value)
+                for seq, _ in dataset.assays[0].records[split_size : split_size * 2]
+            ]
+            split_Y = [
+                target["target"]
+                for _, target in dataset.assays[0].records[split_size : split_size * 2]
+            ]
 
         case 3:
-            split_X = dataset.assays.test(targets=targets).x.iloc[:, 0].tolist()
-            split_Y = dataset.assays.test(targets=targets).y.iloc[:, 0].tolist()
+            split_X = [
+                str(seq.value)
+                for seq, _ in dataset.assays[0].records[split_size * 2 : split_size * 3]
+            ]
+            split_Y = [
+                target["target"]
+                for _, target in dataset.assays[0].records[
+                    split_size * 2 : split_size * 3
+                ]
+            ]
 
     logger.info("Loaded the dataset with splits X and Y.")
 

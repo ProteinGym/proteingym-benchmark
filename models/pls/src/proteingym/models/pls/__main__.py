@@ -3,9 +3,8 @@ from typing import Annotated
 
 import typer
 from proteingym.base import Dataset
+from proteingym.base.model import ModelCard
 from rich.console import Console
-
-from proteingym.benchmark.model import ModelCard
 
 from .model import infer
 from .model import train as train_model
