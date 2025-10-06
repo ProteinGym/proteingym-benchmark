@@ -25,14 +25,7 @@ jobs:
         env:
           repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          # Configure PAT to git clone the private repo: proteingym-base
-          git config --global credential.helper store
-          echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ~/.git-credentials
-          uv sync
-     
           # Run DVC repro
-          echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > benchmark/supervised/git-auth.txt
-          echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > benchmark/zero_shot/git-auth.txt
           uv run dvc repro benchmark/supervised/local/dvc.yaml
           uv run dvc repro benchmark/zero_shot/local/dvc.yaml
           
