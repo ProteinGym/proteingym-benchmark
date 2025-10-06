@@ -22,7 +22,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv.sources]
-# TODO: After proteingym-base and proteingym-benchmark are public repositories, below reference can be updated
+# TODO: After proteingym-base is public repositories, below reference can be updated
 proteingym-base = { path = "dist/proteingym_base-0.1.0b1-py3-none-any.whl" }
 
 [tool.hatch.build.targets.wheel]
