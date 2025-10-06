@@ -21,15 +21,21 @@ jobs:
         with:
           python-version-file: ".python-version"
 
+      - name: Generate datasets and models
+        run: |
+          # Supervised game: Generate datasets and models
+          uv run proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder" or .name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename})' | yq -p json -o json '. = {"datasets": .}' > benchmark/supervised/local/datasets.json
+          uv run proteingym-base list-models models | jq 'map(select(.name == "pls")) | map({name: .name, input_filename: .input_filename})' | yq -p json -o json '. = {"models": .}' > benchmark/supervised/local/models.json
+          
+          # Zero-shot game: Generate datasets and models
+          uv run proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename})' | yq -p json -o json '. = {"datasets": .}' > benchmark/zero_shot/local/datasets.json
+          uv run proteingym-base list-models models | jq 'map(select(.name == "esm")) | map({name: .name, input_filename: .input_filename})' | yq -p json -o json '. = {"models": .}' > benchmark/zero_shot/local/models.json
+          
+
       - name: Run model validation
         env:
           repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          # Configure PAT to git clone the private repo: proteingym-base
-          git config --global credential.helper store
-          echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ~/.git-credentials
-          uv sync
-
           # Supervised game: Generate datasets and models
           uv run proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder" or .name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename})' | yq -p json -o json '. = {"datasets": .}' > benchmark/supervised/local/datasets.json
           uv run proteingym-base list-models models | jq 'map(select(.name == "pls")) | map({name: .name, input_filename: .input_filename})' | yq -p json -o json '. = {"models": .}' > benchmark/supervised/local/models.json
