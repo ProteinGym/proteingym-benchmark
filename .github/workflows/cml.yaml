@@ -25,10 +25,25 @@ jobs:
         env:
           repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          # Run DVC repro
-          uv run dvc repro benchmark/supervised/local/dvc.yaml
-          uv run dvc repro benchmark/zero_shot/local/dvc.yaml
+          # Configure PAT to git clone the private repo: proteingym-base
+          git config --global credential.helper store
+          echo "https://${{ secrets.USERNAME }}:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com" > ~/.git-credentials
+          uv sync
+
+          # Supervised game: Generate datasets and models
+          uv run proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder" or .name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename})' | yq -p json -o json '. = {"datasets": .}' > benchmark/supervised/local/datasets.json
+          uv run proteingym-base list-models models | jq 'map(select(.name == "pls")) | map({name: .name, input_filename: .input_filename})' | yq -p json -o json '. = {"models": .}' > benchmark/supervised/local/models.json
           
+          # Supervised game: Run DVC repro
+          uv run dvc repro benchmark/supervised/local/dvc.yaml
+
+          # Zero-shot game: Generate datasets and models
+          uv run proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename})' | yq -p json -o json '. = {"datasets": .}' > benchmark/zero_shot/local/datasets.json
+          uv run proteingym-base list-models models | jq 'map(select(.name == "esm")) | map({name: .name, input_filename: .input_filename})' | yq -p json -o json '. = {"models": .}' > benchmark/zero_shot/local/models.json
+          
+          # Zero-shot game: Run DVC repro
+          uv run dvc repro benchmark/zero_shot/local/dvc.yaml
+
           # Create report with metrics
           # Pick one supervised model
           echo "✅ Supervised models have all passed validation." >> report.md
