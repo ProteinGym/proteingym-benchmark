@@ -8,8 +8,8 @@ from .cli.metric import metric_app
 from .cli.sagemaker import sagemaker_app
 
 app = typer.Typer(
-    name="benchmark",
-    help="ProteinGym2 - Benchmark CLI",
+    name="proteingym-benchmark",
+    help="CLI for handling ProteinGym benchmark",
     add_completion=False,
 )
 
