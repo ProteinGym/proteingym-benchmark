@@ -13,13 +13,11 @@ dynamic = ["version"]  # Dynamically set hatch version using git tags
 requires-python = ">=3.12"
 dependencies = [
     "typer>=0.15.2",
-    "proteingym-base",
     "pycm>=4.3",
     "scipy>=1.15.3",
     "dvc>=3.59.2",
     "boto3>=1.38.27",
-    "python-frontmatter>=1.1.0",
-    "pandas>=2.2.0",  # TODO: Remove when dummy dataset is removed
+    "pandas>=2.2.0", # TODO: Replace with Polars when custom metric is implemented
 ]
 
 [project.scripts]
@@ -34,9 +32,6 @@ path = "src/proteingym/benchmark/__about__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/proteingym"]
-
-[tool.uv.sources]
-proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base", tag = "v0.1.0rc0" }
 
 [tool.ruff]
 line-length = 88
