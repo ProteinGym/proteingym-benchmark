@@ -1577,8 +1577,8 @@ wheels = [
 
 [[package]]
 name = "proteingym-base"
-version = "0.1.0rc0"
-source = { git = "https://github.com/ProteinGym/proteingym-base?tag=v0.1.0rc0#a2065cee93c857b5cbbed966a5174eb60d20f131" }
+version = "0.1.0b1"
+source = { path = "dist/proteingym_base-0.1.0b1-py3-none-any.whl" }
 dependencies = [
     { name = "biopython" },
     { name = "msgpack" },
@@ -1588,6 +1588,21 @@ dependencies = [
     { name = "semver" },
     { name = "toml" },
     { name = "typer" },
+]
+wheels = [
+    { filename = "proteingym_base-0.1.0b1-py3-none-any.whl", hash = "sha256:89a1ba9a1a1902ab85d8117b7c45a73901420f36a9755f500633531250a71643" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "biopython", specifier = ">=1.85.0,<2.0.0" },
+    { name = "msgpack", specifier = ">=1.1.0,<2.0.0" },
+    { name = "polars", extras = ["pyarrow"], specifier = ">=1.30.0,<2.0.0" },
+    { name = "pydantic", specifier = ">=2.11.4,<3.0.0" },
+    { name = "python-frontmatter", specifier = ">=1.1.0" },
+    { name = "semver", specifier = ">=3.0.4,<4.0.0" },
+    { name = "toml", specifier = ">=0.10.2,<1.0.0" },
+    { name = "typer", specifier = ">=0.16.0,<1.0.0" },
 ]
 
 [[package]]
@@ -1618,7 +1633,7 @@ requires-dist = [
     { name = "boto3", specifier = ">=1.38.27" },
     { name = "dvc", specifier = ">=3.59.2" },
     { name = "pandas", specifier = ">=2.2.0" },
-    { name = "proteingym-base", git = "https://github.com/ProteinGym/proteingym-base?tag=v0.1.0rc0" },
+    { name = "proteingym-base", path = "dist/proteingym_base-0.1.0b1-py3-none-any.whl" },
     { name = "pycm", specifier = ">=4.3" },
     { name = "scipy", specifier = ">=1.15.3" },
     { name = "typer", specifier = ">=0.15.2" },

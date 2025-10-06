@@ -35,7 +35,8 @@ path = "src/proteingym/benchmark/__about__.py"
 packages = ["src/proteingym"]
 
 [tool.uv.sources]
-proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base", tag = "v0.1.0rc0" }
+# TODO: After proteingym-base is public repositories, below reference can be updated
+proteingym-base = { path = "dist/proteingym_base-0.1.0b1-py3-none-any.whl" }
 
 [tool.ruff]
 line-length = 88
