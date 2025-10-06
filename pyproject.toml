@@ -18,8 +18,7 @@ dependencies = [
     "scipy>=1.15.3",
     "dvc>=3.59.2",
     "boto3>=1.38.27",
-    "python-frontmatter>=1.1.0",
-    "pandas>=2.2.0",  # TODO: Remove when dummy dataset is removed
+    "pandas>=2.2.0", # TODO: Remove when dummy dataset is removed
 ]
 
 [project.scripts]
