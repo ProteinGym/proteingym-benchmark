@@ -7,7 +7,6 @@ requires-python = ">=3.12"
 dependencies = [
     "typer~=0.16.0",
     "proteingym-base[biopython]",
-    "proteingym-benchmark",
     "fair-esm~=2.0.0",
     "torch~=2.7.1",
     "bio~=1.8.0",
@@ -25,10 +24,9 @@ build-backend = "hatchling.build"
 [tool.uv.sources]
 # TODO: After proteingym-base and proteingym-benchmark are public repositories, below reference can be updated
 proteingym-base = { path = "dist/proteingym_base-0.1.0b1-py3-none-any.whl" }
-proteingym-benchmark = { path = "dist/proteingym_benchmark-0.1.0b1-py3-none-any.whl" }
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/"]
+packages = ["src/proteingym"]
 
 [tool.ruff]
 line-length = 88

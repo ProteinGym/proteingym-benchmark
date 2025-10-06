@@ -36,7 +36,7 @@ def load_x_and_y(dataset: Dataset, split) -> tuple[list[Any], list[Any]]:
     #     targets=targets,
     # )
 
-    # TODO: Remove dummy split with even split size
+    # TODO: Replace this dummy split with above split method
     split_size = len(dataset.assays[0].records) // 3
 
     match split:

@@ -5,9 +5,8 @@ import torch
 from esm import pretrained
 from esm.data import Alphabet
 from proteingym.base import Dataset
+from proteingym.base.model import ModelCard
 from tqdm import tqdm
-
-from proteingym.benchmark.model import ModelCard
 
 from .preprocess import encode
 from .utils import compute_pppl, label_row
@@ -65,15 +64,24 @@ def infer(
     Raises:
         ValueError: If an unrecognized scoring strategy is specified
     """
-    assays = dataset.assays.meta.assays
-    targets = list(dataset.assays.meta.assays.keys())
+    assays = dataset.assays[0]
 
-    sequence = assays[targets[0]].constants["sequence"]
-    mutation_col = assays[targets[0]].constants["mutation_col"]
+    df = pd.DataFrame(
+        {
+            "mutation_col": [str(seq.value) for seq, _ in assays.records],
+            "target": [target["target"] for _, target in assays.records],
+        }
+    )
 
-    df = dataset.assays.data_frame
+    # For ESM zero-shot model, the schema is defined as ["mutation_col", "target"]
+    # with a reference sequence.
+    # For example: ["A2C", "-0.03"] with a reference sequence "AABB" refers to:
+    # in position 2, "A" is mutated to "C", which ends as "ACBB".
+    # But this reference sequence cannot be represented in the current proteingym-base dataset.
+    # As a workaround, variables are used to store this constant reference sequence.
+    reference_sequence = assays.variables["R"]
 
-    batch_tokens = encode(sequence, alphabet)
+    batch_tokens = encode(reference_sequence, alphabet)
 
     match model_card.hyper_params["scoring_strategy"]:
         case "wt-marginals":
@@ -82,8 +90,8 @@ def infer(
 
             df["pred"] = df.apply(
                 lambda row: label_row(
-                    row[mutation_col],
-                    sequence,
+                    row["mutation_col"],
+                    reference_sequence,
                     token_probs,
                     alphabet,
                     model_card.hyper_params["offset_idx"],
@@ -109,8 +117,8 @@ def infer(
 
             df["pred"] = df.apply(
                 lambda row: label_row(
-                    row[mutation_col],
-                    sequence,
+                    row["mutation_col"],
+                    reference_sequence,
                     token_probs,
                     alphabet,
                     model_card.hyper_params["offset_idx"],
@@ -123,8 +131,8 @@ def infer(
 
             df["pred"] = df.progress_apply(
                 lambda row: compute_pppl(
-                    row[mutation_col],
-                    sequence,
+                    row["mutation_col"],
+                    reference_sequence,
                     model,
                     alphabet,
                     model_card.hyper_params["offset_idx"],
@@ -137,6 +145,6 @@ def infer(
                 f"Unrecognized scoring strategy: {model_card.hyper_params['scoring_strategy']}"
             )
 
-    df.rename(columns={targets[0]: "test"}, inplace=True)
+    df.rename(columns={"target": "test"}, inplace=True)
 
     return df
