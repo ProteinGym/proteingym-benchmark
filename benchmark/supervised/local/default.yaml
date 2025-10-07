@@ -1,0 +1,3 @@
+output:
+  prediction: output
+  metric: metric

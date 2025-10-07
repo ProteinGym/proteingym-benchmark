@@ -2,9 +2,8 @@ import logging
 
 import polars as pl
 from proteingym.base import Dataset
+from proteingym.base.model import ModelCard
 from sklearn.cross_decomposition import PLSRegression
-
-from proteingym.benchmark.model import ModelCard
 
 from .preprocess import encode, load_x_and_y
 

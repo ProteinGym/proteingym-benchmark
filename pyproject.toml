@@ -13,6 +13,7 @@ dynamic = ["version"]  # Dynamically set hatch version using git tags
 requires-python = ">=3.12"
 dependencies = [
     "typer>=0.15.2",
+    "proteingym-base",
     "pycm>=4.3",
     "scipy>=1.15.3",
     "dvc>=3.59.2",
@@ -32,6 +33,10 @@ path = "src/proteingym/benchmark/__about__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/proteingym"]
+
+[tool.uv.sources]
+# TODO: After proteingym-base is public repositories, below reference can be updated
+proteingym-base = { path = "dist/proteingym_base-0.1.0b1-py3-none-any.whl" }
 
 [tool.ruff]
 line-length = 88
