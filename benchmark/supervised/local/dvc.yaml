@@ -7,7 +7,7 @@ stages:
 
   setup:
     cmd:
-      - mkdir -p logs ${target.output_path} ${target.metric_path}
+      - mkdir -p logs ${output.prediction} ${output.metric}
       - echo "Created local directories" > logs/setup.txt
     outs:
       - logs/setup.txt
@@ -19,14 +19,14 @@ stages:
 
     cmd:
       - docker build -f $(dirname ${item.model.input_filename})/Dockerfile -t ${item.model.name}:latest $(dirname ${item.model.input_filename})
-      - docker run --rm -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename}) -v $(realpath ${item.model.input_filename}):/$(basename ${item.model.input_filename}) -v $(realpath ${target.output_path}):/opt/ml/model ${item.model.name}:latest train --dataset-file /$(basename ${item.dataset.input_filename}) --model-card-file /$(basename ${item.model.input_filename})
+      - docker run --rm -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename}) -v $(realpath ${item.model.input_filename}):/$(basename ${item.model.input_filename}) -v $(realpath ${output.prediction}):/opt/ml/model ${item.model.name}:latest train --dataset-file /$(basename ${item.dataset.input_filename}) --model-card-file /$(basename ${item.model.input_filename})
       - docker image prune -a -f
     deps:
       - logs/setup.txt
       - ${item.dataset.input_filename}
       - ${item.model.input_filename}
     outs:
-      - ${target.output_path}/${item.dataset.name}_${item.model.name}.csv:
+      - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv:
           cache: true
 
   calculate_metric:
@@ -34,9 +34,9 @@ stages:
       dataset: ${datasets}
       model: ${models}
 
-    cmd: uv run proteingym-benchmark metric calc --output-path ${target.output_path}/${item.dataset.name}_${item.model.name}.csv --metric-path ${target.metric_path}/${item.dataset.name}_${item.model.name}.csv
+    cmd: uv run proteingym-benchmark metric calc --output-path ${output.prediction}/${item.dataset.name}_${item.model.name}.csv --metric-path ${output.metric}/${item.dataset.name}_${item.model.name}.csv
     deps:
-      - ${target.output_path}/${item.dataset.name}_${item.model.name}.csv
+      - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
     outs:
-      - ${target.metric_path}/${item.dataset.name}_${item.model.name}.csv:
+      - ${output.metric}/${item.dataset.name}_${item.model.name}.csv:
           cache: true
