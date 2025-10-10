@@ -14,7 +14,6 @@ Example output CSV:
     | Overall ACC  | 0.85       |
     | PPV Macro    | 'None'     |
     | Kappa 95% CI | (0.0, 0.0) |
-    | Spearman     | 0.82       |
 
 Functions:
     calc: Calculate and save performance metrics from prediction output files
