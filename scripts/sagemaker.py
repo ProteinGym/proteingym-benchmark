@@ -14,6 +14,7 @@ Usage:
 """
 
 import argparse
+import sys
 import time
 from datetime import datetime
 
@@ -105,6 +106,8 @@ def create_training_job(
 
     response = sagemaker.create_training_job(**training_job_params)
 
+    print(training_job_name)
+
 
 def monitor_training_job(
     region_name: str,
@@ -152,11 +155,18 @@ def monitor_training_job(
     sagemaker = boto3.client("sagemaker", region_name=region_name)
     start_time = time.time()
 
+    print(f"Monitoring SageMaker training job: {job_name}")
+    print(f"Poll interval: {poll_interval}s, Timeout: {timeout}s")
+
     while True:
         response = sagemaker.describe_training_job(TrainingJobName=job_name)
         status = response["TrainingJobStatus"]
 
+        elapsed = int(time.time() - start_time)
+        print(f"[{elapsed}s] Job status: {status}")
+
         if status == "Completed":
+            print("✅ Training job completed successfully!")
             return {
                 "status": "Completed",
                 "job_name": job_name,
@@ -167,6 +177,8 @@ def monitor_training_job(
 
         elif status == "Failed":
             failure_reason = response.get("FailureReason", "Unknown")
+            print(f"❌ Training job failed: {failure_reason}", file=sys.stderr)
+
             return {
                 "status": "Failed",
                 "job_name": job_name,
@@ -174,15 +186,18 @@ def monitor_training_job(
             }
 
         elif status == "Stopped":
+            print("Training job was stopped")
             return {"status": "Stopped", "job_name": job_name}
 
         elif status in ["InProgress", "Stopping"]:
             if time.time() - start_time > timeout:
+                print(f"Timeout reached ({timeout}s)")
                 return {"status": "Timeout", "job_name": job_name}
 
             time.sleep(poll_interval)
 
         else:
+            print(f"Unexpected status: {status}", file=sys.stderr)
             time.sleep(poll_interval)
 
 
