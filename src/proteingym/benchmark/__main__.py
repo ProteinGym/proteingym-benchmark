@@ -4,7 +4,6 @@ from typing import Annotated
 import typer
 
 from .__about__ import __version__
-from .cli.metric import metric_app
 from .cli.sagemaker import sagemaker_app
 
 app = typer.Typer(
@@ -13,7 +12,6 @@ app = typer.Typer(
     add_completion=False,
 )
 
-app.add_typer(metric_app, name="metric", help="Metric operations")
 app.add_typer(sagemaker_app, name="sagemaker", help="SageMaker operations")
 
 
