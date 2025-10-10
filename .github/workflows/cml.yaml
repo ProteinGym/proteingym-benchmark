@@ -15,31 +15,37 @@ jobs:
 
       - uses: iterative/setup-cml@v2
 
-      - uses: astral-sh/setup-uv@v1
-
       - uses: actions/setup-python@v4
         with:
-          python-version-file: ".python-version"
+          python-version: '3.12'
+
+      - name: Create virtual environment
+        run: python -m venv .venv
+
+      - name: Activate virtual environment and install requirements
+        run: |
+          source .venv/bin/activate
+          pip install -r requirements.txt
 
       - name: Generate datasets and models
         run: |
           # Supervised game: Generate datasets and models
-          uv run proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder" or .name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/supervised/local/datasets.json
-          uv run proteingym-base list-models models | jq 'map(select(.name == "pls")) | map({name: .name, input_filename: .input_filename}) | . = {"models": .}' > benchmark/supervised/local/models.json
+          proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder" or .name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/supervised/local/datasets.json
+          proteingym-base list-models models | jq 'map(select(.name == "pls")) | map({name: .name, input_filename: .input_filename}) | . = {"models": .}' > benchmark/supervised/local/models.json
           
           # Zero-shot game: Generate datasets and models
-          uv run proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/zero_shot/local/datasets.json
-          uv run proteingym-base list-models models | jq 'map(select(.name == "esm")) | map({name: .name, input_filename: .input_filename}) | . = {"models": .}' > benchmark/zero_shot/local/models.json
+          proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/zero_shot/local/datasets.json
+          proteingym-base list-models models | jq 'map(select(.name == "esm")) | map({name: .name, input_filename: .input_filename}) | . = {"models": .}' > benchmark/zero_shot/local/models.json
           
       - name: Run model validation
         env:
           repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: | 
           # Supervised game: Run DVC repro
-          uv run dvc repro benchmark/supervised/local/dvc.yaml
+          dvc repro benchmark/supervised/local/dvc.yaml
   
           # Zero-shot game: Run DVC repro
-          uv run dvc repro benchmark/zero_shot/local/dvc.yaml
+          dvc repro benchmark/zero_shot/local/dvc.yaml
 
           # Create report with metrics
           # Pick one supervised model
