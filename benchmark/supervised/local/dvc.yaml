@@ -34,7 +34,7 @@ stages:
       dataset: ${datasets}
       model: ${models}
 
-    cmd: python ../scripts/metric.py --output ${output.prediction}/${item.dataset.name}_${item.model.name}.csv --metric ${output.metric}/${item.dataset.name}_${item.model.name}.csv --actual-vector-col "test" --predict-vector-col "pred"
+    cmd: python ${DVC_ROOT}/scripts/metric.py --output ${output.prediction}/${item.dataset.name}_${item.model.name}.csv --metric ${output.metric}/${item.dataset.name}_${item.model.name}.csv --actual-vector-col "test" --predict-vector-col "pred"
     deps:
       - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
     outs:
