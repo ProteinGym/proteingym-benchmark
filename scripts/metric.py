@@ -59,7 +59,7 @@ def calc(output: Path, metric: Path, actual_vector_col: str, predict_vector_col:
 
     metrics_data = [
         {"metric_name": key, "metric_value": str(value)}
-        for key, value in list(cm.overall_stat.items()) + [("Spearman", correlation)]
+        for key, value in cm.overall_stat.items()
     ]
 
     metric_dataframe = pl.DataFrame(
