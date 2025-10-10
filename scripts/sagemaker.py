@@ -1,7 +1,7 @@
 """
 SageMaker Training Job Management Script
 
-This script provides utilities for managing AWS SageMaker training jobs with the following features:
+This script provides utilities for managing AWS SageMaker training jobs.
 
 Commands:
     create  - Create and start a new SageMaker training job
