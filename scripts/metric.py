@@ -2,12 +2,11 @@
 Metric calculation script for ProteinGym benchmark evaluation.
 
 This script provides functionality to calculate performance metrics for machine learning models
-by comparing actual and predicted values. It computes both classification metrics (via confusion
-matrix) and correlation metrics (Spearman correlation) from CSV output files.
+by comparing actual and predicted values. It computes classification metrics via confusion
+matrix from CSV output files.
 
 The main function `calc` reads prediction results from a CSV file, generates a confusion matrix
-with comprehensive classification statistics, calculates Spearman correlation between actual
-and predicted values, and outputs all metrics to a CSV file for further analysis.
+with comprehensive classification statistics, and outputs all metrics to a CSV file for further analysis.
 
 Example output CSV:
     | Metric       | Value      |
@@ -26,15 +25,13 @@ from pathlib import Path
 
 import polars as pl
 from pycm import ConfusionMatrix
-from scipy.stats import spearmanr
 
 
 def calc(output: Path, metric: Path, actual_vector_col: str, predict_vector_col: str):
     """Calculate performance metrics from prediction output and save to CSV.
 
     Reads prediction results from a CSV file, computes classification metrics using
-    a confusion matrix and calculates Spearman correlation between actual and
-    predicted values. All metrics are saved to a CSV file.
+    a confusion matrix. All metrics are saved to a CSV file.
 
     Args:
         output: Path to the CSV file containing prediction results
@@ -50,11 +47,6 @@ def calc(output: Path, metric: Path, actual_vector_col: str, predict_vector_col:
     cm = ConfusionMatrix(
         actual_vector=output_dataframe[actual_vector_col].to_list(),
         predict_vector=output_dataframe[predict_vector_col].to_list(),
-    )
-
-    correlation, p_value = spearmanr(
-        a=output_dataframe[actual_vector_col].to_list(),
-        b=output_dataframe[predict_vector_col].to_list(),
     )
 
     metrics_data = [

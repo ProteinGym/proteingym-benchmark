@@ -1,3 +1,2 @@
 polars[pyarrow]>=1.30.0,<2.0.0
 pycm==4.4
-scipy==1.16.2

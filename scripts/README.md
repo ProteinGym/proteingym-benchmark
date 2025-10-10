@@ -12,7 +12,7 @@ pip install -r requirements.txt
 
 ## metric.py
 
-The [metric.py](metric.py) script calculates performance metrics for machine learning models by comparing actual and predicted values. It computes both classification metrics (via confusion matrix) and correlation metrics (Spearman correlation) from CSV output files.
+The [metric.py](metric.py) script calculates performance metrics for machine learning models by comparing actual and predicted values.
 
 ### Arguments
 
