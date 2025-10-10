@@ -43,6 +43,8 @@ def calc(output: Path, metric: Path, actual_vector_col: str, predict_vector_col:
         predict_vector_col: Column name containing predicted values
     """
 
+    print("Start to calculate metrics.")
+
     output_dataframe = pl.read_csv(output)
 
     cm = ConfusionMatrix(
@@ -66,6 +68,8 @@ def calc(output: Path, metric: Path, actual_vector_col: str, predict_vector_col:
     )
 
     metric_dataframe.write_csv(metric)
+
+    print(f"Metrics have been saved to {metric}.")
 
 
 def main():
