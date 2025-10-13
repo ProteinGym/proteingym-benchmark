@@ -2,7 +2,7 @@
 # Model identifier used for referencing this model in the benchmark system
 name: "pls"
 
-hyper_params:
+hyper_parameters:
     # Number of PLS components to extract (dimensionality of the reduced space)
     n_components: 2
     # Standard 20 amino acid single-letter codes

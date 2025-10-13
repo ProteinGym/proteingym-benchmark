@@ -2,7 +2,7 @@
 # Model identifier used for referencing this model in the benchmark system
 name: "esm"
 
-hyper_params:
+hyper_parameters:
     # HuggingFace model checkpoint identifier for the specific ESM-2 variant
     location: "esm2_t30_150M_UR50D"
     # Scoring method: calculates marginal probabilities for wild-type amino acids
