@@ -1,6 +1,8 @@
 ---
 # Model identifier used for referencing this model in the benchmark system
-name: "esm"
+name: esm
+
+tags: ["zero-shot"]
 
 hyper_parameters:
     # HuggingFace model checkpoint identifier for the specific ESM-2 variant

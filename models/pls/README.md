@@ -1,6 +1,8 @@
 ---
 # Model identifier used for referencing this model in the benchmark system
-name: "pls"
+name: pls
+
+tags: ["supervised"]
 
 hyper_parameters:
     # Number of PLS components to extract (dimensionality of the reduced space)
