@@ -26,8 +26,9 @@ jobs:
       - name: Generate datasets and models
         run: |
           # Supervised game: Generate datasets and models
-          proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder" or .name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/supervised/local/datasets.json
-          proteingym-base list-models models | jq 'map(select(.name == "pls")) | map({name: .name, input_filename: .input_filename}) | . = {"models": .}' > benchmark/supervised/local/models.json
+          uv run proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder" or .name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/supervised/local/datasets.json
+          uv run proteingym-base list-models models | jq 'map(select(.name == "pls")) | map({name: .name, input_filename: .input_filename}) | . = {"models": .}' > benchmark/supervised/local/models.json
+          uv run proteingym-base list-models models | jq 'map(select(.name == "RITA regressor")) | map({name: .name, input_filename: .input_filename}) | . = {"models": .}' > benchmark/supervised/local/models.json
           
           # Zero-shot game: Generate datasets and models
           proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/zero_shot/local/datasets.json
