@@ -7,7 +7,7 @@
 </script>
 
 <header class="sticky top-0 border-b border-gray-100 bg-white z-30">
-  <div class="flex space-x-10 items-center h-16 mx-4 xl:max-w-6xl xl:mx-auto">
+  <div class="flex space-x-10 items-center h-16 px-6 max-w-7xl mx-auto">
     <div class="cursor-pointer w-10">
       <img src={logo} alt="proteingym-logo">
     </div>
