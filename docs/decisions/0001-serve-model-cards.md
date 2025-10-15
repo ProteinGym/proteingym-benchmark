@@ -37,10 +37,10 @@ We will use **SvelteKit** as the web framework and **TailwindCSS** for styling t
 
 | Option | Static Generation & GitHub Pages | Search Performance & UX | Content Extensibility & DX | Backend & Database Extensibility | Deployment Flexibility |
 | ------ | -------------------------------- | ----------------------- | -------------------------- | -------------------------------- | ---------------------- |
-| 1 (Jekyll) | High | Low | Low | Low | Low |
-| 2 (Streamlit) | Low | Medium | Low | High | Low |
-| 3 (React/Next.js) | High | High | High | High | High |
-| 4 (SvelteKit) | High | High | High | High | High |
+| Jekyl | High | Low | Low | Low | Low |
+| Streamlit | Low | Medium | Low | High | Low |
+| React/Next.js | High | High | High | High | High |
+| SvelteKit | High | High | High | High | High |
 
 ### Analysis of Decision Matrix
 
