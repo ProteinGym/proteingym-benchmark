@@ -80,12 +80,18 @@ def train(
         )
         model.fit(data.filter(pl.col("split") == "train"))
 
-        preds = model.predict(
-            data=data,
+        test_data = data.filter(pl.col("split") == "test")
+        test_preds = model.predict(
+            data=test_data,
         )
 
-    df = data[["sequence", "split", "target"]]
-    df = df.with_columns(pl.Series("pred", preds))
+    df = pl.DataFrame(
+        {
+            "sequence": test_data["sequence"],
+            "test": test_data["target"],
+            "pred": test_preds.tolist(),
+        }
+    )
 
     if Path(SageMakerTrainingJobPath.OUTPUT_PATH).is_dir():
         df.write_csv(
