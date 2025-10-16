@@ -4,23 +4,14 @@ metric
 logs
 
 # Python-generated files
-__pycache__/
-.pytest_cache/
-*.py[oc]
-build/
 dist/
-wheels/
-*.egg-info
-.ruff_cache/
+__pycache__/
 
 # Virtual environments
 .venv
 
 # MasOS
 .DS_Store
-
-# Git
-git-auth.txt
 
 # Environment variables
 .env
