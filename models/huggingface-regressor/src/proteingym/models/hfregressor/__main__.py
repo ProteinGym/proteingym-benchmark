@@ -93,16 +93,13 @@ def train(
         }
     )
 
-    if Path(SageMakerTrainingJobPath.OUTPUT_PATH).is_dir():
-        df.write_csv(
-            f"{SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}.csv"
-        )
+    df.write_csv(
+        f"{SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}.csv"
+    )
 
-        console.print(
-            f"Saved the metrics in CSV in {SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}.csv"
-        )
-    else:
-        console.print(f"Predictions:\n {df}")
+    console.print(
+        f"Saved the metrics in CSV in {SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}.csv"
+    )
 
 
 @app.command()
