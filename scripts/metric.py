@@ -26,7 +26,9 @@ import polars as pl
 from pycm import ConfusionMatrix
 
 
-def calc(output: Path, metric: Path, actual_vector_col: str, predict_vector_col: str):
+def calc(
+    output: Path, metric: Path, actual_vector_col: str, predict_vector_col: str
+) -> Path:
     """Calculate performance metrics from prediction output and save to CSV.
 
     Reads prediction results from a CSV file, computes classification metrics using
@@ -60,7 +62,7 @@ def calc(output: Path, metric: Path, actual_vector_col: str, predict_vector_col:
 
     metric_dataframe.write_csv(metric)
 
-    print(f"Metrics have been saved to {metric}.")
+    return metric
 
 
 def main():
@@ -95,7 +97,7 @@ def main():
 
     args = parser.parse_args()
 
-    calc(
+    return calc(
         output=args.output,
         metric=args.metric,
         actual_vector_col=args.actual_vector_col,
@@ -104,4 +106,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    print(f"Metrics have been saved to {main()}.")
