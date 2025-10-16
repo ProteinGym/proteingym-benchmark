@@ -1,6 +1,6 @@
 ---
 # Model identifier used for referencing this model in the benchmark system
-name: "RITA regressor"
+name: "RITARegressor"
 
 hyper_params:
     # Which embedder class to use
@@ -19,6 +19,6 @@ hyper_params:
 [!WARNING]
 Just like pls, this model does not read data splitting instructions and uses dummy logic for generating train and test splits. 
 
-# Model Card for RITA regressor
+# Model Card for RITARegressor
 
-The RITA regressor is a supervised VEP model that produces sequence embeddings and fits those to properties by ridge regression. The sequence embeddings are obtained using [RITA_xl](https://huggingface.co/lightonai/RITA_xl), which was first described in [RITA: a Study on Scaling Up Generative Protein Sequence Models](https://arxiv.org/abs/2205.05789).
+The RITARegressor is a supervised VEP model that produces sequence embeddings and fits those to properties by ridge regression. The sequence embeddings are obtained using [RITA_xl](https://huggingface.co/lightonai/RITA_xl), which was first described in [RITA: a Study on Scaling Up Generative Protein Sequence Models](https://arxiv.org/abs/2205.05789).

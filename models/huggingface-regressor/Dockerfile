@@ -14,4 +14,4 @@ COPY pyproject.toml pyproject.toml
 COPY src/ src/
 RUN uv sync --no-cache
 
-ENTRYPOINT ["uv", "run", "huggingface-regressor"]
+ENTRYPOINT ["uv", "run", "hfregressor"]

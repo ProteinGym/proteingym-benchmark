@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-huggingface-regressor = "proteingym.models.hfregressor.__main__:app"
+hfregressor = "proteingym.models.hfregressor.__main__:app"
 
 [build-system]
 requires = ["hatchling"]
