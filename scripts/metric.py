@@ -97,7 +97,7 @@ def main():
 
     args = parser.parse_args()
 
-    calc(
+    return calc(
         output=args.output,
         metric=args.metric,
         actual_vector_col=args.actual_vector_col,
