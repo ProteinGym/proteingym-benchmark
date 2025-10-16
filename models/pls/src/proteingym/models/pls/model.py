@@ -35,9 +35,9 @@ def train(
 
     logger.info(f"Loaded {len(train_Y)} training records and start the training...")
 
-    encodings = encode(spit_X=train_X, hyper_params=model_card.hyper_params)
+    encodings = encode(spit_X=train_X, hyper_params=model_card.hyper_parameters)
 
-    model = PLSRegression(model_card.hyper_params["n_components"])
+    model = PLSRegression(model_card.hyper_parameters["n_components"])
     model.fit(encodings, train_Y)
 
     logger.info("Finished the training.")
@@ -73,7 +73,7 @@ def infer(
 
     logger.info(f"Loaded {len(test_Y)} test records and start the scoring...")
 
-    encodings = encode(spit_X=test_X, hyper_params=model_card.hyper_params)
+    encodings = encode(spit_X=test_X, hyper_params=model_card.hyper_parameters)
 
     preds = model.predict(encodings)
 

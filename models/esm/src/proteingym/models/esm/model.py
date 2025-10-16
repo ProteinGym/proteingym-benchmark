@@ -28,11 +28,11 @@ def load(model_card: ModelCard) -> tuple[torch.nn.Module, Alphabet]:
         tuple: The loaded ESM model and its corresponding alphabet
     """
     model, alphabet = pretrained.load_model_and_alphabet(
-        model_card.hyper_params["location"]
+        model_card.hyper_parameters["location"]
     )
     model.eval()
 
-    if torch.cuda.is_available() and not model_card.hyper_params["nogpu"]:
+    if torch.cuda.is_available() and not model_card.hyper_parameters["nogpu"]:
         model = model.cuda()
         print("Transferred model to GPU")
 
@@ -83,7 +83,7 @@ def infer(
 
     batch_tokens = encode(reference_sequence, alphabet)
 
-    match model_card.hyper_params["scoring_strategy"]:
+    match model_card.hyper_parameters["scoring_strategy"]:
         case "wt-marginals":
             with torch.no_grad():
                 token_probs = torch.log_softmax(model(batch_tokens)["logits"], dim=-1)
@@ -94,7 +94,7 @@ def infer(
                     reference_sequence,
                     token_probs,
                     alphabet,
-                    model_card.hyper_params["offset_idx"],
+                    model_card.hyper_parameters["offset_idx"],
                 ),
                 axis=1,
             )
@@ -121,7 +121,7 @@ def infer(
                     reference_sequence,
                     token_probs,
                     alphabet,
-                    model_card.hyper_params["offset_idx"],
+                    model_card.hyper_parameters["offset_idx"],
                 ),
                 axis=1,
             )
@@ -135,14 +135,14 @@ def infer(
                     reference_sequence,
                     model,
                     alphabet,
-                    model_card.hyper_params["offset_idx"],
+                    model_card.hyper_parameters["offset_idx"],
                 ),
                 axis=1,
             )
 
         case _:
             raise ValueError(
-                f"Unrecognized scoring strategy: {model_card.hyper_params['scoring_strategy']}"
+                f"Unrecognized scoring strategy: {model_card.hyper_parameters['scoring_strategy']}"
             )
 
     df.rename(columns={"target": "test"}, inplace=True)
