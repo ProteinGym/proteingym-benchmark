@@ -34,7 +34,7 @@ stages:
       dataset: ${datasets}
       model: ${models}
 
-    cmd: uv run proteingym-benchmark metric calc --output-path ${output.prediction}/${item.dataset.name}_${item.model.name}.csv --metric-path ${output.metric}/${item.dataset.name}_${item.model.name}.csv
+    cmd: python $(dvc root)/scripts/metric.py --output ${output.prediction}/${item.dataset.name}_${item.model.name}.csv --metric ${output.metric}/${item.dataset.name}_${item.model.name}.csv --actual-vector-col "test" --predict-vector-col "pred"
     deps:
       - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
     outs:
