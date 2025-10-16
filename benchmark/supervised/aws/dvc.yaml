@@ -59,7 +59,7 @@ stages:
       model: ${models}
     
     cmd: >
-      uv run proteingym-benchmark sagemaker create-training-job
+      python $(dvc root)/scripts/sagemaker.py create
       --model-name ${item.model.name}
       --region-name ${aws.region_name}
       --sagemaker-role-name ${aws.sagemaker_role_name}
@@ -88,9 +88,11 @@ stages:
       model: ${models}
     
     cmd: >
-      uv run proteingym-benchmark sagemaker monitor-training-job
+      python $(dvc root)/scripts/sagemaker.py monitor
       --region-name ${aws.region_name}
       --job-name $(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)
+      --poll-interval 30
+      --timeout 3600
       > logs/monitor_job_${item.dataset.name}_${item.model.name}.txt
     
     deps:
@@ -110,7 +112,7 @@ stages:
       - aws s3 cp s3://${aws.s3_output_prefix}/$(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)/output/model.tar.gz ${destination.output_dir}/
       - tar -xzf ${destination.output_dir}/model.tar.gz -C ${destination.output_dir}/
       - rm ${destination.output_dir}/model.tar.gz
-      - uv run proteingym-benchmark metric calc --output-path ${destination.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric-path ${destination.metric_dir}/${item.dataset.name}_${item.model.name}.csv
+      - python $(dvc root)/scripts/metric.py --output ${destination.output_dir}/${item.dataset.name}_${item.model.name}.csv --metric ${destination.metric_dir}/${item.dataset.name}_${item.model.name}.csv --actual-vector-col "test" --predict-vector-col "pred"
 
     deps:
       - logs/monitor_job_${item.dataset.name}_${item.model.name}.txt

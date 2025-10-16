@@ -4,15 +4,12 @@ from typing import Annotated
 import typer
 
 from .__about__ import __version__
-from .cli.sagemaker import sagemaker_app
 
 app = typer.Typer(
     name="proteingym-benchmark",
     help="CLI for handling ProteinGym benchmark",
     add_completion=False,
 )
-
-app.add_typer(sagemaker_app, name="sagemaker", help="SageMaker operations")
 
 
 def setup_logger(*, level: int = logging.CRITICAL) -> None:
