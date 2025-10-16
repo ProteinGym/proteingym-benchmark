@@ -32,7 +32,7 @@ def create_training_job(
     volume_size: int,
     dataset_prefix: str,
     model_prefix: str,
-):
+) -> str:
     """
     Create and start a SageMaker training job with specified configuration.
 
@@ -106,7 +106,7 @@ def create_training_job(
 
     response = sagemaker.create_training_job(**training_job_params)
 
-    print(training_job_name)
+    return training_job_name
 
 
 def monitor_training_job(
@@ -114,7 +114,7 @@ def monitor_training_job(
     job_name: str,
     poll_interval: int,
     timeout: int,
-):
+) -> dict:
     """
     Monitor a SageMaker training job until completion or timeout.
 
@@ -240,7 +240,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == "create":
-        create_training_job(
+        return create_training_job(
             model_name=args.model_name,
             region_name=args.region_name,
             sagemaker_role_name=args.sagemaker_role_name,
@@ -252,20 +252,18 @@ def main():
             dataset_prefix=args.dataset_prefix,
             model_prefix=args.model_prefix,
         )
-        print("Training job created successfully")
 
     elif args.command == "monitor":
-        result = monitor_training_job(
+        return monitor_training_job(
             region_name=args.region_name,
             job_name=args.job_name,
             poll_interval=args.poll_interval,
             timeout=args.timeout,
         )
-        print(f"Training job result: {result}")
 
     else:
         parser.print_help()
 
 
 if __name__ == "__main__":
-    main()
+    print(main())
