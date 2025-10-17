@@ -41,7 +41,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
         </svg>
       </div>
-      <input bind:value={searchQuery} class="text-base text-gray-700 pl-8 rounded-md border border-gray-100 h-9 pr-8 focus:shadow-xl focus:outline-none focus:ring-1 focus:ring-gray-100 focus:border-gray-100" type="text" placeholder="Search models...">
+      <input bind:value={searchQuery} class="text-base text-gray-700 pl-8 rounded-md border border-gray-100 h-9 pr-8 focus:shadow-xl focus:outline-none focus:ring-1 focus:ring-gray-100 focus:border-gray-100" type="text" placeholder="Filter by name">
     </div>
   </div>
 </header>
