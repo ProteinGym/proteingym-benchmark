@@ -1,0 +1,8 @@
+{
+  "datasets": [
+    {
+      "name": "ranganathan",
+      "input_filename": "/Users/nezumikozo/Documents/protein/proteingym-benchmark/datasets/ranganathan.pgdata"
+    }
+  ]
+}

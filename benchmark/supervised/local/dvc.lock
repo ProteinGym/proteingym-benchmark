@@ -1,0 +1,111 @@
+schema: '2.0'
+stages:
+  setup:
+    cmd:
+    - mkdir -p logs output metric
+    - echo "Created local directories" > logs/setup.txt
+    outs:
+    - path: logs/setup.txt
+      hash: md5
+      md5: c861b0c201d5e28492f5dff8fab634f5
+      size: 26
+  create_training_job@dataset1-model0:
+    cmd:
+    - docker build -f $(dirname 
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/models/pls/README.md)/Dockerfile
+      -t pls:latest $(dirname 
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/models/pls/README.md)
+    - docker run --rm -v $(realpath 
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/datasets/charge_ladder.pgdata):/$(basename
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/datasets/charge_ladder.pgdata)
+      -v $(realpath 
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/models/pls/README.md):/$(basename
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/models/pls/README.md)
+      -v $(realpath output):/opt/ml/model pls:latest train --dataset-file 
+      /$(basename 
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/datasets/charge_ladder.pgdata)
+      --model-card-file /$(basename 
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/models/pls/README.md)
+    - docker image prune -a -f
+    deps:
+    - path: ../../../datasets/charge_ladder.pgdata
+      hash: md5
+      md5: 0663e6c9d9e8e3ef7e133316d3c72fdb
+      size: 59892
+    - path: ../../../models/pls/README.md
+      hash: md5
+      md5: cca0d906d548dd234a114b30cc30dfbb
+      size: 1147
+    - path: logs/setup.txt
+      hash: md5
+      md5: c861b0c201d5e28492f5dff8fab634f5
+      size: 26
+    outs:
+    - path: output/charge_ladder_pls.csv
+      hash: md5
+      md5: d6a328ed0c3a2f6ed37c9b553972fe5d
+      size: 22985
+  create_training_job@dataset0-model0:
+    cmd:
+    - docker build -f $(dirname 
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/models/pls/README.md)/Dockerfile
+      -t pls:latest $(dirname 
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/models/pls/README.md)
+    - docker run --rm -v $(realpath 
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/datasets/NEIME_2019.pgdata):/$(basename
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/datasets/NEIME_2019.pgdata)
+      -v $(realpath 
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/models/pls/README.md):/$(basename
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/models/pls/README.md)
+      -v $(realpath output):/opt/ml/model pls:latest train --dataset-file 
+      /$(basename 
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/datasets/NEIME_2019.pgdata)
+      --model-card-file /$(basename 
+      /Users/nezumikozo/Documents/protein/proteingym-benchmark/models/pls/README.md)
+    - docker image prune -a -f
+    deps:
+    - path: ../../../datasets/NEIME_2019.pgdata
+      hash: md5
+      md5: 2e339b71c6bfa894c9480407ccbf35fd
+      size: 1331920
+    - path: ../../../models/pls/README.md
+      hash: md5
+      md5: cca0d906d548dd234a114b30cc30dfbb
+      size: 1147
+    - path: logs/setup.txt
+      hash: md5
+      md5: c861b0c201d5e28492f5dff8fab634f5
+      size: 26
+    outs:
+    - path: output/NEIME_2019_pls.csv
+      hash: md5
+      md5: d1ff5f98525ff86ebbddcffad55f400a
+      size: 58528
+  calculate_metric@dataset0-model0:
+    cmd: python $(dvc root)/scripts/metric.py --output output/NEIME_2019_pls.csv
+      --metric metric/NEIME_2019_pls.csv --actual-vector-col "test" 
+      --predict-vector-col "pred"
+    deps:
+    - path: output/NEIME_2019_pls.csv
+      hash: md5
+      md5: d1ff5f98525ff86ebbddcffad55f400a
+      size: 58528
+    outs:
+    - path: metric/NEIME_2019_pls.csv
+      hash: md5
+      md5: 6af7ad9ed3081582dba15ef96cb28ab7
+      size: 1565
+  calculate_metric@dataset1-model0:
+    cmd: python $(dvc root)/scripts/metric.py --output 
+      output/charge_ladder_pls.csv --metric metric/charge_ladder_pls.csv 
+      --actual-vector-col "test" --predict-vector-col "pred"
+    deps:
+    - path: output/charge_ladder_pls.csv
+      hash: md5
+      md5: d6a328ed0c3a2f6ed37c9b553972fe5d
+      size: 22985
+    outs:
+    - path: metric/charge_ladder_pls.csv
+      hash: md5
+      md5: 46350c2f6693b0b86cfd9ba9ab62dedb
+      size: 1445

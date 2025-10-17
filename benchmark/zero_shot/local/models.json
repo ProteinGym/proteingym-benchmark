@@ -1,0 +1,8 @@
+{
+  "models": [
+    {
+      "name": "esm",
+      "input_filename": "/Users/nezumikozo/Documents/protein/proteingym-benchmark/models/esm/README.md"
+    }
+  ]
+}
