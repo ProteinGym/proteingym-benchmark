@@ -1,0 +1,31 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+build
+.svelte-kit
+.output
+
+# Ignore everything except src/
+/*
+!/src
+
+# But still ignore these files in root
+!package.json
+!tsconfig.json
+!vite.config.ts
+!svelte.config.js
+!tailwind.config.ts
+
+# Python and YAML files
+*.py
+*.yaml
+*.yml
+
+# DVC and benchmark folders
+benchmark/
+models/
+scripts/
+docs/
+.github/
