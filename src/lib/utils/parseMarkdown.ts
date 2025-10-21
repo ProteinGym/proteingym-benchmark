@@ -17,9 +17,9 @@ export function parseMarkdown(content: string): ParsedMarkdown | null {
   const markdown = modelCardMatch[2];
 
   // Extracts first paragraph of content, skipping any leading headings or whitespace
-  // Example: "# Title\n\nThis is the overview" -> captures "This is the overview"
-  // Example: "  \n\nFirst paragraph here" -> captures "First paragraph here"
-  const overviewRegex = /^(?:#+[^\n]*\n+|\s)*(.*?)(?=\n\n|$)/s;
+  // Example: "# Title\nThis is the overview\nMore text" -> captures "This is the overview"
+  // Example: "  \nFirst paragraph here\nSecond line" -> captures "First paragraph here"
+  const overviewRegex = /^(?:#+[^\n]*\n+|\s)*(.*?)(?=\n|$)/s;
   const overviewMatch = markdown.match(overviewRegex);
 
   const overview = overviewMatch?.[1] || "";

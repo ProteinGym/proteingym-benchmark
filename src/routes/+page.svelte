@@ -107,7 +107,7 @@
         class="prose prose-sm max-w-none text-gray-600 overflow-hidden flex-1"
       >
         <div class="line-clamp-6">
-          {@html marked(model.content)}
+          {@html marked(model.overview)}
         </div>
       </div>
     </div>

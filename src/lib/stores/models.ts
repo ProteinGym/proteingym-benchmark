@@ -17,6 +17,7 @@ function createModelsStore() {
       modelEntries.map(async ([path, loader]) => {
         try {
           // Example: Extract slug from path: '/models/esm/README.md' -> 'esm'
+          // The list is after path.split("/"): ['', 'models', 'esm', 'README.md']
           const slug = path.split("/")[2];
 
           const content = (await loader()) as string;

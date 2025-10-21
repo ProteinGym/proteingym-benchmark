@@ -4,7 +4,7 @@ This file contains documentation about contributing to this project.
 
 ## Develop locally
 
-After cloning the repository, you can start developing locally for both the benchmarking system and the static website displaying the model cards and benchmarking results.
+After cloning the repository, you can start developing locally for both the benchmarking system and the static website to show the model cards and benchmarking results.
 
 ### Benchmarking
 
