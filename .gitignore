@@ -2,6 +2,8 @@
 output
 metric
 logs
+datasets.json
+models.json
 
 # Python-generated files
 dist/
