@@ -1,31 +1,38 @@
-<script>
-  import logo from '$lib/assets/logo.png';
-  import { marked } from 'marked';
+<script lang="ts">
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
+  import logo from '$lib/assets/logo.png';
+  import { modelsStore } from '$lib/stores/models';
+  import { marked } from 'marked';
 
-  let currentPage = 1;
-  let modelsPerPage = 6;
-  let searchQuery = '';
+  const modelsPerPage = 12;
 
-  export let data;
-  $: models = data.models;
-  $: filteredModels = searchQuery
+  let currentPage = $state(1);
+  let searchQuery = $state('');
+
+  const models = $derived($modelsStore);
+
+  let filteredModels = $derived(searchQuery
     ? models.filter((model) =>
-        model.frontmatter.name.toLowerCase().includes(searchQuery.toLowerCase())
+        (typeof model.frontmatter.name === 'string' ? model.frontmatter.name : '').toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : models;
-  $: paginatedModels = filteredModels.slice(
+    : models
+  );
+
+  let paginatedModels = $derived(filteredModels.slice(
     (currentPage - 1) * modelsPerPage,
     currentPage * modelsPerPage
-  );
-  $: totalPages = Math.ceil(filteredModels.length / modelsPerPage);
+  ));
 
-  $: if (searchQuery) {
-    currentPage = 1;
-  }
+  let totalPages = $derived(Math.ceil(filteredModels.length / modelsPerPage));
 
-  function navigateToModel(slug) {
+  $effect(() => {
+    if (searchQuery) {
+      currentPage = 1;
+    }
+  });
+
+  function navigateToModel(slug: string) {
     goto(`${base}/${slug}`);
   }
 </script>
@@ -50,8 +57,8 @@
   {#each paginatedModels as model}
     <div
       class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 flex flex-col cursor-pointer"
-      on:click={() => navigateToModel(model.slug)}
-      on:keydown={(e) => e.key === 'Enter' && navigateToModel(model.slug)}
+      onclick={() => navigateToModel(model.slug)}
+      onkeydown={(e) => e.key === 'Enter' && navigateToModel(model.slug)}
       role="button"
       tabindex="0"
     >
@@ -78,8 +85,8 @@
   <ul class="flex justify-center items-center space-x-2 text-gray-700 text-base max-w-7xl mx-auto">
     <li>
       <button
-        on:click={() => currentPage--}
-        class="flex items-center rounded-lg px-2.5 py-1 hover:bg-gray-50 text-gray-400 hover:text-gray-700 {currentPage === 1 ? 'pointer-events-none cursor-default' : ''}"
+        onclick={() => currentPage--}
+        class="flex items-center rounded-lg px-2.5 py-1 hover:bg-gray-100 text-gray-400 hover:text-gray-700 {currentPage === 1 ? 'pointer-events-none cursor-default' : ''}"
       >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
@@ -92,8 +99,8 @@
     </li>
     <li>
       <button
-        on:click={() => currentPage++}
-        class="text-base flex items-center rounded-lg px-2.5 py-1 hover:bg-gray-50 text-gray-400 hover:text-gray-700 {currentPage === totalPages ? 'pointer-events-none cursor-default' : ''}"
+        onclick={() => currentPage++}
+        class="text-base flex items-center rounded-lg px-2.5 py-1 hover:bg-gray-100 text-gray-400 hover:text-gray-700 {currentPage === totalPages ? 'pointer-events-none cursor-default' : ''}"
       >
         Next
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">

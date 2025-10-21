@@ -1,18 +1,22 @@
-<script>
+<script lang="ts">
   import { goto } from '$app/navigation';
-  import { marked } from 'marked';
   import { base } from '$app/paths';
+  import { page } from '$app/stores';
+  import { modelsStore } from '$lib/stores/models';
+  import { marked } from 'marked';
 
-  export let data;
-  $: model = data.model;
+  const models = $derived($modelsStore);
+
+  let model = $derived(models.find(m => m.slug === $page.params.slug));
 </script>
 
+{#if model}
 <div class="min-h-screen bg-gray-50">
   <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
     <div class="max-w-4xl mx-auto px-6 py-4">
       <button
-        on:click={() => goto(`${base}/`)}
-        class="text-blue-600 hover:text-blue-800 mb-4 inline-flex items-center"
+        onclick={() => goto(`${base}/`)}
+        class="text-blue-600 hover:text-blue-800 mb-4 py-1 px-3 inline-flex items-center rounded-full hover:bg-blue-100"
       >
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -41,3 +45,8 @@
     </div>
   </main>
 </div>
+{:else}
+<div class="min-h-screen bg-gray-50 flex items-center justify-center">
+  <p class="text-gray-600">Loading...</p>
+</div>
+{/if}
