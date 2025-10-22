@@ -31,24 +31,38 @@ jobs:
         id: extract
         run: |
           changed_files='${{ steps.filter.outputs.models_files }}'
-          echo "Changed files: $changed_files"
-          models=$(echo "$changed_files" | jq -r '.[] | split("/")[1]' | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          echo "models: $models"
+          models=$(echo "$changed_files" | jq -c '[.[] | split("/")[1]] | unique')
           echo "changed_files=$changed_files" >> $GITHUB_OUTPUT
           echo "models=$models" >> $GITHUB_OUTPUT
 
   deploy-to-ecr:
     needs: get-models
     runs-on: ubuntu-latest
-
+    
+    permissions:
+      id-token: write
+      contents: read
+      
     steps:
-      - name: Display changed files and models
-        run: |
-          echo "Changed files: ${{ needs.get-models.outputs.changed_files }}"
-          echo "Models: ${{ needs.get-models.outputs.models }}"
+
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Process each model
         run: |
+          changed_files = '${{ needs.get-models.outputs.changed_files }}'
           models='${{ needs.get-models.outputs.models }}'
           echo "$models" | jq -r '.[]' | while read model; do
             echo "Processing model: $model"
