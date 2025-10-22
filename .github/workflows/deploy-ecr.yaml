@@ -1,0 +1,33 @@
+name: Deploy Models to Amazon ECR
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/ci-upload-model-image-to-ecr
+    paths:
+      - 'models/**'
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  get-models:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            models:
+              - 'models/**'
+
+  deploy-to-ecr:
+    needs: get-models
+    if: needs.get-models.outputs.models == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: echo "There is a change!"
