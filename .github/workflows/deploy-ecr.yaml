@@ -1,7 +1,6 @@
 name: Deploy Models to Amazon ECR
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - feat/ci-upload-model-image-to-ecr
@@ -20,13 +19,19 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: filter
         with:
+          list-files: json
           filters: |
             models:
               - 'models/**'
+      - name: test
+        run: |
+          changed_files='${{ steps.filter.outputs.models_files }}'
+          echo "Changed files: $changed_files"
+          models=$(echo "$changed_files" | jq -r '.[] | split("/")[1]' | sort -u)
+          echo "models: $models"
 
   deploy-to-ecr:
     needs: get-models
-    if: needs.get-models.outputs.models == 'true'
     runs-on: ubuntu-latest
 
     steps:
