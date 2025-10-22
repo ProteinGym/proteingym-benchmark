@@ -38,10 +38,10 @@ jobs:
           repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: | 
           # Supervised game: Run DVC repro
-          dvc repro benchmark/supervised/local/dvc.yaml
+          dvc repro benchmark/supervised/local/dvc.yaml --single-item
   
           # Zero-shot game: Run DVC repro
-          dvc repro benchmark/zero_shot/local/dvc.yaml
+          dvc repro benchmark/zero_shot/local/dvc.yaml --single-item
 
           # Create report with metrics
           # Pick one supervised model
