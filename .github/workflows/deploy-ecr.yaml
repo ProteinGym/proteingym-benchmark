@@ -14,6 +14,9 @@ env:
 jobs:
   get-models:
     runs-on: ubuntu-latest
+    outputs:
+      changed_files: ${{ steps.extract.outputs.changed_files }}
+      models: ${{ steps.extract.outputs.models }}
 
     steps:
       - uses: actions/checkout@v4
@@ -24,16 +27,30 @@ jobs:
           filters: |
             models:
               - 'models/**'
-      - name: test
+      - name: Get changed files and models
+        id: extract
         run: |
           changed_files='${{ steps.filter.outputs.models_files }}'
           echo "Changed files: $changed_files"
-          models=$(echo "$changed_files" | jq -r '.[] | split("/")[1]' | sort -u)
+          models=$(echo "$changed_files" | jq -r '.[] | split("/")[1]' | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "models: $models"
+          echo "changed_files=$changed_files" >> $GITHUB_OUTPUT
+          echo "models=$models" >> $GITHUB_OUTPUT
 
   deploy-to-ecr:
     needs: get-models
     runs-on: ubuntu-latest
 
     steps:
-      - run: echo "There is a change!"
+      - name: Display changed files and models
+        run: |
+          echo "Changed files: ${{ needs.get-models.outputs.changed_files }}"
+          echo "Models: ${{ needs.get-models.outputs.models }}"
+
+      - name: Process each model
+        run: |
+          models='${{ needs.get-models.outputs.models }}'
+          echo "$models" | jq -r '.[]' | while read model; do
+            echo "Processing model: $model"
+            
+          done
