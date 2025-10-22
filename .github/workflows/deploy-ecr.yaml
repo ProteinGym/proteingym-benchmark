@@ -1,6 +1,7 @@
 name: Deploy Models to Amazon ECR
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - feat/ci-upload-model-image-to-ecr
