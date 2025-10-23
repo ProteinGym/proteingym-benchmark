@@ -24,7 +24,7 @@ class HuggingFaceRegressor(BaseEstimator):
 
     def build_pipeline(self):
         embedder = {"RITA": RITAEmbedder}[
-            self.model_card.hyper_params["huggingface_model_name"]
+            self.model_card.hyper_parameters["huggingface_model_name"]
         ](model_card=self.model_card, data=self.data, cache_dir=self.cache_dir)
         column_transformer = ColumnTransformer(
             [
@@ -44,7 +44,7 @@ class HuggingFaceRegressor(BaseEstimator):
                 # ),
             ]
         )
-        regressor = Ridge(alpha=self.model_card.hyper_params["alpha"])
+        regressor = Ridge(alpha=self.model_card.hyper_parameters["alpha"])
         pipeline = Pipeline(
             steps=[
                 ("column_transformer", column_transformer),

@@ -17,18 +17,18 @@ class RITAEmbedder(TransformerMixin, BaseEstimator):
         self.data = data
         self.cache_dir = cache_dir
         self.model = AutoModelForCausalLM.from_pretrained(
-            f"lightonai/{self.model_card.hyper_params['embedder_model_name']}",
+            f"lightonai/{self.model_card.hyper_parameters['embedder_model_name']}",
             trust_remote_code=True,
         )
         self.tokenizer = AutoTokenizer.from_pretrained(
-            f"lightonai/{self.model_card.hyper_params['embedder_model_name']}"
+            f"lightonai/{self.model_card.hyper_parameters['embedder_model_name']}"
         )
         self.embed_dim = {
             "RITA_s": 768,
             "RITA_m": 1024,
             "RITA_l": 1536,
             "RITA_xl": 2048,
-        }[self.model_card.hyper_params["embedder_model_name"]]
+        }[self.model_card.hyper_parameters["embedder_model_name"]]
         self.model.to(torch.get_default_device())
 
     # noinspection PyUnusedLocal
@@ -66,7 +66,7 @@ class RITAEmbedder(TransformerMixin, BaseEstimator):
         return {
             "mean": self.extract_mean_pooled_embeddings,
             "last": self.extract_last_hidden_state_embeddings,
-        }[self.model_card.hyper_params["embedder_pooling"]](tokenized_sequence)
+        }[self.model_card.hyper_parameters["embedder_pooling"]](tokenized_sequence)
 
     def extract_mean_pooled_embeddings(self, tokenized_sequence: torch.tensor):
         return torch.mean(self.model(tokenized_sequence).hidden_states, dim=1).cpu()
