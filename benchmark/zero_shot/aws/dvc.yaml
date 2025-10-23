@@ -31,7 +31,7 @@ stages:
       model: ${models}
 
     cmd:
-      - aws s3 cp ${item.model.input_filename} s3://${aws.s3_training_data_prefix}/models/${item.model.name}
+      - aws s3 cp ${item.model.input_filename} s3://${aws.s3_training_data_prefix}/models/${item.model.name}/README.md
       - echo "Model upload completed at $(date)" > logs/s3_upload_model_${item.model.name}.txt
     deps:
       - logs/setup.txt
