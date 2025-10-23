@@ -54,7 +54,7 @@ def train(
     dataset = Dataset.from_path(dataset_file)
     model_card = ModelCard.from_path(model_card_file)
 
-    if model_card.hyper_params["device"] == "cuda":
+    if model_card.hyper_parameters["device"] == "cuda":
         if not CUDA_AVAILABLE:
             console.print(f"No cuda enabled GPUs available, falling back to CPU")
             torch.set_default_device("cpu")
@@ -62,10 +62,10 @@ def train(
             torch.set_default_device("cuda")
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        if model_card.hyper_params["cache_dir"] == "TEMP":
+        if model_card.hyper_parameters["cache_dir"] == "TEMP":
             cache_dir = temp_dir
         else:
-            cache_dir = model_card.hyper_params["cache_dir"]
+            cache_dir = model_card.hyper_parameters["cache_dir"]
         console.print(f"Caching embeddings to {cache_dir}")
 
         # WIP Load embeddings by downloading embeddings to cache_dir
