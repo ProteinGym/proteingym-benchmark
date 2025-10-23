@@ -22,6 +22,7 @@ import boto3
 
 
 def create_training_job(
+    dataset_name: str,
     model_name: str,
     region_name: str,
     sagemaker_role_name: str,
@@ -30,8 +31,6 @@ def create_training_job(
     s3_output_prefix: str,
     instance_type: str,
     volume_size: int,
-    dataset_prefix: str,
-    model_prefix: str,
 ) -> str:
     """
     Create and start a SageMaker training job with specified configuration.
@@ -41,6 +40,7 @@ def create_training_job(
     training process with the specified compute resources.
 
     Args:
+        dataset_name: Name of the dataset, used to configure S3 dataset source
         model_name: Name of the model, used to generate unique job names
         region_name: AWS region where the training job will be executed
         sagemaker_role_name: IAM role name with SageMaker permissions
@@ -49,8 +49,6 @@ def create_training_job(
         s3_output_prefix: S3 bucket/prefix where training outputs will be stored
         instance_type: EC2 instance type for training (e.g., 'ml.p3.2xlarge')
         volume_size: EBS volume size in GB for the training instance
-        dataset_prefix: Prefix path for dataset files within the S3 bucket
-        model_prefix: Prefix path for model card files within the S3 bucket
 
     Returns:
         None: Function starts the training job but doesn't wait for completion
@@ -86,7 +84,7 @@ def create_training_job(
                 "DataSource": {
                     "S3DataSource": {
                         "S3DataType": "S3Prefix",
-                        "S3Uri": f"s3://{s3_training_data_prefix}/datasets/{dataset_prefix}",
+                        "S3Uri": f"s3://{s3_training_data_prefix}/datasets/{dataset_name}",
                         "S3DataDistributionType": "FullyReplicated",
                     }
                 },
@@ -96,7 +94,7 @@ def create_training_job(
                 "DataSource": {
                     "S3DataSource": {
                         "S3DataType": "S3Prefix",
-                        "S3Uri": f"s3://{s3_training_data_prefix}/models/{model_prefix}",
+                        "S3Uri": f"s3://{s3_training_data_prefix}/models/{model_name}",
                         "S3DataDistributionType": "FullyReplicated",
                     }
                 },
@@ -206,6 +204,7 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     create_parser = subparsers.add_parser("create", help="Create a training job")
+    create_parser.add_argument("--dataset-name", required=True, help="Dataset name")
     create_parser.add_argument("--model-name", required=True, help="Model name")
     create_parser.add_argument("--region-name", required=True, help="AWS region")
     create_parser.add_argument(
@@ -224,8 +223,6 @@ def main():
     create_parser.add_argument(
         "--volume-size", type=int, required=True, help="Volume size in GB"
     )
-    create_parser.add_argument("--dataset-prefix", required=True, help="Dataset prefix")
-    create_parser.add_argument("--model-prefix", required=True, help="Model prefix")
 
     monitor_parser = subparsers.add_parser("monitor", help="Monitor a training job")
     monitor_parser.add_argument("--region-name", required=True, help="AWS region")
@@ -241,6 +238,7 @@ def main():
 
     if args.command == "create":
         return create_training_job(
+            dataset_name=args.dataset_name,
             model_name=args.model_name,
             region_name=args.region_name,
             sagemaker_role_name=args.sagemaker_role_name,
@@ -249,8 +247,6 @@ def main():
             s3_output_prefix=args.s3_output_prefix,
             instance_type=args.instance_type,
             volume_size=args.volume_size,
-            dataset_prefix=args.dataset_prefix,
-            model_prefix=args.model_prefix,
         )
 
     elif args.command == "monitor":
