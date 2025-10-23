@@ -29,7 +29,7 @@ console = Console()
 
 class SageMakerTrainingJobPath:
     PREFIX = Path("/opt/ml")
-    TRAINING_JOB_PATH = PREFIX / "input" / "data" / "training" / "dataset.zip"
+    TRAINING_JOB_PATH = PREFIX / "input" / "data" / "training" / "dataset.pgdata"
     MODEL_CARD_PATH = PREFIX / "input" / "data" / "model_card" / "README.md"
     OUTPUT_PATH = PREFIX / "model"
 

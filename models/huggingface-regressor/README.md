@@ -2,7 +2,9 @@
 # Model identifier used for referencing this model in the benchmark system
 name: "ritaregressor"
 
-hyper_params:
+tags: ["supervised"]
+
+hyper_parameters:
     # Which embedder class to use
     huggingface_model_name: RITA
     # Which of the models supported by the embedder class to load from huggingface
