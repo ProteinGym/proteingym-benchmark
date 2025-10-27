@@ -1,0 +1,61 @@
+name: validate-model
+
+on:    
+  workflow_dispatch:
+  pull_request:
+    branches: main
+  
+
+jobs:
+  cml:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: iterative/setup-cml@v2
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install requirements
+        run: |
+          pip install -r requirements.txt
+
+      - name: Generate datasets and models
+        run: |
+          # Supervised game: Generate datasets and models
+          proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder" or .name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/supervised/local/datasets.json
+          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/supervised/local/models.json
+          
+          # Zero-shot game: Generate datasets and models
+          proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/zero_shot/local/datasets.json
+          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-shot"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/zero_shot/local/models.json
+          
+      - name: Run model validation
+        env:
+          repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: | 
+          # Supervised game: Run DVC repro
+          dvc repro benchmark/supervised/local/dvc.yaml --single-item
+  
+          # Zero-shot game: Run DVC repro
+          dvc repro benchmark/zero_shot/local/dvc.yaml --single-item
+
+          # Create report with metrics
+          # Pick one supervised model
+          echo "✅ Supervised models have all passed validation." >> report.md
+          echo '```csv' >> report.md
+          cat ./benchmark/supervised/local/metric/charge_ladder_pls.csv >> report.md
+          echo '```' >> report.md
+
+          # Pick one zero-shot model
+          echo "✅ Zero-shot models have all passed validation." >> report.md
+          echo '```csv' >> report.md
+          cat ./benchmark/zero_shot/local/metric/ranganathan_esm.csv >> report.md
+          echo '```' >> report.md
+          
+          # Send comment to PR
+          echo "Send comment to PR"
+          cml comment create report.md
