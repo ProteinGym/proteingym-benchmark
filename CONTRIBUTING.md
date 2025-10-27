@@ -91,7 +91,7 @@ src/
 ├── lib/                # Shared utilities and components
 │   ├── stores/         # Svelte stores for state management
 │   ├── types/          # TypeScript type definitions
-│   └── utils/          # Utility functions
+│   └── assets/         # Favicon and log
 ├── app.html            # HTML template
 └── app.css             # Global styles
 ```
