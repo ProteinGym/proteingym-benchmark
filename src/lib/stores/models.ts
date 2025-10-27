@@ -22,10 +22,10 @@ function createModelsStore() {
 
           const markdown = (await loader()) as string;
           const parsedMarkdown = matter<Record<string, any>>(markdown);
-          
+
           const frontmatter = parsedMarkdown.attributes;
           const content = parsedMarkdown.body;
-          
+
           // Extracts first paragraph of content, skipping any leading headings or whitespace
           // Example: "# Title\nThis is the overview\nMore text" -> captures "This is the overview"
           // Example: "  \nFirst paragraph here\nSecond line" -> captures "First paragraph here"
@@ -34,7 +34,7 @@ function createModelsStore() {
           const overview = overviewMatch?.[1] || "";
 
           return {
-            frontmatter, 
+            frontmatter,
             overview,
             content,
             slug,

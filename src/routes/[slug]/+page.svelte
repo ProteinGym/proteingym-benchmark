@@ -50,7 +50,9 @@
           {/if}
           {#if model.frontmatter.hyper_parameters}
             <div class="mt-4">
-              <h3 class="text-sm font-semibold text-gray-700 mb-2">Hyperparameters:</h3>
+              <h3 class="text-sm font-semibold text-gray-700 mb-2">
+                Hyperparameters:
+              </h3>
               <div class="flex flex-wrap gap-2">
                 {#each Object.entries(model.frontmatter.hyper_parameters) as [key, value]}
                   <span
