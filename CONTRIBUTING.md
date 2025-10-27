@@ -6,7 +6,7 @@ This file contains documentation about contributing to this project.
 
 After cloning the repository, you can start developing locally for both the benchmarking system and the static website to show the model cards and benchmarking results.
 
-### Benchmarking
+### Benchmarking installation
 
 To install the local environment for the benchmarking system, you can do the following:
 
@@ -16,7 +16,7 @@ $ source .venv/bin/activate
 $ pip install -r requirements.txt
 ```
 
-### Static website
+### Static website installation
 
 The static website is built with [SvelteKit](https://svelte.dev/docs/kit/introduction) and displays model cards and benchmarking results. It uses TypeScript, [Tailwind CSS](https://tailwindcss.com/) for styling, and is configured as a static site adapter for deployment.
 
