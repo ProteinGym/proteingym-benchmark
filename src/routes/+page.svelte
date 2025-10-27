@@ -80,7 +80,7 @@
 <main
   class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6 max-w-7xl mx-auto auto-rows-fr"
 >
-  {#each paginatedModels as model}
+  {#each paginatedModels as model (model.slug)}
     <div
       class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 flex flex-col cursor-pointer"
       onclick={() => navigateToModel(model.slug)}
@@ -94,7 +94,7 @@
         </h2>
         {#if model.frontmatter.tags}
           <div class="flex flex-wrap gap-2 mb-3">
-            {#each model.frontmatter.tags as tag}
+            {#each model.frontmatter.tags as tag (tag)}
               <span
                 class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full"
                 >{tag}</span
@@ -107,6 +107,7 @@
         class="prose prose-sm max-w-none text-gray-600 overflow-hidden flex-1"
       >
         <div class="line-clamp-6">
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html marked(model.overview)}
         </div>
       </div>

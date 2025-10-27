@@ -8,6 +8,10 @@
   const models = $derived($modelsStore);
 
   let model = $derived(models.find((m) => m.slug === $page.params.slug));
+
+  function navigateBack() {
+    goto(`${base}/`);
+  }
 </script>
 
 {#if model}
@@ -15,7 +19,7 @@
     <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
       <div class="max-w-4xl mx-auto px-6 py-4">
         <button
-          onclick={() => goto(`${base}/`)}
+          onclick={navigateBack}
           class="text-blue-600 hover:text-blue-800 mb-4 py-1 px-3 inline-flex items-center rounded-full hover:bg-blue-100"
         >
           <svg
@@ -40,7 +44,7 @@
           </h1>
           {#if model.frontmatter.tags}
             <div class="flex flex-wrap gap-2">
-              {#each model.frontmatter.tags as tag}
+              {#each model.frontmatter.tags as tag (tag)}
                 <span
                   class="px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-full"
                   >{tag}</span
@@ -54,7 +58,7 @@
                 Hyperparameters:
               </h3>
               <div class="flex flex-wrap gap-2">
-                {#each Object.entries(model.frontmatter.hyper_parameters) as [key, value]}
+                {#each Object.entries(model.frontmatter.hyper_parameters) as [key, value] (key)}
                   <span
                     class="px-3 py-1 text-sm font-medium bg-green-100 text-green-800 rounded-full"
                   >
@@ -71,6 +75,7 @@
     <main class="max-w-4xl mx-auto px-6 py-8">
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
         <div class="prose prose-sm max-w-none">
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html marked(model.content)}
         </div>
       </div>

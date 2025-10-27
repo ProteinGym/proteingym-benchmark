@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import type { Model } from "$lib/types/model";
+import type { Model, ModelFrontmatter } from "$lib/types/model";
 import matter from "front-matter";
 
 const modelFiles = import.meta.glob("/models/*/README.md", {
@@ -21,7 +21,7 @@ function createModelsStore() {
           const slug = path.split("/")[2];
 
           const markdown = (await loader()) as string;
-          const parsedMarkdown = matter<Record<string, any>>(markdown);
+          const parsedMarkdown = matter<ModelFrontmatter>(markdown);
 
           const frontmatter = parsedMarkdown.attributes;
           const content = parsedMarkdown.body;

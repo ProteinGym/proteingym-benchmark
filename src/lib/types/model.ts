@@ -1,5 +1,12 @@
+export interface ModelFrontmatter {
+  name: string;
+  tags?: string[];
+  hyper_parameters?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
 export interface ParsedMarkdown {
-  frontmatter: Record<string, any>;
+  frontmatter: ModelFrontmatter;
   overview: string;
   content: string;
 }
