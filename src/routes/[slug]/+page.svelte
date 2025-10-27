@@ -48,6 +48,20 @@
               {/each}
             </div>
           {/if}
+          {#if model.frontmatter.hyper_parameters}
+            <div class="mt-4">
+              <h3 class="text-sm font-semibold text-gray-700 mb-2">Hyperparameters:</h3>
+              <div class="flex flex-wrap gap-2">
+                {#each Object.entries(model.frontmatter.hyper_parameters) as [key, value]}
+                  <span
+                    class="px-3 py-1 text-sm font-medium bg-green-100 text-green-800 rounded-full"
+                  >
+                    {key}: {JSON.stringify(value)}
+                  </span>
+                {/each}
+              </div>
+            </div>
+          {/if}
         </div>
       </div>
     </header>

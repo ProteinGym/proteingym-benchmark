@@ -1,6 +1,6 @@
 import { writable } from "svelte/store";
 import type { Model } from "$lib/types/model";
-import { parseMarkdown } from "$lib/utils/parseMarkdown";
+import matter from "front-matter";
 
 const modelFiles = import.meta.glob("/models/*/README.md", {
   query: "?raw",
@@ -20,13 +20,23 @@ function createModelsStore() {
           // The list is after path.split("/"): ['', 'models', 'esm', 'README.md']
           const slug = path.split("/")[2];
 
-          const content = (await loader()) as string;
-          const parsed = parseMarkdown(content);
-
-          if (!parsed) return null;
+          const markdown = (await loader()) as string;
+          const parsedMarkdown = matter<Record<string, any>>(markdown);
+          
+          const frontmatter = parsedMarkdown.attributes;
+          const content = parsedMarkdown.body;
+          
+          // Extracts first paragraph of content, skipping any leading headings or whitespace
+          // Example: "# Title\nThis is the overview\nMore text" -> captures "This is the overview"
+          // Example: "  \nFirst paragraph here\nSecond line" -> captures "First paragraph here"
+          const overviewRegex = /^(?:#+[^\n]*\n+|\s)*(.*?)(?=\n|$)/s;
+          const overviewMatch = content.match(overviewRegex);
+          const overview = overviewMatch?.[1] || "";
 
           return {
-            ...parsed,
+            frontmatter, 
+            overview,
+            content,
             slug,
           };
         } catch (error) {

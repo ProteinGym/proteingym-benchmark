@@ -1,5 +1,5 @@
 export interface ParsedMarkdown {
-  frontmatter: Record<string, string | string[]>;
+  frontmatter: Record<string, any>;
   overview: string;
   content: string;
 }
