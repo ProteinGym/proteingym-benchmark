@@ -49,7 +49,7 @@ stages:
     cmd: >-
       python $(dvc root)/scripts/metric.py
       --prediction ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
-      --metric ${output.metric}/${item.dataset.name}_${item.model.name}.csv
+      --metric ${output.metric}/${item.dataset.name}_${item.model.name}.json
       --plot ${output.plot}/${item.dataset.name}_${item.model.name}.json
       --actual-vector-col "test"
       --predict-vector-col "pred"
