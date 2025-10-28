@@ -2,5 +2,6 @@ polars[pyarrow]>=1.30.0,<2.0.0
 pycm==4.4
 boto3>=1.38.27
 dvc>=3.59.2
+scipy>=1.16.2
 pre-commit>=4.2.0
 dist/proteingym_base-0.1.0b1-py3-none-any.whl

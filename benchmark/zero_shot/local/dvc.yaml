@@ -7,7 +7,7 @@ stages:
 
   setup:
     cmd:
-      - mkdir -p logs ${output.prediction} ${output.metric}
+      - mkdir -p logs ${output.prediction} ${output.metric}  ${output.plot}
       - echo "Created local directories" > logs/setup.txt
     outs:
       - logs/setup.txt
@@ -18,8 +18,20 @@ stages:
       model: ${models}
 
     cmd:
-      - docker build -f $(dirname ${item.model.input_filename})/Dockerfile -t ${item.model.name}:latest $(dirname ${item.model.input_filename})
-      - docker run --rm -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename}) -v $(realpath ${item.model.input_filename}):/$(basename ${item.model.input_filename}) -v $(realpath ${output.prediction}):/opt/ml/model ${item.model.name}:latest train --dataset-file /$(basename ${item.dataset.input_filename}) --model-card-file /$(basename ${item.model.input_filename})
+      - >-
+        docker build 
+        -f $(dirname ${item.model.input_filename})/Dockerfile
+        -t ${item.model.name}:latest
+        $(dirname ${item.model.input_filename})
+      - >-
+        docker run --rm
+        -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename})
+        -v $(realpath ${item.model.input_filename}):/$(basename ${item.model.input_filename})
+        -v $(realpath ${output.prediction}):/opt/ml/model
+        ${item.model.name}:latest
+        train
+        --dataset-file /$(basename ${item.dataset.input_filename})
+        --model-card-file /$(basename ${item.model.input_filename})
       - docker image prune -a -f
     deps:
       - logs/setup.txt
@@ -34,9 +46,20 @@ stages:
       dataset: ${datasets}
       model: ${models}
 
-    cmd: python $(dvc root)/scripts/metric.py --output ${output.prediction}/${item.dataset.name}_${item.model.name}.csv --metric ${output.metric}/${item.dataset.name}_${item.model.name}.csv --actual-vector-col "test" --predict-vector-col "pred"
+    cmd: >-
+      python $(dvc root)/scripts/metric.py
+      --prediction ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
+      --metric ${output.metric}/${item.dataset.name}_${item.model.name}.csv
+      --plot ${output.plot}/${item.dataset.name}_${item.model.name}.json
+      --actual-vector-col "test"
+      --predict-vector-col "pred"
+      --selected-metrics ${metrics}
     deps:
       - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
-    outs:
-      - ${output.metric}/${item.dataset.name}_${item.model.name}.csv:
-          cache: true
+    metrics:
+      - ${output.metric}/${item.dataset.name}_${item.model.name}.json:
+          cache: false
+    plots:
+      - ${output.plot}/${item.dataset.name}_${item.model.name}.json:
+          x: metric
+          y: value
