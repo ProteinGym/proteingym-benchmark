@@ -81,7 +81,7 @@ def calc(
     predict_vector_col: str,
     selected_metrics: list[str] | None = None,
 ) -> Path:
-    """Calculate performance metrics from prediction output and save to JSON and plot formats.
+    """Calculate performance metrics from prediction output and save to metric and plot JSON formats.
 
     Reads prediction results from a CSV file, computes classification metrics using
     a confusion matrix. All metrics are saved to a JSON file, and a plot-ready version
