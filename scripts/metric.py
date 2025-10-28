@@ -27,7 +27,7 @@ Example plot JSON output:
 
 Functions:
     calculate_all_metrics: Calculate all metrics including confusion matrix and custom metrics
-    calc: Calculate and save performance metrics from prediction output files to JSON and plot formats
+    calc: Calculate and save performance metrics from prediction output files to metric and plot JSON formats
 """
 
 import argparse
