@@ -46,14 +46,14 @@ jobs:
           # Create report with metrics
           # Pick one supervised model
           echo "✅ Supervised models have all passed validation." >> report.md
-          echo '```csv' >> report.md
-          cat ./benchmark/supervised/local/metric/charge_ladder_pls.csv >> report.md
+          echo '```json' >> report.md
+          cat ./benchmark/supervised/local/metric/charge_ladder_pls.json >> report.md
           echo '```' >> report.md
 
           # Pick one zero-shot model
           echo "✅ Zero-shot models have all passed validation." >> report.md
-          echo '```csv' >> report.md
-          cat ./benchmark/zero_shot/local/metric/ranganathan_esm.csv >> report.md
+          echo '```json' >> report.md
+          cat ./benchmark/zero_shot/local/metric/ranganathan_esm.json >> report.md
           echo '```' >> report.md
           
           # Send comment to PR
