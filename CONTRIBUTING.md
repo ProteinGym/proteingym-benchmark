@@ -10,7 +10,7 @@ After cloning the repository, you can start developing locally for both the benc
 
 The benchmarking system evaluates protein machine learning models using [DVC (Data Version Control)](https://dvc.org/) to orchestrate reproducible machine learning pipelines. It tests models on different datasets for supervised and zero-shot games by containerizing each model with Docker, running predictions, and calculating performance metrics. The system supports three environments: local development, AWS cloud (using SageMaker), and CI/CD (GitHub Actions).
 
-**Key workflows:**
+#### Key workflows
 1. **Local testing** - Fast iteration with Docker containers on your machine
 2. **AWS deployment** - Scalable training jobs using SageMaker and ECR
 3. **CI validation** - Automated testing on pull requests to validate model changes
