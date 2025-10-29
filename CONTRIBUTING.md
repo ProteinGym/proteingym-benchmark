@@ -2,22 +2,20 @@
 
 This file contains documentation about contributing to this project.
 
-## Develop locally
-
 After cloning the repository, you can start developing locally for both the benchmarking system and the static website to show the model cards and benchmarking results.
 
-### Benchmarking
+## Benchmarking
 
 The benchmarking system evaluates protein machine learning models using [DVC (Data Version Control)](https://dvc.org/) to orchestrate reproducible machine learning pipelines. It tests models on different datasets for supervised and zero-shot games by containerizing each model with Docker, running predictions, and calculating performance metrics. The system supports three environments: local development, AWS cloud (using SageMaker), and CI/CD (GitHub Actions).
 
-#### Key workflows
+### Key workflows
 1. **Local testing** - Fast iteration with Docker containers on your machine
 2. **AWS deployment** - Scalable training jobs using SageMaker and ECR
 3. **CI validation** - Automated testing on pull requests to validate model changes
 
 The system uses DVC's matrix feature to automatically create pipeline stages for all dataset-model combinations, ensuring comprehensive testing across configurations.
 
-#### Installation
+### Installation
 
 To install the local environment for the benchmarking system, you can do the following:
 
@@ -27,11 +25,11 @@ $ source .venv/bin/activate
 $ pip install -r requirements.txt
 ```
 
-#### DVC Pipeline Configuration
+### DVC Pipeline Configuration
 
 The benchmarking system uses DVC to manage reproducible pipelines. Each benchmark game (supervised/zero-shot) has separate configurations for different environments.
 
-##### dvc.yaml Structure
+#### dvc.yaml Structure
 
 Each [dvc.yaml](benchmark/supervised/local/dvc.yaml) file defines a pipeline with multiple stages:
 
@@ -59,7 +57,7 @@ create_training_job:
     - ${item.model.input_filename}
 ```
 
-##### Dataset and Model Configuration
+#### Dataset and Model Configuration
 
 **datasets.json** - Specifies which datasets to test:
 ```json
@@ -96,11 +94,11 @@ proteingym-base list-datasets datasets | jq ... > benchmark/supervised/local/dat
 proteingym-base list-models models | jq ... > benchmark/supervised/local/models.json
 ```
 
-#### Environment Comparison
+### Environment Comparison
 
 The benchmarking system supports three execution environments, each with different purposes and configurations:
 
-##### Local Environment
+#### Local Environment
 
 **Purpose:** Fast iteration and debugging during development
 
@@ -133,7 +131,7 @@ dvc repro benchmark/supervised/local/dvc.yaml --single-item
 - Easy debugging with local logs
 - Full control over execution
 
-##### AWS Environment
+#### AWS Environment
 
 **Purpose:** Scalable cloud training for resource-intensive models
 
@@ -174,7 +172,7 @@ dvc repro benchmark/supervised/aws/dvc.yaml --single-item
 - Persistent storage in S3
 - Production-grade infrastructure
 
-##### CI Environment (GitHub Actions)
+#### CI Environment (GitHub Actions)
 
 **Purpose:** Automated validation on pull requests
 
@@ -213,11 +211,11 @@ dvc repro benchmark/supervised/local/dvc.yaml --single-item
 
 This ensures your local tests match CI expectations, reducing failed checks.
 
-#### How to Pass CI Validation
+### How to Pass CI Validation
 
 The CI system validates that models work correctly before merging code. Follow these steps to ensure your changes pass:
 
-##### 1. Test Locally First
+#### 1. Test Locally First
 
 Always run the same pipeline that CI uses before pushing:
 
@@ -233,7 +231,7 @@ proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-s
 dvc repro benchmark/zero_shot/local/dvc.yaml --single-item
 ```
 
-##### 2. Common Failure Scenarios
+#### 2. Common Failure Scenarios
 
 **Docker build failures:**
 - **Cause:** Missing dependencies, syntax errors in Dockerfile
@@ -258,7 +256,7 @@ dvc repro benchmark/zero_shot/local/dvc.yaml --single-item
 - **Fix:** Ensure output directories exist and are writable
 - **Check:** The `setup` stage should create all necessary directories
 
-##### 3. Quick Validation Checklist
+#### 3. Quick Validation Checklist
 
 Before pushing:
 - [ ] Local pipeline completes: `dvc repro benchmark/*/local/dvc.yaml --single-item`
@@ -267,11 +265,11 @@ Before pushing:
 - [ ] Model runs successfully: `docker run ... your-model:latest train ...`
 - [ ] Required tags are set in model README (e.g., `tags: ["supervised"]` or `tags: ["zero-shot"]`)
 
-### Static website
+## Static website
 
 The static website is built with [SvelteKit](https://svelte.dev/docs/kit/introduction) and displays model cards and benchmarking results. It uses TypeScript, [Tailwind CSS](https://tailwindcss.com/) for styling, and is configured as a static site adapter for deployment.
 
-#### Installation
+### Installation
 
 To install the development environment for the static website:
 
@@ -281,7 +279,7 @@ $ npm install
 
 This will install all dependencies including Svelte, SvelteKit, TypeScript, Tailwind CSS, and development tools.
 
-#### Development
+### Development
 
 Start the development server with hot module replacement:
 
@@ -291,7 +289,7 @@ $ npm run dev
 
 The development server will start at `http://localhost:5173` by default. The site will automatically reload when you make changes to files in the `src/` directory.
 
-#### Building
+### Building
 
 To create a production build of the static site:
 
@@ -301,7 +299,7 @@ $ npm run build
 
 This generates static files in the `build/` directory that can be deployed to any static hosting service.
 
-#### Preview
+### Preview
 
 To preview the production build locally:
 
@@ -311,7 +309,7 @@ $ npm run preview
 
 This serves the built static files so you can test the production build before deployment.
 
-#### Code Quality
+### Code Quality
 
 Before committing changes, ensure your code passes all quality checks:
 
@@ -331,7 +329,7 @@ $ npm run lint
 
 **Note:** Prettier is configured to only format files in the `src/` directory and specific config files. Python, YAML, and benchmark-related files are excluded. See [.prettierignore](.prettierignore) for details.
 
-#### Project Structure
+### Project Structure
 
 ```
 src/
@@ -347,7 +345,7 @@ src/
 └── app.css             # Global styles
 ```
 
-#### Technology Stack
+### Technology Stack
 
 - **Framework:** SvelteKit 2.x with Svelte 5.x
 - **Language:** TypeScript 5.x
