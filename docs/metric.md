@@ -8,7 +8,7 @@ The ProteinGym benchmark uses the [scripts/metric.py](../scripts/metric.py) scri
 
 ## How to add a custom metric
 
-Adding a new custom metric is straightforward and requires two steps:
+Adding a new custom metric is straightforward and requires the following steps:
 
 ### Step 1: Add your metric to `calculate_all_metrics()` function
 
