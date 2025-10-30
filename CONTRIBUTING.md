@@ -65,7 +65,7 @@ create_training_job:
   "datasets": [
     {
       "name": "charge_ladder",
-      "input_filename": "datasets/charge_ladder/README.md"
+      "input_filename": "datasets/charge_ladder.pgdata"
     }
   ]
 }
