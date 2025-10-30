@@ -144,8 +144,8 @@ dvc repro benchmark/supervised/local/dvc.yaml --single-item
 
 <ins>Pipeline stages:</ins>
 1. `setup` - Creates local directories
-2. `upload_to_s3` - Uploads datasets/models to S3
-3. `deploy_to_ecr` - Builds and pushes Docker images to ECR
+2. `upload_to_s3` - Uploads datasets/model cards (README.md) to S3
+3. `deploy_to_ecr` - Builds and pushes Docker images of models to ECR
 4. `create_training_job` - Submits SageMaker training jobs
 5. `monitor_training_job` - Polls job status until completion
 6. `calculate_metric` - Downloads results from S3 and computes metrics
@@ -163,7 +163,7 @@ dvc repro benchmark/supervised/aws/dvc.yaml --single-item
 <ins>Requirements:</ins>
 - AWS credentials configured
 - SageMaker execution role
-- S3 buckets for data and outputs
+- S3 buckets for data inputs and outputs
 - ECR repositories for Docker images
 
 <ins>Advantages:</ins>
