@@ -248,7 +248,7 @@ docker build -t proteingym-esm:latest .
 Run the container with the required volume mounts for datasets and model cards:
 
 ```bash
-docker run \
+docker run --rm \
   -v /path/to/dataset:/opt/ml/input/data/training \
   -v /path/to/model-card:/opt/ml/input/data/model_card \
   -v /path/to/output:/opt/ml/output \
