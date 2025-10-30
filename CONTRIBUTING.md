@@ -242,9 +242,16 @@ dvc repro benchmark/zero_shot/local/dvc.yaml --single-item
 - **Cause:** Runtime errors, missing files, incorrect file paths
 - **Fix:** Run the Docker container manually and check logs:
   ```shell
-  docker run --rm -v $(pwd)/datasets/charge_ladder/README.md:/README.md your-model:latest train --dataset-file /README.md --model-card-file /model.md
+  docker run --rm \
+  -v $(pwd)/datasets/charge_ladder.pgdata:/charge_ladder.pgdata \
+  -v $(pwd)/your-model/README.md:/README.md \
+  -v $(pwd)/output/prediction:/opt/ml/model \
+  your-model:latest train --dataset-file /charge_ladder.pgdata --model-card-file /README.md
   ```
 - **Check:** Verify output CSV has required columns (`test`, `pred`)
+
+> [!TIP]
+> For `--dataset-file /charge_ladder.pgdata` and `--model-card-file /README.md`, you provide the paths inside the containers, which you mount in the previous `-v`.
 
 **Metric calculation failures:**
 - **Cause:** Missing columns in prediction CSV, incorrect data format
