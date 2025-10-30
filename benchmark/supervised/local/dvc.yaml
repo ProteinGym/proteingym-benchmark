@@ -7,7 +7,7 @@ stages:
 
   setup:
     cmd:
-      - mkdir -p logs ${output.prediction} ${output.metric}  ${output.plot}
+      - mkdir -p logs ${output.prediction} ${output.metric}
       - echo "Created local directories" > logs/setup.txt
     outs:
       - logs/setup.txt
@@ -47,19 +47,12 @@ stages:
       model: ${models}
 
     cmd: >-
-      python $(dvc root)/scripts/metric.py
+      python $(dvc root)/scripts/metric.py "test" "pred"
       --prediction ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
       --metric ${output.metric}/${item.dataset.name}_${item.model.name}.json
-      --plot ${output.plot}/${item.dataset.name}_${item.model.name}.json
-      --actual-vector-col "test"
-      --predict-vector-col "pred"
       --selected-metrics ${metrics}
     deps:
       - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
     metrics:
       - ${output.metric}/${item.dataset.name}_${item.model.name}.json:
           cache: false
-    plots:
-      - ${output.plot}/${item.dataset.name}_${item.model.name}.json:
-          x: metric
-          y: value

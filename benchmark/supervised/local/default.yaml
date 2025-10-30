@@ -1,5 +1,4 @@
 output:
   prediction: prediction
   metric: metric
-  plot: plot
-metrics: '"Overall RACCU" "Average Spearman"'
+metrics: '"spearman"'

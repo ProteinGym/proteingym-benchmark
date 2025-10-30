@@ -1,5 +1,4 @@
 polars[pyarrow]>=1.30.0,<2.0.0
-pycm==4.4
 boto3>=1.38.27
 dvc>=3.59.2
 scipy>=1.16.2
