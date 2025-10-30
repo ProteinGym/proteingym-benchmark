@@ -11,4 +11,5 @@ output:
   prediction: prediction
   metric: metric
 
-metrics: '"spearman"'
+metrics: 
+  - spearman
