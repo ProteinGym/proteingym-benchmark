@@ -254,7 +254,7 @@ docker run --rm \
   -v /path/to/output:/opt/ml/output \
   proteingym-<model-name>:latest \
   train \
-  --dataset-file /opt/ml/input/data/training/dataset.zip \
+  --dataset-file /opt/ml/input/data/training/dataset.pgdata \
   --model-card-file /opt/ml/input/data/model_card/README.md
 ```
 
