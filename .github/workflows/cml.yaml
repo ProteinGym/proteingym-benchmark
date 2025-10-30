@@ -48,23 +48,18 @@ jobs:
           echo "" >> report.md
 
           # Pick one supervised model
-          echo "## Supervised Models" >> report.md
-          echo "" >> report.md
-          echo "✅ Supervised models have all passed validation." >> report.md
-          echo "" >> report.md
-          echo '```json' >> report.md
-          cat ./benchmark/supervised/local/metric/charge_ladder_pls.json >> report.md
-          echo '```' >> report.md
-          echo "" >> report.md
-
-          # Pick one zero-shot model
-          echo "## Zero-shot Models" >> report.md
-          echo "" >> report.md
-          echo "✅ Zero-shot models have all passed validation." >> report.md
-          echo "" >> report.md
-          echo '```json' >> report.md
-          cat ./benchmark/zero_shot/local/metric/ranganathan_esm.json >> report.md
-          echo '```' >> report.md
+          cat <<EOF > report.md
+          ## Supervised Models
+          ✅ Supervised models have all passed validation.
+          \`\`\`json
+          $(cat ./benchmark/supervised/local/metric/charge_ladder_pls.json)
+          \`\`\`
+          ## Zero-shot Models
+          ✅ Zero-shot models have all passed validation.
+          \`\`\`json
+          $(cat ./benchmark/zero_shot/local/metric/ranganathan_esm.json)
+          \`\`\`
+          EOF
           
           # Send comment to PR
           echo "Send comment to PR"
