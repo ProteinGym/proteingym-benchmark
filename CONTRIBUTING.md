@@ -174,11 +174,11 @@ dvc repro benchmark/supervised/aws/dvc.yaml --single-item
 
 #### CI Environment (GitHub Actions)
 
-**Purpose:** Automated validation on pull requests
+<ins>Purpose:</ins> Automated validation on pull requests
 
-**Location:** [.github/workflows/cml.yaml](.github/workflows/cml.yaml)
+<ins>Location:</ins> [.github/workflows/cml.yaml](.github/workflows/cml.yaml)
 
-**How it works:**
+<ins>How it works:</ins>
 The CI environment closely mirrors the local environment, making local testing a reliable way to predict CI results. The workflow:
 
 1. **Setup** - Installs Python and CML (Continuous Machine Learning)
@@ -188,13 +188,13 @@ The CI environment closely mirrors the local environment, making local testing a
 3. **Run DVC pipelines** - Executes both supervised and zero-shot benchmarks using `dvc repro`
 4. **Report results** - Posts metrics to PR as a comment using CML
 
-**Key similarities to local:**
+<ins>Key similarities to local:</ins>
 - Uses identical [dvc.yaml](benchmark/supervised/local/dvc.yaml) files
 - Runs Docker containers the same way
 - Produces the same metric outputs
 - Uses `--single-item` flag for faster execution (tests subset of combinations)
 
-**Key differences from local:**
+<ins>Key differences from local:</ins>
 - Automated trigger on PR creation/updates
 - Limited dataset/model selection for speed
 - Posts results as PR comments
