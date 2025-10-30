@@ -100,17 +100,17 @@ The benchmarking system supports three execution environments, each with differe
 
 #### Local Environment
 
-**Purpose:** Fast iteration and debugging during development
+<ins>Purpose:</ins> Fast iteration and debugging during development
 
-**Location:** `benchmark/{supervised,zero_shot}/local/`
+<ins>Location:</ins> `benchmark/{supervised,zero_shot}/local/`
 
-**Configuration files:**
+<ins>Configuration files:</ins>
 - `dvc.yaml`- Pipeline definition
 - `default.yaml` - Output directories and metrics
 - `datasets.json` - Datasets to test
 - `models.json` - Models to evaluate
 
-**Pipeline stages:**
+<ins>Pipeline stages:</ins>
 1. `setup` - Creates local directories
 2. `create_training_job` - Builds Docker images and runs containers locally
 3. `calculate_metric` - Computes metrics from predictions
