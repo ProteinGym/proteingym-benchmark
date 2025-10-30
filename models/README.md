@@ -251,7 +251,7 @@ Run the container with the required volume mounts for datasets and model cards:
 docker run --rm \
   -v /path/to/dataset:/opt/ml/input/data/training \
   -v /path/to/model-card:/opt/ml/input/data/model_card \
-  -v /path/to/output:/opt/ml/output \
+  -v /path/to/output:/opt/ml/model \
   proteingym-<model-name>:latest \
   train \
   --dataset-file /opt/ml/input/data/training/dataset.pgdata \
