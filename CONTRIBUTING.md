@@ -244,7 +244,7 @@ dvc repro benchmark/zero_shot/local/dvc.yaml --single-item
   ```shell
   docker run --rm \
   -v $(pwd)/datasets/charge_ladder.pgdata:/charge_ladder.pgdata \
-  -v $(pwd)/your-model/README.md:/README.md \
+  -v $(pwd)/models/your-model/README.md:/README.md \
   -v $(pwd)/output/prediction:/opt/ml/model \
   your-model:latest train --dataset-file /charge_ladder.pgdata --model-card-file /README.md
   ```
