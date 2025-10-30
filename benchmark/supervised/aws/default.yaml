@@ -8,5 +8,7 @@ aws:
   volume_size: 5
 
 output:
-  prediction: output
+  prediction: prediction
   metric: metric
+
+metrics: '"spearman"'
