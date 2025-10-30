@@ -125,7 +125,7 @@ proteingym-base list-models models | jq '[.[] | select(.tags | contains(["superv
 dvc repro benchmark/supervised/local/dvc.yaml --single-item
 ```
 
-**Advantages:**
+<ins>Advantages:</ins>
 - Quick feedback loop
 - No cloud costs
 - Easy debugging with local logs
@@ -133,16 +133,16 @@ dvc repro benchmark/supervised/local/dvc.yaml --single-item
 
 #### AWS Environment
 
-**Purpose:** Scalable cloud training for resource-intensive models
+<ins>Purpose:</ins> Scalable cloud training for resource-intensive models
 
-**Location:** `benchmark/{supervised,zero_shot}/aws/`
+<ins>Location:</ins> `benchmark/{supervised,zero_shot}/aws/`
 
-**Configuration files:**
+<ins>Configuration files:</ins>
 - `dvc.yaml` - Pipeline with AWS-specific stages
 - `default.yaml` - AWS credentials and configuration
 - Same dataset/model JSON files as local
 
-**Pipeline stages:**
+<ins>Pipeline stages:</ins>
 1. `setup` - Creates local directories
 2. `upload_to_s3` - Uploads datasets/models to S3
 3. `deploy_to_ecr` - Builds and pushes Docker images to ECR
@@ -160,13 +160,13 @@ export AWS_PROFILE=your-profile
 dvc repro benchmark/supervised/aws/dvc.yaml --single-item
 ```
 
-**Requirements:**
+<ins>Requirements:</ins>
 - AWS credentials configured
 - SageMaker execution role
 - S3 buckets for data and outputs
 - ECR repositories for Docker images
 
-**Advantages:**
+<ins>Advantages:</ins>
 - Handles large-scale training
 - Parallel execution on powerful instances
 - Persistent storage in S3
