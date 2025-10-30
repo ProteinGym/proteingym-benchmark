@@ -48,8 +48,8 @@ stages:
 
     cmd: >-
       python $(dvc root)/scripts/metric.py "test" "pred"
-      --prediction ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
-      --metric ${output.metric}/${item.dataset.name}_${item.model.name}.json
+      --prediction-path ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
+      --metric-path ${output.metric}/${item.dataset.name}_${item.model.name}.json
       --selected-metrics ${metrics}
     deps:
       - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv

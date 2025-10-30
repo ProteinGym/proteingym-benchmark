@@ -113,8 +113,8 @@ def calculate_selected_metrics(
 def evaluate(
     actual_column: str,
     predict_column: str,
-    prediction: Path,
-    metric: Path,
+    prediction_path: Path,
+    metric_path: Path,
     selected_metrics: list[str] | None = None,
 ) -> Path:
     """Calculate performance metrics from prediction output and save to metric JSON formats.
@@ -125,8 +125,8 @@ def evaluate(
     Args:
         actual_column: Column name containing actual/ground truth values
         predict_column: Column name containing predicted values
-        prediction: Path to the CSV file containing prediction results
-        metric: Path where the calculated metrics JSON will be saved
+        prediction_path: Path to the CSV file containing prediction results
+        metric_path: Path where the calculated metrics JSON will be saved
         selected_metrics: Optional list of metric names to include. If None, all metrics are included.
 
     Returns:
@@ -135,7 +135,7 @@ def evaluate(
 
     print("Start to calculate metrics.")
 
-    prediction_dataframe = pl.read_csv(prediction).drop_nulls()
+    prediction_dataframe = pl.read_csv(prediction_path).drop_nulls()
 
     actual_values = prediction_dataframe[actual_column].to_list()
     predicted_values = prediction_dataframe[predict_column].to_list()
@@ -146,9 +146,9 @@ def evaluate(
         key: str(value) for key, value in selected_metrics.items()
     }
 
-    metric.write_text(json.dumps(metric_data, indent=2))
+    metric_path.write_text(json.dumps(metric_data, indent=2))
 
-    return metric
+    return metric_path
 
 
 def main():
@@ -167,13 +167,13 @@ def main():
         help="Column name containing predicted values",
     )
     parser.add_argument(
-        "--prediction",
+        "--prediction-path",
         type=Path,
         required=True,
         help="Path to the CSV file containing prediction results",
     )
     parser.add_argument(
-        "--metric",
+        "--metric-path",
         type=Path,
         required=True,
         help="Path where the calculated metrics JSON will be saved",
@@ -191,8 +191,8 @@ def main():
     return evaluate(
         actual_column=args.actual_column,
         predict_column=args.predict_column,
-        prediction=args.prediction,
-        metric=args.metric,
+        prediction_path=args.prediction_path,
+        metric_path=args.metric_path,
         selected_metrics=args.selected_metrics,
     )
 
