@@ -78,7 +78,7 @@ stages:
       dataset: ${datasets}
       model: ${models}
     
-    cmd: >
+    cmd: >-
       python $(dvc root)/scripts/sagemaker.py create
       --dataset-name ${item.dataset.name}
       --model-name ${item.model.name}
@@ -107,7 +107,7 @@ stages:
       dataset: ${datasets}
       model: ${models}
     
-    cmd: >
+    cmd: >-
       python $(dvc root)/scripts/sagemaker.py monitor
       --region-name ${aws.region_name}
       --job-name $(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)

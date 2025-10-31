@@ -78,7 +78,7 @@ stages:
       dataset: ${datasets}
       model: ${models}
     
-    cmd: >
+    cmd: >-
       python $(dvc root)/scripts/sagemaker.py create
       --dataset-name ${item.dataset.name}
       --model-name ${item.model.name}
@@ -107,7 +107,7 @@ stages:
       dataset: ${datasets}
       model: ${models}
     
-    cmd: >
+    cmd: >-
       python $(dvc root)/scripts/sagemaker.py monitor
       --region-name ${aws.region_name}
       --job-name $(cat logs/create_job_${item.dataset.name}_${item.model.name}.txt)
@@ -136,7 +136,7 @@ stages:
       - tar -xzf ${output.prediction}/model.tar.gz -C ${output.prediction}/
       - rm ${output.prediction}/model.tar.gz
       - >-
-       METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))") &&
+        METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))") &&
         python $(dvc root)/scripts/metric.py
         --prediction-path ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
         --metric-path ${output.metric}/${item.dataset.name}_${item.model.name}.json
