@@ -122,11 +122,6 @@ stages:
     outs:
      - logs/monitor_job_${item.dataset.name}_${item.model.name}.txt:
           cache: true
-
-  prepare_metrics:
-    cmd: python3 -c "import yaml; data = yaml.safe_load(open('default.yaml')); open('metrics.txt', 'w').write(' '.join(data['metrics']))"
-    outs:
-      - metrics.txt
   
   calculate_metric:
     matrix: 
@@ -141,14 +136,13 @@ stages:
       - tar -xzf ${output.prediction}/model.tar.gz -C ${output.prediction}/
       - rm ${output.prediction}/model.tar.gz
       - >-
-        METRICS=$(cat metrics.txt) &&
-        python $(dvc root)/scripts/metric.py "test" "pred"
+        METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))") &&
+        python $(dvc root)/scripts/metric.py
         --prediction-path ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
         --metric-path ${output.metric}/${item.dataset.name}_${item.model.name}.json
         --selected-metrics $METRICS
 
     deps:
-      - metrics.txt
       - logs/monitor_job_${item.dataset.name}_${item.model.name}.txt
     metrics:
       - ${output.metric}/${item.dataset.name}_${item.model.name}.json:
