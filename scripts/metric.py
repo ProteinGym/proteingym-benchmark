@@ -31,12 +31,6 @@ Adding Custom Metrics:
         result = custom_calculation(actual_values, predicted_values)
         return result
     ```
-
-Functions:
-    metric_spearman: Calculate Spearman rank correlation coefficient
-    calculate_selected_metrics: Dynamically discover and execute selected metric functions
-    evaluate: Calculate and save performance metrics from prediction CSV to JSON format
-    main: Command-line interface for metric calculation
 """
 
 import inspect
