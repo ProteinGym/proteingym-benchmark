@@ -12,7 +12,7 @@ For more information, you can reference Hugging Face's [model cards](https://hug
 
 ## Datasets
 
-The datasets are included in the [dataset](datasets/) folder, where each dataset goes into a subfolder.
+The datasets are included in the [dataset](datasets/) folder, where each dataset is an archived file with suffix `pgdata`.
 
 In order to build the archived file for each dataset, [proteingym-base](https://github.com/ProteinGym/proteingym-base) is used.
 
@@ -96,3 +96,4 @@ You can benchmark a group of zero-shot models:
 ```shell
 AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro benchmark/zero_shot/aws/dvc.yaml --single-item
 ```
+
