@@ -26,8 +26,8 @@ The benchmark is defined in the [benchmark](benchmark/) folder, where there exis
 
 Each game has its selected list of models and datasets defined in `dvc.yaml`.
 
-- Supervised game is defined in this [dvc.yaml](supervised/local/dvc.yaml)
-- Zero-shot game is defined in this [dvc.yaml](zero_shot/local/dvc.yaml)
+- Supervised game is defined in this [dvc.yaml](benchmark/supervised/local/dvc.yaml)
+- Zero-shot game is defined in this [dvc.yaml](benchmark/zero_shot/local/dvc.yaml)
 
 The models and datasets are defined in `vars` at the top, and DVC translates `vars` into a matrix, which is namely a loop defined as the following pseudo-code:
 
@@ -96,5 +96,6 @@ You can benchmark a group of zero-shot models:
 ```shell
 AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro benchmark/zero_shot/aws/dvc.yaml --single-item
 ```
+
 
 
