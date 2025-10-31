@@ -69,7 +69,7 @@
       </div>
       <input
         bind:value={searchQuery}
-        class="text-base text-gray-700 pl-8 rounded-md border border-gray-100 h-9 pr-8 focus:shadow-xl focus:outline-none focus:ring-1 focus:ring-gray-100 focus:border-gray-100"
+        class="text-base text-gray-700 pl-8 rounded-md border border-gray-100 h-9 pr-8 shadow-sm focus:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-100 focus:border-gray-100"
         type="text"
         placeholder="Filter by name"
       />
