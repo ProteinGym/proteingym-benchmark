@@ -60,9 +60,7 @@ dvc repro benchmark/zero_shot/local/dvc.yaml --single-item
 
 ### AWS environment
 
-There are two environments in which to run benchmark: one is the local environment, the other is the AWS environment.
-
-The difference of the AWS environment is that:
+The difference of the AWS environment from the local envrionment is that:
 * You need to upload the dataset and model files to S3.
 * You need to build and push your Docker image to ECR.
 * You need to use SageMaker training job to either train or score a model.
@@ -96,6 +94,7 @@ You can benchmark a group of zero-shot models:
 ```shell
 AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro benchmark/zero_shot/aws/dvc.yaml --single-item
 ```
+
 
 
 
