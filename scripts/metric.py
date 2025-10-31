@@ -9,12 +9,6 @@ The script reads prediction results from CSV files and computes selected metrics
 a plugin-style architecture: any function with the 'metric_' prefix is automatically
 discovered and made available for calculation. Results are saved as JSON for further analysis.
 
-Key Features:
-    - Dynamic metric discovery: Add new metrics by defining 'metric_<name>' functions
-    - Selective metric calculation: Choose which metrics to compute via command-line args
-    - JSON output format for easy integration with analysis pipelines
-    - Built-in support for correlation metrics (e.g., Spearman)
-
 Example Usage:
     ```bash
     python metric.py actual_column predicted_column \\
