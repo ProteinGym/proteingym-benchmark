@@ -178,6 +178,103 @@ def infer(dataset: Dataset, model_card: ModelCard, model: Any) -> DataFrame:
 It contains the supporting methods from the original models' code to facilitate
 the `model.py`.
 
+## Containerization
+
+Models in the ProteinGym benchmark are containerized using Docker to ensure
+reproducibility, portability, and compatibility with different execution
+environments (local and cloud-based like AWS SageMaker).
+
+### Dockerfile Structure
+
+Each model should include a `Dockerfile` in its root directory. The Dockerfile
+follows a standard structure:
+
+```dockerfile
+FROM python:3.12-slim-bookworm
+
+# Copy uv package manager from official image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /opt/program
+
+# Copy ProteinGym dependencies (required until packages are public)
+COPY dist/proteingym*.whl dist/
+
+# Copy model files and install dependencies
+COPY README.md README.md
+COPY pyproject.toml pyproject.toml
+COPY src/ src/
+RUN uv sync --no-cache
+
+# Set the entrypoint to your model's CLI command
+ENTRYPOINT ["uv", "run", "<model-name>"]
+```
+
+### Key Components
+
+1. **Base Image**: Uses `python:3.12-slim-bookworm` for a minimal Python
+   environment.
+
+2. **Package Manager**: Integrates [uv](https://docs.astral.sh/uv/) for fast,
+   reliable dependency management.
+
+3. **Working Directory**: Sets `/opt/program` as the working directory, which is
+   the standard location for SageMaker training containers.
+
+4. **Dependencies**:
+   - Copies pre-built `proteingym` wheel files from the `dist/` directory
+   - Copies `pyproject.toml` to define model-specific dependencies
+   - Runs `uv sync --no-cache` to install all dependencies
+
+5. **Entrypoint**: Configures the container to run your model's CLI command
+   (e.g., `esm`, `pls`, etc.) using `uv run`.
+
+### Building a Docker Image
+
+To build a Docker image for your model, navigate to the model directory and run:
+
+```bash
+docker build -t proteingym-<model-name>:latest .
+```
+
+For example:
+```bash
+cd models/esm
+docker build -t proteingym-esm:latest .
+```
+
+### Running a Containerized Model
+
+Run the container with the required volume mounts for datasets and model cards:
+
+```bash
+docker run --rm \
+  -v /path/to/dataset:/opt/ml/input/data/training \
+  -v /path/to/model-card:/opt/ml/input/data/model_card \
+  -v /path/to/output:/opt/ml/model \
+  proteingym-<model-name>:latest \
+  train \
+  --dataset-file /opt/ml/input/data/training/dataset.pgdata \
+  --model-card-file /opt/ml/input/data/model_card/README.md
+```
+
+### Best Practices
+
+- **Layer Caching**: Structure your Dockerfile to maximize Docker layer caching.
+  Copy dependency files (like `pyproject.toml`) before source code.
+
+- **Minimal Images**: Use slim base images and avoid installing unnecessary
+  dependencies to keep image sizes small.
+
+- **No Cache**: Use `--no-cache` with `uv sync` to prevent caching issues in
+  containerized environments.
+
+- **Testing**: Always test your containerized model locally before deploying to
+  cloud environments.
+
+- **Validation**: Use `proteingym-base validate_model your-model-root-folder` to
+  verify your model structure and configuration before containerization.
+
 ## Backends
 
 This section details common logic per backend.
