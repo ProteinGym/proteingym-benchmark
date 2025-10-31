@@ -9,15 +9,9 @@ The script reads prediction results from CSV files and computes selected metrics
 a plugin-style architecture: any function with the 'metric_' prefix is automatically
 discovered and made available for calculation. Results are saved as JSON for further analysis.
 
-Key Features:
-    - Dynamic metric discovery: Add new metrics by defining 'metric_<name>' functions
-    - Selective metric calculation: Choose which metrics to compute via command-line args
-    - JSON output format for easy integration with analysis pipelines
-    - Built-in support for correlation metrics (e.g., Spearman)
-
 Example Usage:
     ```bash
-    python metric.py actual_column predicted_col \\
+    python metric.py actual_column predicted_column \\
         --prediction predictions.csv \\
         --metric metrics.json \\
         --selected-metrics spearman
@@ -26,23 +20,17 @@ Example Usage:
 Example metric JSON output:
     ```json
     {
-        "Average Spearman": 0.8542
+        "spearman": 0.8542
     }
     ```
 
 Adding Custom Metrics:
     To add a new metric, define a function following this pattern:
     ```python
-    def metric_<name>(actual_values: list[float], predicted_values: list[float]) -> tuple[str, float]:
+    def metric_<name>(actual_values: list[float], predicted_values: list[float]) -> float:
         result = custom_calculation(actual_values, predicted_values)
-        return ("Metric Display Name", result)
+        return result
     ```
-
-Functions:
-    metric_spearman: Calculate Spearman rank correlation coefficient
-    calculate_selected_metrics: Dynamically discover and execute selected metric functions
-    evaluate: Calculate and save performance metrics from prediction CSV to JSON format
-    main: Command-line interface for metric calculation
 """
 
 import inspect
@@ -54,13 +42,36 @@ from pathlib import Path
 import polars as pl
 from scipy.stats import spearmanr
 
+metric_functions = {}
+
 
 def metric_spearman(
     actual_values: list[float],
     predicted_values: list[float],
-) -> tuple[str, float]:
+) -> float:
+    """
+    Compute the Spearman rank correlation coefficient between two lists of values.
+
+    The Spearman correlation assesses how well the relationship between two variables
+    can be described using a monotonic function. It measures the strength and direction
+    of association between the ranked versions of the input variables.
+
+    Args:
+        actual_values: A list of actual values.
+        predicted_values: A list of predicted values.
+
+    Returns:
+        float: The Spearman rank correlation coefficient, ranging from -1 to 1.
+            - 1 indicates a perfect positive monotonic relationship.
+            - -1 indicates a perfect negative monotonic relationship.
+            - 0 indicates no monotonic relationship.
+
+    Example:
+        >>> metric_spearman([1, 2, 3, 4], [10, 20, 30, 40])
+        1.0
+    """
     spearman_corr, _ = spearmanr(actual_values, predicted_values)
-    return ("Average Spearman", spearman_corr)
+    return spearman_corr
 
 def calculate_selected_metrics(
     actual_values: list[float],
@@ -77,7 +88,7 @@ def calculate_selected_metrics(
     Example:
         def metric_custom(actual_values, predicted_values):
             result = custom_calculation(actual_values, predicted_values)
-            return ("Custom Metric Name", result)
+            return result
 
     Args:
         actual_values: List of actual/ground truth values
@@ -89,7 +100,7 @@ def calculate_selected_metrics(
         Dictionary mapping metric names to their computed values
     """
     current_module = sys.modules[__name__]
-    metric_functions = {}
+    global metric_functions
 
     for name, obj in inspect.getmembers(current_module, inspect.isfunction):
         if name.startswith("metric_"):
@@ -100,10 +111,10 @@ def calculate_selected_metrics(
 
     for metric_name in selected_metrics:
         if metric_name in metric_functions:
-            metric_key, metric_value = metric_functions[metric_name](
+            metric_value = metric_functions[metric_name](
                 actual_values, predicted_values
             )
-            results[metric_key] = metric_value
+            results[metric_name] = metric_value
         else:
             print(f"Warning: Metric '{metric_name}' not found in available metrics")
 
@@ -111,8 +122,6 @@ def calculate_selected_metrics(
 
 
 def evaluate(
-    actual_column: str,
-    predict_column: str,
     prediction_path: Path,
     metric_path: Path,
     selected_metrics: list[str] | None = None,
@@ -123,8 +132,6 @@ def evaluate(
     a confusion matrix. All metrics are saved to a JSON file.
 
     Args:
-        actual_column: Column name containing actual/ground truth values
-        predict_column: Column name containing predicted values
         prediction_path: Path to the CSV file containing prediction results
         metric_path: Path where the calculated metrics JSON will be saved
         selected_metrics: Optional list of metric names to include. If None, all metrics are included.
@@ -137,16 +144,12 @@ def evaluate(
 
     prediction_dataframe = pl.read_csv(prediction_path).drop_nulls()
 
-    actual_values = prediction_dataframe[actual_column].to_list()
-    predicted_values = prediction_dataframe[predict_column].to_list()
+    actual_values = prediction_dataframe.to_series(0)
+    predicted_values = prediction_dataframe.to_series(1)
     
     selected_metrics = calculate_selected_metrics(actual_values, predicted_values, selected_metrics)
 
-    metric_data = {
-        key: str(value) for key, value in selected_metrics.items()
-    }
-
-    metric_path.write_text(json.dumps(metric_data, indent=2))
+    metric_path.write_text(json.dumps(selected_metrics, indent=2))
 
     return metric_path
 
@@ -156,16 +159,6 @@ def main():
         description="Calculate metric for ProteinGym benchmark evaluation."
     )
 
-    parser.add_argument(
-        "actual_column",
-        type=str,
-        help="Column name containing actual/ground truth values",
-    )
-    parser.add_argument(
-        "predict_column",
-        type=str,
-        help="Column name containing predicted values",
-    )
     parser.add_argument(
         "--prediction-path",
         type=Path,
@@ -189,8 +182,6 @@ def main():
     args = parser.parse_args()
     
     return evaluate(
-        actual_column=args.actual_column,
-        predict_column=args.predict_column,
         prediction_path=args.prediction_path,
         metric_path=args.metric_path,
         selected_metrics=args.selected_metrics,

@@ -23,4 +23,4 @@ The top-level of the manifest contains the model metadata and its hyper paramete
 | **Field**          | **Type**                              | **Required** | **Default** | **Description**                     |
 |--------------------|---------------------------------------|--------------|-------------|-------------------------------------|
 | `name`             | `string`                              | Yes          | N/A         | The name of the model.              |
-| `hyper_parameters` | `map[str, bool | int | float | str ]` | No           | Empty dict  | The hyper parameters of the model.  |
+| `hyper_parameters` | `map[str, bool \| int \| float \| str ]` | No           | Empty dict  | The hyper parameters of the model.  |

@@ -16,9 +16,9 @@ Open [scripts/metric.py](../scripts/metric.py) and take the `metric_spearman()` 
 
 To add a new metric, define a function following this pattern:
 ```python
-def metric_<your_metric_name>(actual_values: list[float], predicted_values: list[float]) -> tuple[str, float]:
+def metric_<your_metric_name>(actual_values: list[float], predicted_values: list[float]) -> float:
     result = custom_calculation(actual_values, predicted_values)
-    return ("Metric Display Name", result)
+    return result
 ```
 
 > [!IMPORTANT]
@@ -32,7 +32,9 @@ def metric_<your_metric_name>(actual_values: list[float], predicted_values: list
 To include your metric in the benchmark output, add it to the metrics list in the DVC configuration file: `default.yaml` for each game under each environment:
 
 ```yaml
-metrics: '"spearman" "your_metric_name"'  # Add your new metric here
+metrics: 
+  - spearman
+  - your_metric_name  # Add your new metric here
 ```
 
 ### Step 3: Update `requirements.txt`
@@ -44,9 +46,9 @@ If you have extra package installed for your metric, don't forget to add the dep
 Run the metric calculation script to verify your metric is computed correctly:
 
 ```bash
-python scripts/metric.py "test" "pred" \
-  --output path/to/predictions.csv \
-  --metric path/to/output/metrics.json \
+python scripts/metric.py \
+  --prediction-path path/to/predictions.csv \
+  --metric-path path/to/output/metrics.json \
   --selected-metrics "your_metric_name"
 ```
 
@@ -71,9 +73,8 @@ Metrics are saved in the JSON formats:
 ### 1. Metrics JSON (`metric.json`)
 ```json
 {
-  "Overall ACC": "0.85",
-  "Average Spearman": "0.72",
-  "Your Metric Name": "0.91"
+  "spearman": "0.72",
+  "your_metric_name": "0.91"
 }
 ```
 

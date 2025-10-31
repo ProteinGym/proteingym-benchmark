@@ -40,11 +40,6 @@ stages:
     outs:
       - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv:
           cache: true
-
-  prepare_metrics:
-    cmd: python3 -c "import yaml; data = yaml.safe_load(open('default.yaml')); open('metrics.txt', 'w').write(' '.join(data['metrics']))"
-    outs:
-      - metrics.txt
   
   calculate_metric:
     matrix: 
@@ -52,14 +47,13 @@ stages:
       model: ${models}
 
     cmd: >-
-      METRICS=$(cat metrics.txt) &&
-      python $(dvc root)/scripts/metric.py "test" "pred"
+      METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))") &&
+      python $(dvc root)/scripts/metric.py
       --prediction-path ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
       --metric-path ${output.metric}/${item.dataset.name}_${item.model.name}.json
       --selected-metrics $METRICS
     
     deps:
-      - metrics.txt
       - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
     metrics:
       - ${output.metric}/${item.dataset.name}_${item.model.name}.json:
