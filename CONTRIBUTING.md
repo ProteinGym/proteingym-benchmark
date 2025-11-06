@@ -95,7 +95,9 @@ proteingym-base list-models models | jq ... > benchmark/supervised/local/models.
 ```
 
 > [!TIP]
-> By default, all pipelines configured by `dvc.yaml` will be recursively checked when executing `dvc repro`. As a result, if either `datasets.json` or `models.json` is missing in any pipelines, there will throw an error. So the command option `--single-item` is used to restrict what gets checked by turning off the recursive search for changed dependencies.
+> By default, all pipelines configured by `dvc.yaml` will be recursively checked when executing `dvc repro`. As a result, if either `datasets.json` or `models.json` is missing in any pipelines, there will throw an error. So the command option `--single-item` is used to restrict what gets checked by turning off the recursive search for changed dependencies for all pipelines.
+>
+> For example, if you run `dvc repro ... --single-item` in `local` folder, only `datasets.json` and `models.json` in `local` folder are checked for its `dvc.yaml` dependencies, but not also in `aws` folder.
 
 ### Environment Comparison
 
