@@ -94,6 +94,9 @@ proteingym-base list-datasets datasets | jq ... > benchmark/supervised/local/dat
 proteingym-base list-models models | jq ... > benchmark/supervised/local/models.json
 ```
 
+> [!TIP]
+> By default, all pipelines configured by `dvc.yaml` will be recursively checked when executing `dvc repro`. As a result, if either `datasets.json` or `models.json` is missing in any pipelines, there will throw an error. So the command option `--single-item` is used to restrict what gets checked by turning off the recursive search for changed dependencies.
+
 ### Environment Comparison
 
 The benchmarking system supports three execution environments, each with different purposes and configurations:
@@ -192,24 +195,12 @@ The CI environment closely mirrors the local environment, making local testing a
 - Uses identical [dvc.yaml](benchmark/supervised/local/dvc.yaml) files
 - Runs Docker containers the same way
 - Produces the same metric outputs
-- Uses `--single-item` flag for faster execution (tests subset of combinations)
 
 <ins>Key differences from local:</ins>
 - Automated trigger on PR creation/updates
 - Limited dataset/model selection for speed
 - Posts results as PR comments
 - Runs in Ubuntu environment (vs. your local OS)
-
-**How to replicate CI locally:**
-```shell
-# Use the exact commands from cml.yaml
-proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder" or .name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | {datasets: .}' > benchmark/supervised/local/datasets.json
-proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/supervised/local/models.json
-
-dvc repro benchmark/supervised/local/dvc.yaml --single-item
-```
-
-This ensures your local tests match CI expectations, reducing failed checks.
 
 ### How to Pass CI Validation
 
