@@ -94,8 +94,3 @@ You can benchmark a group of zero-shot models:
 ```shell
 AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro benchmark/zero_shot/aws/dvc.yaml --single-item
 ```
-
-
-
-
-
