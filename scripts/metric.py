@@ -11,7 +11,7 @@ discovered and made available for calculation. Results are saved as JSON for fur
 
 Example Usage:
     ```bash
-    python metric.py actual_column predicted_column \\
+    python metric.py \\
         --prediction predictions.csv \\
         --metric metrics.json \\
         --selected-metrics spearman
