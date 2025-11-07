@@ -16,19 +16,17 @@ The [metric.py](metric.py) script calculates performance metrics for machine lea
 
 ### Arguments
 
-- `--output`: Path to the CSV file containing prediction results
-- `--metric`: Path where the calculated metrics CSV will be saved
-- `--actual-vector-col`: Column name containing actual/ground truth values
-- `--predict-vector-col`: Column name containing predicted values
+- `--prediction-path`: Path to the CSV file containing prediction results
+- `--metric-path`: Path where the calculated metrics CSV will be saved
+- `--selected-metrics`:The list of metrics to calculate in order to evaluate a model
 
 ### Example
 
 ```shell
-python metric.py \
-    --output predictions.csv \
-    --metric metrics.csv \
-    --actual-vector-col "true_values" \
-    --predict-vector-col "predicted_values"
+python metric.py \\
+    --prediction-path predictions.csv \\
+    --metric-path metrics.json \\
+    --selected-metrics spearman
 ```
 
 ## sagemaker.py
