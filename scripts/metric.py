@@ -12,8 +12,8 @@ discovered and made available for calculation. Results are saved as JSON for fur
 Example Usage:
     ```bash
     python metric.py \\
-        --prediction predictions.csv \\
-        --metric metrics.json \\
+        --prediction-path predictions.csv \\
+        --metric-path metrics.json \\
         --selected-metrics spearman
     ```
 
