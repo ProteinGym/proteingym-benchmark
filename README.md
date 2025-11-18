@@ -20,14 +20,10 @@ You can reference [this guide](https://github.com/ProteinGym/proteingym-base?tab
 
 ## Benchmark
 
-The benchmark is defined in the [benchmark](benchmark/) folder, where there exist two games: supervised and zero-shot. Under each game, there are two environments: local and AWS.
+The benchmark is defined in the [benchmark](benchmark/) folder, where there exist two games: supervised and zero-shot. Each game has its selected list of models and datasets defined in `dvc.yaml`.
 
-### Local environment
-
-Each game has its selected list of models and datasets defined in `dvc.yaml`.
-
-- Supervised game is defined in this [dvc.yaml](benchmark/supervised/local/dvc.yaml)
-- Zero-shot game is defined in this [dvc.yaml](benchmark/zero_shot/local/dvc.yaml)
+- Supervised game is defined in this [dvc.yaml](benchmark/supervised/dvc.yaml).
+- Zero-shot game is defined in this [dvc.yaml](benchmark/zero_shot/dvc.yaml).
 
 The models and datasets are defined in `vars` at the top, and DVC translates `vars` into a matrix, which is namely a loop defined as the following pseudo-code:
 
@@ -41,22 +37,39 @@ for dataset in datasets:
         calculate_metric()
 ```
 
-#### Supervised
+### Generate `datasets.json` and `models.json`
+
+In order to create your own benchmark and generate your own `datasets.json` and `models.json`, you can use the `proteingym-base` command as below:
+
+* `proteingym-base list-datasets datasets` will list all datasets under the folder `datasets`.
+* `proteingym-base list-models models` will list all models under the folder `models`. Pay attention that in order for a model to be listed, it needs to define its model card as `README.md` with YAML front matter in its root folder.
+* `jq` is used to filter the datasets and models.
+
+```shell
+proteingym-base list-datasets datasets | jq ... > benchmark/supervised/local/datasets.json
+proteingym-base list-models models | jq ... > benchmark/supervised/local/models.json
+```
+
+For more information, you can check out [CONTRIBUTING.md](CONTRIBUTING.md) to reference the detailed commands. Also in [cml.yaml](.github/workflows/cml.yaml), you can check out the detailed commands which run in the CI pipeline.
+
+### Supervised
 
 You can benchmark a group of supervised models:
 ```shell
-dvc repro benchmark/supervised/local/dvc.yaml --single-item
+dvc repro benchmark/supervised/dvc.yaml -s
 ```
 
-#### Zero-shot
+### Zero-shot
 
 You can benchmark a group of zero-shot models:
 ```shell
-dvc repro benchmark/zero_shot/local/dvc.yaml --single-item
+dvc repro benchmark/zero_shot/dvc.yaml -s
 ```
 
 > [!NOTE]
-> Based on https://dvc.org/doc/command-reference/repro#-s, `--single-item` turns off the recursive search for all `dvc.yaml` changed dependencies. Only the current executed `dvc.yaml` will be searched.
+> By default, all pipelines configured by `dvc.yaml` will be recursively checked when executing `dvc repro`. As a result, if either `datasets.json` or `models.json` are missing in any pipelines, an error will be thrown. So the command option `--single-item` (`-s`) is used to restrict what gets checked by turning off the recursive search for changed dependencies of all pipelines.
+>
+> For example, if you run `dvc repro ... -s` in `supervised` folder, only `datasets.json` and `models.json` in `supervised` folder are checked for its `dvc.yaml` dependencies, excluding the `zero_shot` folders.
 
 > [!TIP]
 > To run specific parts of the pipeline with DVC, you can run `dvc repro --downstream <stage_name>`. For example, `dvc repro --downstream calculate_metric`.
@@ -66,40 +79,3 @@ dvc repro benchmark/zero_shot/local/dvc.yaml --single-item
 
 > [!TIP]
 > By default, DVC will stop execution when any stage fails. If one dataset-model pair's metric calculation fails (e.g., due to a missing prediction file, script error, or invalid data), DVC will halt the entire pipeline run. In order to prevent this blocking behavior, you can use: `dvc repro --keep-going`. This flag tells DVC to continue executing other stages even if some fail.
-
-### AWS environment
-
-The difference of the AWS environment from the local envrionment is that:
-* You need to upload the dataset archive files and model card files to S3.
-* You need to build and push your model's Docker image to ECR.
-* You need to use SageMaker training job to either train or score a model.
-
-> [!IMPORTANT]
-> In order to use the AWS environment, you need to set up your AWS profile with the below steps:
-> 1. Execute `aws configure sso`.
-> 2. Fill in the required fields, especially: "Default client Region" is "us-east-1".
->   a. SSO session name: `pg2benchmark`.
->   b. SSO start URL: https://d-90674355f1.awsapps.com/start
->   c. SSO region: `us-east-1`.
->   d. SSO registration scopes: Leave empty.
->   e. Login via browser.
-> 2. Select the account: `ifflabdev`.
->   a. Default client Region is `us-east-1`.
->   b. CLI default ouptut: Leave empty.
->   c. Profile name: `pg2benchmark`.
-> 4. You can find your account ID and profile by executing `cat ~/.aws/config`.
-> 5. Finally, you can run `dvc repro` with environment variables in each game: `AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro`
-
-#### Supervised
-
-You can benchmark a group of supervised models:
-```shell
-AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro benchmark/supervised/aws/dvc.yaml --single-item
-```
-
-#### Zero-shot
-
-You can benchmark a group of zero-shot models:
-```shell
-AWS_ACCOUNT_ID=xxx AWS_PROFILE=yyy dvc repro benchmark/zero_shot/aws/dvc.yaml --single-item
-```
