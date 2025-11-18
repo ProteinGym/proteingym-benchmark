@@ -27,7 +27,7 @@ stages:
         docker run --rm
         -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename})
         -v $(realpath ${item.model.input_filename}):/$(basename ${item.model.input_filename})
-        -v $(realpath ${output.prediction}):/opt/ml/model
+        -v $(realpath ${output.prediction}):/opt/program/output
         ${item.model.name}:latest
         train
         --dataset-file /$(basename ${item.dataset.input_filename})
