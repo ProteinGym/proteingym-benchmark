@@ -58,6 +58,15 @@ dvc repro benchmark/zero_shot/local/dvc.yaml --single-item
 > [!NOTE]
 > Based on https://dvc.org/doc/command-reference/repro#-s, `--single-item` turns off the recursive search for all `dvc.yaml` changed dependencies. Only the current executed `dvc.yaml` will be searched.
 
+> [!TIP]
+> To run specific parts of the pipeline with DVC, you can run `dvc repro --downstream <stage_name>`. For example, `dvc repro --downstream calculate_metric`.
+
+> [!TIP]
+> To ignore cache and run anew, you can run `dvc repro --force`.
+
+> [!TIP]
+> By default, DVC will stop execution when any stage fails. If one dataset-model pair's metric calculation fails (e.g., due to a missing prediction file, script error, or invalid data), DVC will halt the entire pipeline run. In order to prevent this blocking behavior, you can use: `dvc repro --keep-going`. This flag tells DVC to continue executing other stages even if some fail.
+
 ### AWS environment
 
 The difference of the AWS environment from the local envrionment is that:
