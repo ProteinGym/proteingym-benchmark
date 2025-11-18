@@ -27,11 +27,10 @@ app = typer.Typer(
 console = Console()
 
 
-class SageMakerTrainingJobPath:
-    PREFIX = Path("/opt/ml")
-    TRAINING_JOB_PATH = PREFIX / "input" / "data" / "training" / "dataset.pgdata"
-    MODEL_CARD_PATH = PREFIX / "input" / "data" / "model_card" / "README.md"
-    OUTPUT_PATH = PREFIX / "model"
+class ContainerTrainingJobPath:
+    PREFIX = Path("/opt/program")
+    MODEL_CARD_PATH = PREFIX / "README.md"
+    OUTPUT_PATH = PREFIX / "output"
 
 
 @app.command()
@@ -41,13 +40,13 @@ def train(
         typer.Option(
             help="Path to the dataset file",
         ),
-    ] = SageMakerTrainingJobPath.TRAINING_JOB_PATH,
+    ],
     model_card_file: Annotated[
         Path,
         typer.Option(
             help="Path to the model card markdown file",
         ),
-    ] = SageMakerTrainingJobPath.MODEL_CARD_PATH,
+    ] = ContainerTrainingJobPath.MODEL_CARD_PATH,
 ):
     console.print(f"Loading {dataset_file} and {model_card_file}...")
 
@@ -94,11 +93,11 @@ def train(
     )
 
     df.write_csv(
-        f"{SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}.csv"
+        f"{ContainerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}.csv"
     )
 
     console.print(
-        f"Saved the metrics in CSV in {SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}.csv"
+        f"Saved the metrics in CSV in {ContainerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}.csv"
     )
 
 
