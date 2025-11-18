@@ -20,20 +20,34 @@ stages:
     cmd:
       - >-
         MODEL=$(python3 -c "import sys,re; model=dict(re.findall(r'--(\w+)\s+(\S+)', sys.argv[1])); print(model.get('input_filename', model.get('image', '')))" "${item.model}") &&
-        echo "Resolved MODEL: $MODEL" &&
         if [[ "$MODEL" == /* ]]; then
-          echo "Building image from local path: $MODEL" &&
-          docker build -f $(dirname "$MODEL")/Dockerfile -t ${item.model.name}:latest $(dirname "$MODEL");
+          echo "Building image from local path: $MODEL"
+          docker build \
+            -f $(dirname "$MODEL")/Dockerfile \
+            -t ${item.model.name}:latest \
+            $(dirname "$MODEL");
         else
-          echo "Pulling image from registry: $MODEL" &&
+          echo "Pulling image from registry: $MODEL"
           docker pull "$MODEL" &&
           docker tag "$MODEL" ${item.model.name}:latest;
         fi
       - >-
         if [[ "$MODEL" == /* ]]; then
-          docker run --rm -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename}) -v $(realpath "$MODEL"):/$(basename "$MODEL") -v $(realpath ${output.prediction}):/opt/program/output ${item.model.name}:latest train --dataset-file /$(basename ${item.dataset.input_filename}) --model-card-file /$(basename "$MODEL");
+          docker run --rm \
+            -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename}) \
+            -v $(realpath "$MODEL"):/$(basename "$MODEL") \
+            -v $(realpath ${output.prediction}):/opt/program/output \
+            ${item.model.name}:latest \
+            train \
+              --dataset-file /$(basename ${item.dataset.input_filename}) \
+              --model-card-file /$(basename "$MODEL");
         else
-          docker run --rm -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename}) -v $(realpath ${output.prediction}):/opt/program/output ${item.model.name}:latest train --dataset-file /$(basename ${item.dataset.input_filename});
+          docker run --rm \
+            -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename}) \
+            -v $(realpath ${output.prediction}):/opt/program/output \
+            ${item.model.name}:latest \
+            train \
+              --dataset-file /$(basename ${item.dataset.input_filename});
         fi
       - docker image prune -a -f
     deps:
