@@ -31,9 +31,9 @@ stages:
         fi
       - >-
         if [[ "$MODEL" == /* ]]; then
-          docker run --rm -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename}) -v $(realpath "$MODEL"):/$(basename "$MODEL") -v $(realpath ${output.prediction}):/opt/ml/model ${item.model.name}:latest train --dataset-file /$(basename ${item.dataset.input_filename}) --model-card-file /$(basename "$MODEL");
+          docker run --rm -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename}) -v $(realpath "$MODEL"):/$(basename "$MODEL") -v $(realpath ${output.prediction}):/opt/program/output ${item.model.name}:latest train --dataset-file /$(basename ${item.dataset.input_filename}) --model-card-file /$(basename "$MODEL");
         else
-          docker run --rm -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename}) -v $(realpath ${output.prediction}):/opt/ml/model ${item.model.name}:latest train --dataset-file /$(basename ${item.dataset.input_filename});
+          docker run --rm -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename}) -v $(realpath ${output.prediction}):/opt/program/output ${item.model.name}:latest train --dataset-file /$(basename ${item.dataset.input_filename});
         fi
       - docker image prune -a -f
     deps:
