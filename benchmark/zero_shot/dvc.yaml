@@ -1,0 +1,60 @@
+vars:
+  - default.yaml
+  - datasets.json
+  - models.json
+
+stages:
+
+  setup:
+    cmd:
+      - mkdir -p logs ${output.prediction} ${output.metric}
+      - echo "Created local directories" > logs/setup.txt
+    outs:
+      - logs/setup.txt
+
+  create_training_job:
+    matrix:
+      dataset: ${datasets}
+      model: ${models}
+
+    cmd:
+      - >-
+        docker build 
+        -f $(dirname ${item.model.input_filename})/Dockerfile
+        -t ${item.model.name}:latest
+        $(dirname ${item.model.input_filename})
+      - >-
+        docker run --rm
+        -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename})
+        -v $(realpath ${item.model.input_filename}):/$(basename ${item.model.input_filename})
+        -v $(realpath ${output.prediction}):/opt/ml/model
+        ${item.model.name}:latest
+        train
+        --dataset-file /$(basename ${item.dataset.input_filename})
+        --model-card-file /$(basename ${item.model.input_filename})
+      - docker image prune -a -f
+    deps:
+      - logs/setup.txt
+      - ${item.dataset.input_filename}
+      - ${item.model.input_filename}
+    outs:
+      - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv:
+          cache: true
+  
+  calculate_metric:
+    matrix: 
+      dataset: ${datasets}
+      model: ${models}
+
+    cmd: >-
+      METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))") &&
+      python $(dvc root)/scripts/metric.py
+      --prediction-path ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
+      --metric-path ${output.metric}/${item.dataset.name}_${item.model.name}.json
+      --selected-metrics $METRICS
+    
+    deps:
+      - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
+    metrics:
+      - ${output.metric}/${item.dataset.name}_${item.model.name}.json:
+          cache: false
