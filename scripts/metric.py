@@ -142,15 +142,28 @@ def evaluate(
 
     print("Start to calculate metrics.")
 
+    if not prediction_path.exists():
+        print(f"Error: Prediction file not found: {prediction_path}", file=sys.stderr)
+        error_result = {
+            "error": f"Prediction file not found: {prediction_path}",
+            "status": "failed"
+        }
+        
+        if selected_metrics:
+            for metric_name in selected_metrics:
+                error_result[metric_name] = None
+
+        metric_path.write_text(json.dumps(error_result, indent=2))
+        return metric_path
+
     prediction_dataframe = pl.read_csv(prediction_path).drop_nulls()
 
     actual_values = prediction_dataframe.to_series(0)
     predicted_values = prediction_dataframe.to_series(1)
-    
-    selected_metrics = calculate_selected_metrics(actual_values, predicted_values, selected_metrics)
 
-    metric_path.write_text(json.dumps(selected_metrics, indent=2))
+    metrics_result = calculate_selected_metrics(actual_values, predicted_values, selected_metrics)
 
+    metric_path.write_text(json.dumps(metrics_result, indent=2))
     return metric_path
 
 
