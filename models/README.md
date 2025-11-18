@@ -9,10 +9,6 @@ framework accesses models via the `train` entrypoint, for example:
 - [models/esm/src/proteingym/models/esm/__main__.py]
 - [models/pls/src/proteingym/models/pls/__main__.py]
 
-> [!NOTE]
-> The `train` entrypoint is convention for ProteinGym benchmark. And, required
-> by AWS SageMaker.
-
 The `train` entrypoint expects a reference to a dataset archive, e.g., loaded by
 `proteingym.base.Dataset`:
 
@@ -274,40 +270,3 @@ docker run --rm \
 
 - **Validation**: Use `proteingym-base validate_model your-model-root-folder` to
   verify your model structure and configuration before containerization.
-
-## Backends
-
-This section details common logic per backend.
-
-### SageMaker 
-
-When using SageMaker, the references point to S3 paths mounted to the (Docker)
-container. Containers are destroyed after running them, but the data can be
-safely persisted in the S3 buckets. These mounted paths are defined as below
-
-```python
-class SageMakerPathLayout:
-    """SageMaker's paths layout."""
-
-    PREFIX: Path = Path("/opt/ml")
-    """All Sagemaker paths start with this prefix."""
-
-    TRAINING_JOB_PATH: Path = PREFIX / "input" / "data" / "training" / "dataset.zip"
-    """Path to training data."""
-
-    MODEL_CARD_PATH: Path = PREFIX / "input" / "data" / "model_card" / "README.md"
-    """Path to the model card."""
-
-    OUTPUT_PATH = PREFIX / "output"
-    """Path to the output, such as the result data frames."""
-```
-
-For example, to persist the score for a given dataset and model as csv:
-
-``` python
-scores: pd.DataFrame
-scores.to_csv(
-    f"{SageMakerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model.name}.csv",
-    index=False,
-)
-```
