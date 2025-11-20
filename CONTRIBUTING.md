@@ -6,12 +6,11 @@ After cloning the repository, you can start developing locally for both the benc
 
 ## Benchmarking
 
-The benchmarking system evaluates protein machine learning models using [DVC (Data Version Control)](https://dvc.org/) to orchestrate reproducible machine learning pipelines. It tests models on different datasets for supervised and zero-shot games by containerizing each model with Docker, running predictions, and calculating performance metrics. The system supports three environments: local development, AWS cloud (using SageMaker), and CI/CD (GitHub Actions).
+The benchmarking system evaluates protein machine learning models using [DVC (Data Version Control)](https://dvc.org/) to orchestrate reproducible machine learning pipelines. It tests models on different datasets for supervised and zero-shot games by containerizing each model with Docker, running predictions, and calculating performance metrics. The system supports two environments: local development and CI/CD (GitHub Actions).
 
 ### Key workflows
 1. **Local testing** - Fast iteration with Docker containers on your machine
-2. **AWS deployment** - Scalable training jobs using SageMaker and ECR
-3. **CI validation** - Automated testing on pull requests to validate model changes
+2. **CI validation** - Automated testing on pull requests to validate model changes
 
 The system uses DVC's matrix feature to automatically create pipeline stages for all dataset-model combinations, ensuring comprehensive testing across configurations.
 
@@ -40,9 +39,8 @@ Each [dvc.yaml](benchmark/supervised/local/dvc.yaml) file defines a pipeline wit
 
 2. **stages** - Pipeline steps executed in order:
    - **setup** - Creates output directories
-   - **create_training_job** - Builds Docker images and runs model training (local) or submits SageMaker jobs (AWS)
+   - **create_training_job** - Builds Docker images and runs model training
    - **calculate_metric** - Computes performance metrics from predictions
-   - Additional AWS stages: `upload_to_s3`, `deploy_to_ecr`, `monitor_training_job`
 
 The `matrix` feature allows DVC to automatically generate stages for all dataset-model combinations:
 
@@ -94,11 +92,6 @@ proteingym-base list-datasets datasets | jq ... > benchmark/supervised/local/dat
 proteingym-base list-models models | jq ... > benchmark/supervised/local/models.json
 ```
 
-> [!TIP]
-> By default, all pipelines configured by `dvc.yaml` will be recursively checked when executing `dvc repro`. As a result, if either `datasets.json` or `models.json` is missing in any pipelines, there will throw an error. So the command option `--single-item` is used to restrict what gets checked by turning off the recursive search for changed dependencies for all pipelines.
->
-> For example, if you run `dvc repro ... --single-item` in `local` folder, only `datasets.json` and `models.json` in `local` folder are checked for its `dvc.yaml` dependencies, but not also in `aws` folder.
-
 ### Environment Comparison
 
 The benchmarking system supports three execution environments, each with different purposes and configurations:
@@ -135,47 +128,6 @@ dvc repro benchmark/supervised/local/dvc.yaml --single-item
 - No cloud costs
 - Easy debugging with local logs
 - Full control over execution
-
-#### AWS Environment
-
-<ins>Purpose:</ins> Scalable cloud training for resource-intensive models
-
-<ins>Location:</ins> `benchmark/{supervised,zero_shot}/aws/`
-
-<ins>Configuration files:</ins>
-- `dvc.yaml` - Pipeline with AWS-specific stages
-- `default.yaml` - AWS credentials and configuration
-- Same dataset/model JSON files as local
-
-<ins>Pipeline stages:</ins>
-1. `setup` - Creates local directories
-2. `upload_to_s3` - Uploads datasets/model cards (README.md) to S3
-3. `deploy_to_ecr` - Builds and pushes Docker images of models to ECR
-4. `create_training_job` - Submits SageMaker training jobs
-5. `monitor_training_job` - Polls job status until completion
-6. `calculate_metric` - Downloads results from S3 and computes metrics
-
-**How to run:**
-```shell
-# Set AWS credentials
-export AWS_ACCOUNT_ID=your-account-id
-export AWS_PROFILE=your-profile
-
-# Run the pipeline
-dvc repro benchmark/supervised/aws/dvc.yaml --single-item
-```
-
-<ins>Requirements:</ins>
-- AWS credentials configured
-- SageMaker execution role
-- S3 buckets for data inputs and outputs
-- ECR repositories for Docker images
-
-<ins>Advantages:</ins>
-- Handles large-scale training
-- Parallel execution on powerful instances
-- Persistent storage in S3
-- Production-grade infrastructure
 
 #### CI Environment (GitHub Actions)
 
