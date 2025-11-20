@@ -15,6 +15,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
 
       - uses: iterative/setup-cml@v2
 
@@ -69,18 +72,24 @@ jobs:
           echo "Send comment to PR"
           cml comment create report.md
 
-      - name: Commit DVC lock files
+      - name: Commit and push DVC lock files
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+
+          # Pull latest changes from remote
+          git pull origin ${{ github.head_ref }} --rebase || true
+
+          # Add and commit files
           git add benchmark/supervised/dvc.lock benchmark/zero_shot/dvc.lock
           git add benchmark/supervised/datasets.json benchmark/zero_shot/datasets.json
           git add benchmark/supervised/models.json benchmark/zero_shot/models.json
           git add benchmark/supervised/metric benchmark/zero_shot/metric --force
-          git commit -m "Update DVC lock files with the results of metrics [skip ci]" || echo "No changes to commit"
 
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.head_ref }}
+          # Commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update DVC lock files with the results of metrics [skip ci]"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
