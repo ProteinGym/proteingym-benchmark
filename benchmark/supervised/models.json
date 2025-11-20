@@ -1,0 +1,12 @@
+{
+  "models": [
+    {
+      "name": "pls",
+      "input_filename": "/home/runner/work/proteingym-benchmark/proteingym-benchmark/models/pls/README.md"
+    },
+    {
+      "name": "ritaregressor",
+      "input_filename": "/home/runner/work/proteingym-benchmark/proteingym-benchmark/models/huggingface-regressor/README.md"
+    }
+  ]
+}
