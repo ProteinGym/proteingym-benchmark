@@ -35,7 +35,7 @@ jobs:
         run: |
           # Supervised game: Generate datasets and models if they don't exist
           if [ ! -f benchmark/supervised/datasets.json ]; then
-            proteingym-base list-datasets datasets | jq 'map(select(.name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/supervised/datasets.json
+            proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder" or .name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/supervised/datasets.json
           else
             echo "benchmark/supervised/datasets.json already exists, skipping generation"
           fi
