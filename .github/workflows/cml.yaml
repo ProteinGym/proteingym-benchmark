@@ -9,9 +9,17 @@ on:
 jobs:
   cml:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          # Fetch ALL commit history
+          # to ensure git pull --rebase work correctly without "unrelated histories" errors
+          fetch-depth: 0
 
       - uses: iterative/setup-cml@v2
 
@@ -25,13 +33,31 @@ jobs:
 
       - name: Generate datasets and models
         run: |
-          # Supervised game: Generate datasets and models
-          proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder" or .name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/supervised/datasets.json
-          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/supervised/models.json
-          
-          # Zero-shot game: Generate datasets and models
-          proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/zero_shot/datasets.json
-          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-shot"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/zero_shot/models.json
+          # Supervised game: Generate datasets and models if they don't exist
+          if [ ! -f benchmark/supervised/datasets.json ]; then
+            proteingym-base list-datasets datasets | jq 'map(select(.name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/supervised/datasets.json
+          else
+            echo "benchmark/supervised/datasets.json already exists, skipping generation"
+          fi
+
+          if [ ! -f benchmark/supervised/models.json ]; then
+            proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/supervised/models.json
+          else
+            echo "benchmark/supervised/models.json already exists, skipping generation"
+          fi
+
+          # Zero-shot game: Generate datasets and models if they don't exist
+          if [ ! -f benchmark/zero_shot/datasets.json ]; then
+            proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/zero_shot/datasets.json
+          else
+            echo "benchmark/zero_shot/datasets.json already exists, skipping generation"
+          fi
+
+          if [ ! -f benchmark/zero_shot/models.json ]; then
+            proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-shot"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/zero_shot/models.json
+          else
+            echo "benchmark/zero_shot/models.json already exists, skipping generation"
+          fi
           
       - name: Run model validation
         env:
@@ -44,18 +70,16 @@ jobs:
           dvc repro benchmark/zero_shot/dvc.yaml --single-item
 
           # Create report with metrics
-          echo "# Model Validation Report" >> report.md
-          echo "" >> report.md
-
-          # Pick one supervised model
           cat <<EOF > report.md
           ## Supervised Models
           ✅ Supervised models have all passed validation.
+          For the supervised model \`pls\`, its metric based on the dataset \`NEIME_2019\` is as below:
           \`\`\`json
-          $(cat ./benchmark/supervised/metric/charge_ladder_pls.json)
+          $(cat ./benchmark/supervised/metric/NEIME_2019_pls.json)
           \`\`\`
           ## Zero-shot Models
           ✅ Zero-shot models have all passed validation.
+          For the zero-shot model \`esm\`, its metric based on the dataset \`ranganathan\` is as below:
           \`\`\`json
           $(cat ./benchmark/zero_shot/metric/ranganathan_esm.json)
           \`\`\`
@@ -64,3 +88,26 @@ jobs:
           # Send comment to PR
           echo "Send comment to PR"
           cml comment create report.md
+
+      - name: Commit and push DVC lock files
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # Pull latest changes from remote
+          git pull origin ${{ github.head_ref }} --rebase || true
+
+          # Add and commit files
+          git add .dvc/cache --force
+          git add benchmark/supervised/dvc.lock benchmark/zero_shot/dvc.lock
+          git add benchmark/supervised/datasets.json benchmark/zero_shot/datasets.json
+          git add benchmark/supervised/models.json benchmark/zero_shot/models.json
+          git add benchmark/supervised/metric benchmark/zero_shot/metric --force
+
+          # Commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update DVC lock files with the results of metrics [skip ci]"
+            git push origin HEAD:${{ github.head_ref }}
+          fi

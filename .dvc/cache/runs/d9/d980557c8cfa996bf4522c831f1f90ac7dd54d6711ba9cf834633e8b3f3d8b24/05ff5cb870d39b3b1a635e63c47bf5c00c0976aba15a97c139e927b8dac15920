@@ -1,0 +1,35 @@
+cmd:
+- docker build -f $(dirname 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/huggingface-regressor/README.md)/Dockerfile
+  -t ritaregressor:latest $(dirname 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/huggingface-regressor/README.md)
+- docker run --rm -v $(realpath 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/charge_ladder.pgdata):/$(basename
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/charge_ladder.pgdata)
+  -v $(realpath 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/huggingface-regressor/README.md):/$(basename
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/huggingface-regressor/README.md)
+  -v $(realpath prediction):/opt/program/output ritaregressor:latest train 
+  --dataset-file /$(basename 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/charge_ladder.pgdata)
+  --model-card-file /$(basename 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/huggingface-regressor/README.md)
+- docker image prune -a -f
+deps:
+- path: ../../datasets/charge_ladder.pgdata
+  hash: md5
+  md5: 0663e6c9d9e8e3ef7e133316d3c72fdb
+  size: 59892
+- path: ../../models/huggingface-regressor/README.md
+  hash: md5
+  md5: 5517fdda4a998db7fac2754fa274f16c
+  size: 1404
+- path: logs/setup.txt
+  hash: md5
+  md5: c861b0c201d5e28492f5dff8fab634f5
+  size: 26
+outs:
+- path: prediction/charge_ladder_ritaregressor.csv
+  hash: md5
+  md5: 48bee946c79ca41cf03e032eb1ccfa53
+  size: 13803

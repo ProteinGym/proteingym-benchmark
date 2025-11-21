@@ -1,0 +1,35 @@
+cmd:
+- docker build -f $(dirname 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/pls/README.md)/Dockerfile
+  -t pls:latest $(dirname 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/pls/README.md)
+- docker run --rm -v $(realpath 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata):/$(basename
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
+  -v $(realpath 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/pls/README.md):/$(basename
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/pls/README.md)
+  -v $(realpath prediction):/opt/program/output pls:latest train --dataset-file 
+  /$(basename 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
+  --model-card-file /$(basename 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/pls/README.md)
+- docker image prune -a -f
+deps:
+- path: ../../datasets/NEIME_2019.pgdata
+  hash: md5
+  md5: 2e339b71c6bfa894c9480407ccbf35fd
+  size: 1331920
+- path: ../../models/pls/README.md
+  hash: md5
+  md5: cca0d906d548dd234a114b30cc30dfbb
+  size: 1147
+- path: logs/setup.txt
+  hash: md5
+  md5: c861b0c201d5e28492f5dff8fab634f5
+  size: 26
+outs:
+- path: prediction/NEIME_2019_pls.csv
+  hash: md5
+  md5: 3eed6c0182a8ae942233169dd11758e6
+  size: 58523

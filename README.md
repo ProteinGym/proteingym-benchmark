@@ -79,3 +79,16 @@ dvc repro benchmark/zero_shot/dvc.yaml -s
 
 > [!TIP]
 > By default, DVC will stop execution when any stage fails. If one dataset-model pair's metric calculation fails (e.g., due to a missing prediction file, script error, or invalid data), DVC will halt the entire pipeline run. In order to prevent this blocking behavior, you can use: `dvc repro --keep-going`. This flag tells DVC to continue executing other stages even if some fail.
+
+## CML pipeline
+
+The CML (Continuous Machine Learning) pipeline is configured in [cml.yaml](.github/workflows/cml.yaml), which will be triggered every time there is a PR submitted.
+
+In the CML pipeline, it will check whether there exist `datasets.json` and `models.json` in the [supervised](benchmark/supervised/) and [zero_shot](benchmark/zero_shot/) folder. If there are no required files, it will generate them using `proteingym-base list-datasets` and `proteingym-base list-models` as mentioned above, otherwise CML pipeline will start based on the existing `datasets.json` and `models.json`.
+
+Besides, `dvc.lock` and `.dvc/cache` will be tracked in Git repo, so if the files, namely `datasets.json` and `models.json`, don't change (e.g., no new datasets added, no new models added), the DVC stages to run the training jobs and calculate the metrics will be skipped, because DVC will compare the cached files with the present `dvc.lock`. It will make the CML pipeline efficient to skip already-run datasets and models.
+
+> [!IMPORTANT]
+> If you add a new dataset in [datasets](datasets/) or add a new model in [models](models/), please also update the `datasets.json` and `models.json` respectively in either [supervised](benchmark/supervised/) folder or [zero_shot](benchmark/zero_shot/) folder.
+
+You can find the latest metrics result in either [supervised](benchmark/supervised) folder or [zero_shot](benchmark/zero_shot/) folder, as the latest CML pipeline will commit the metrics back in the main branch, once it is merged.
