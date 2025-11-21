@@ -99,6 +99,7 @@ jobs:
           git pull origin ${{ github.head_ref }} --rebase || true
 
           # Add and commit files
+          git add .dvc/cache
           git add benchmark/supervised/dvc.lock benchmark/zero_shot/dvc.lock
           git add benchmark/supervised/datasets.json benchmark/zero_shot/datasets.json
           git add benchmark/supervised/models.json benchmark/zero_shot/models.json
