@@ -52,7 +52,6 @@ stages:
     deps:
       - logs/setup.txt
       - ${item.dataset.input_filename}
-      - ${item.model.input_filename}
     outs:
       - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv:
           cache: true
