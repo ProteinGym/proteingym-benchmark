@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
+          # Fetch ALL commit history
+          # to ensure git pull --rebase work correctly without "unrelated histories" errors
           fetch-depth: 0
 
       - uses: iterative/setup-cml@v2
@@ -68,9 +70,6 @@ jobs:
           dvc repro benchmark/zero_shot/dvc.yaml --single-item
 
           # Create report with metrics
-          echo "# Model Validation Report" >> report.md
-          echo "" >> report.md
-
           cat <<EOF > report.md
           ## Supervised Models
           ✅ Supervised models have all passed validation.
@@ -99,7 +98,7 @@ jobs:
           git pull origin ${{ github.head_ref }} --rebase || true
 
           # Add and commit files
-          git add .dvc/cache
+          git add .dvc/cache --force
           git add benchmark/supervised/dvc.lock benchmark/zero_shot/dvc.lock
           git add benchmark/supervised/datasets.json benchmark/zero_shot/datasets.json
           git add benchmark/supervised/models.json benchmark/zero_shot/models.json
