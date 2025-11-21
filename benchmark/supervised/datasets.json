@@ -3,6 +3,10 @@
     {
       "name": "NEIME_2019",
       "input_filename": "/home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata"
+    },
+    {
+      "name": "charge_ladder",
+      "input_filename": "/home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/charge_ladder.pgdata"
     }
   ]
 }
