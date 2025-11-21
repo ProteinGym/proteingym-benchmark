@@ -56,13 +56,13 @@ jobs:
           cat <<EOF > report.md
           ## Supervised Models
           ✅ Supervised models have all passed validation.
-          Pick one supervised model \`pls\`, its metric based on the dataset \`NEIME_2019\` is as below:
+          Picking one supervised model \`pls\`, its metric based on the dataset \`NEIME_2019\` is as below:
           \`\`\`json
           $(cat ./benchmark/supervised/metric/NEIME_2019_pls.json)
           \`\`\`
           ## Zero-shot Models
           ✅ Zero-shot models have all passed validation.
-          Pick one zero-shot model \`esm\`, its metric based on the dataset \`ranganathan\` is as below:
+          Picking one zero-shot model \`esm\`, its metric based on the dataset \`ranganathan\` is as below:
           \`\`\`json
           $(cat ./benchmark/zero_shot/metric/ranganathan_esm.json)
           \`\`\`
