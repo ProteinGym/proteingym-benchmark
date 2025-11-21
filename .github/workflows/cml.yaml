@@ -31,13 +31,31 @@ jobs:
 
       - name: Generate datasets and models
         run: |
-          # Supervised game: Generate datasets and models
-          proteingym-base list-datasets datasets | jq 'map(select(.name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/supervised/datasets.json
-          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/supervised/models.json
-          
-          # Zero-shot game: Generate datasets and models
-          proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/zero_shot/datasets.json
-          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-shot"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/zero_shot/models.json
+          # Supervised game: Generate datasets and models if they don't exist
+          if [ ! -f benchmark/supervised/datasets.json ]; then
+            proteingym-base list-datasets datasets | jq 'map(select(.name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/supervised/datasets.json
+          else
+            echo "benchmark/supervised/datasets.json already exists, skipping generation"
+          fi
+
+          if [ ! -f benchmark/supervised/models.json ]; then
+            proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/supervised/models.json
+          else
+            echo "benchmark/supervised/models.json already exists, skipping generation"
+          fi
+
+          # Zero-shot game: Generate datasets and models if they don't exist
+          if [ ! -f benchmark/zero_shot/datasets.json ]; then
+            proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/zero_shot/datasets.json
+          else
+            echo "benchmark/zero_shot/datasets.json already exists, skipping generation"
+          fi
+
+          if [ ! -f benchmark/zero_shot/models.json ]; then
+            proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-shot"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/zero_shot/models.json
+          else
+            echo "benchmark/zero_shot/models.json already exists, skipping generation"
+          fi
           
       - name: Run model validation
         env:
