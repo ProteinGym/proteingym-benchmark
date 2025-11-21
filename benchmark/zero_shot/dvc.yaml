@@ -19,7 +19,6 @@ stages:
 
     cmd:
       - >-
-        MODEL=$(python3 -c "import sys,re; model=dict(re.findall(r'--(\w+)\s+(\S+)', sys.argv[1])); print(model.get('input_filename', model.get('image', '')))" "${item.model}") &&
         if [[ ${item.model.input_filename} == /* ]]; then
           echo "Building image from local path: $MODEL"
           docker build \
