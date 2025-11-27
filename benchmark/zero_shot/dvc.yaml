@@ -5,27 +5,18 @@ vars:
 
 stages:
 
-  setup:
-    cmd:
-      - mkdir -p logs ${output.prediction} ${output.metric}
-      - echo "Created local directories" > logs/setup.txt
-    outs:
-      - logs/setup.txt
-
   create_training_job:
     matrix:
       dataset: ${datasets}
       model: ${models}
 
-    cmd:
-      - >-
-        docker run --rm
-        -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename})
-        -v $(realpath ${output.prediction}):/opt/program/output
-        ${item.model.image}
-        train --dataset-file /$(basename ${item.dataset.input_filename});
+    cmd: >-
+      docker run --rm
+      -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename})
+      -v $(realpath ${output.prediction}):/opt/program/output
+      ${item.model.image}
+      train --dataset-file /$(basename ${item.dataset.input_filename});
     deps:
-      - logs/setup.txt
       - ../../models
       - ${item.dataset.input_filename}
     outs:
