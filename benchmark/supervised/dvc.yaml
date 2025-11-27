@@ -26,6 +26,7 @@ stages:
         train --dataset-file /$(basename ${item.dataset.input_filename})
     deps:
       - logs/setup.txt
+      - ../../models
       - ${item.dataset.input_filename}
     outs:
       - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv:
