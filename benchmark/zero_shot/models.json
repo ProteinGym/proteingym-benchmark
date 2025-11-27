@@ -2,7 +2,7 @@
   "models": [
     {
       "name": "esm",
-      "input_filename": "/home/runner/work/proteingym-benchmark/proteingym-benchmark/models/esm/README.md"
+      "image": "esm:latest"
     }
   ]
 }
