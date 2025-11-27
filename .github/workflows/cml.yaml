@@ -35,7 +35,7 @@ jobs:
               $model_folder
           done
 
-      - name: Run model validation
+      - name: Run benchmarking
         env:
           repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: | 
@@ -72,12 +72,14 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"         
 
-          # Commit if there are changes
+          # Add and commit all files
+          git add -f .
+          git commit -m "Update DVC lock files with the results of metrics"
+
+          # Update branch if there are changes
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git add -f .
-            git commit -m "Update DVC lock files with the results of metrics"
             git pull origin ${{ github.head_ref }} --rebase || true
             git push origin HEAD:${{ github.head_ref }}
           fi
