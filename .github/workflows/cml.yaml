@@ -54,8 +54,6 @@ jobs:
           done
 
       - name: Run benchmarking
-        env:
-          repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
           # Supervised game: Run DVC repro
           dvc repro benchmark/supervised/dvc.yaml --single-item
@@ -102,6 +100,8 @@ jobs:
           done
       
       - name: Create PR report
+        env:
+          repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
           cat <<EOF > report.md
           ✅ The benchmark has been finished successfully.
