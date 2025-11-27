@@ -76,7 +76,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git add .
+            git add -f .
             git commit -m "Update DVC lock files with the results of metrics"
             git pull origin ${{ github.head_ref }} --rebase || true
             git push origin HEAD:${{ github.head_ref }}
