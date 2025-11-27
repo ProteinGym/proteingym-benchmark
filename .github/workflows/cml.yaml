@@ -102,13 +102,9 @@ jobs:
         run: |
           cat <<EOF > report.md
           ✅ The benchmark has been finished successfully.
-          For the supervised game, the result is as below:
+          📈 The result is as below:
           \`\`\`csv
-          $(cat ./benchmark/supervised/metrics_summary.csv)
-          \`\`\`
-          For the zero-shot game, the result is as below:
-          \`\`\`csv
-          $(cat ./benchmark/zero_shot/metrics_summary.csv)
+          $(cat ./benchmark/metrics.csv)
           \`\`\`
           EOF
           
