@@ -23,47 +23,33 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Generate datasets and models
+      - name: Generate datasets
         run: |
           # Supervised game: Generate datasets and models
           proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder" or .name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/supervised/datasets.json
-          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/supervised/models.json
           
           # Zero-shot game: Generate datasets and models
           proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/zero_shot/datasets.json
-          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-shot"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/zero_shot/models.json
       
       - name: Build Docker images for models
         run: |
-          # Build Docker images for supervised models
-          jq -r '.models[] | "\(.name) \(.input_filename)"' benchmark/supervised/models.json | while read -r model_name input_filename; do
-            context_dir=$(dirname "$input_filename")
-            echo "Building Docker image for $model_name with context $context_dir"
+          # Build Docker images from models folder
+          for model_folder in models/*/; do
+            model_name=$(basename "$model_folder")
+            echo "Building Docker image for $model_name with context $model_folder"
             docker build \
-              -f $context_dir/Dockerfile \
+              -f $model_folder/Dockerfile \
               -t $model_name:latest \
-              $context_dir
-          done
-
-          # Build Docker images for zero-shot models
-          jq -r '.models[] | "\(.name) \(.input_filename)"' benchmark/zero_shot/models.json | while read -r model_name input_filename; do
-            context_dir=$(dirname "$input_filename")
-            echo "Building Docker image for $model_name with context $context_dir"
-            docker build \
-              -f $context_dir/Dockerfile \
-              -t $model_name:latest \
-              $context_dir
+              $model_folder
           done
       
-      - name: Update models with local images
+      - name: Generate models
         run: |
-          # Update supervised models.json with local image references
-          jq '.models |= map(. + {image: "\(.name):latest"})' benchmark/supervised/models.json > benchmark/supervised/models.json.tmp
-          mv benchmark/supervised/models.json.tmp benchmark/supervised/models.json
+          # Generate supervised models.json with name and image
+          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, image: "\(.name):latest"}) | {models: .}' > benchmark/supervised/models.json
 
-          # Update zero-shot models.json with local image references
-          jq '.models |= map(. + {image: "\(.name):latest"})' benchmark/zero_shot/models.json > benchmark/zero_shot/models.json.tmp
-          mv benchmark/zero_shot/models.json.tmp benchmark/zero_shot/models.json
+          # Generate zero-shot models.json with name and image
+          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-shot"]))] | map({name: .name, image: "\(.name):latest"}) | {models: .}' > benchmark/zero_shot/models.json
 
 
       - name: Run model validation
