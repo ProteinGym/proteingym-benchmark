@@ -11,31 +11,17 @@ stages:
       size: 26
   create_training_job@dataset0-model0:
     cmd:
-    - docker build -f $(dirname 
-      /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/pls/README.md)/Dockerfile
-      -t pls:latest $(dirname 
-      /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/pls/README.md)
     - docker run --rm -v $(realpath 
       /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata):/$(basename
       /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
-      -v $(realpath 
-      /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/pls/README.md):/$(basename
-      /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/pls/README.md)
       -v $(realpath prediction):/opt/program/output pls:latest train 
       --dataset-file /$(basename 
       /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
-      --model-card-file /$(basename 
-      /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/pls/README.md)
-    - docker image prune -a -f
     deps:
     - path: ../../datasets/NEIME_2019.pgdata
       hash: md5
       md5: 2e339b71c6bfa894c9480407ccbf35fd
       size: 1331920
-    - path: ../../models/pls/README.md
-      hash: md5
-      md5: cca0d906d548dd234a114b30cc30dfbb
-      size: 1147
     - path: logs/setup.txt
       hash: md5
       md5: c861b0c201d5e28492f5dff8fab634f5
@@ -47,31 +33,17 @@ stages:
       size: 58523
   create_training_job@dataset0-model1:
     cmd:
-    - docker build -f $(dirname 
-      /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/huggingface-regressor/README.md)/Dockerfile
-      -t ritaregressor:latest $(dirname 
-      /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/huggingface-regressor/README.md)
     - docker run --rm -v $(realpath 
       /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata):/$(basename
       /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
-      -v $(realpath 
-      /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/huggingface-regressor/README.md):/$(basename
-      /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/huggingface-regressor/README.md)
-      -v $(realpath prediction):/opt/program/output ritaregressor:latest train 
-      --dataset-file /$(basename 
+      -v $(realpath prediction):/opt/program/output huggingface-regressor:latest
+      train --dataset-file /$(basename 
       /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
-      --model-card-file /$(basename 
-      /home/runner/work/proteingym-benchmark/proteingym-benchmark/models/huggingface-regressor/README.md)
-    - docker image prune -a -f
     deps:
     - path: ../../datasets/NEIME_2019.pgdata
       hash: md5
       md5: 2e339b71c6bfa894c9480407ccbf35fd
       size: 1331920
-    - path: ../../models/huggingface-regressor/README.md
-      hash: md5
-      md5: 5517fdda4a998db7fac2754fa274f16c
-      size: 1404
     - path: logs/setup.txt
       hash: md5
       md5: c861b0c201d5e28492f5dff8fab634f5
@@ -79,8 +51,8 @@ stages:
     outs:
     - path: prediction/NEIME_2019_ritaregressor.csv
       hash: md5
-      md5: b64667ea47f6f69677cffde305995447
-      size: 35068
+      md5: a0aa2a747d75580ee0981b8feb1b74ec
+      size: 34958
   calculate_metric@dataset0-model0:
     cmd:
     - METRICS=$(python -c "import yaml; data = 
@@ -89,6 +61,10 @@ stages:
       prediction/NEIME_2019_pls.csv --metric-path metric/NEIME_2019_pls.json 
       --selected-metrics $METRICS
     deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 142f206b77cdc15f43c6144e4609c26e
+      size: 6746
     - path: prediction/NEIME_2019_pls.csv
       hash: md5
       md5: 3eed6c0182a8ae942233169dd11758e6
@@ -106,15 +82,19 @@ stages:
       prediction/NEIME_2019_ritaregressor.csv --metric-path 
       metric/NEIME_2019_ritaregressor.json --selected-metrics $METRICS
     deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 142f206b77cdc15f43c6144e4609c26e
+      size: 6746
     - path: prediction/NEIME_2019_ritaregressor.csv
       hash: md5
-      md5: b64667ea47f6f69677cffde305995447
-      size: 35068
+      md5: a0aa2a747d75580ee0981b8feb1b74ec
+      size: 34958
     outs:
     - path: metric/NEIME_2019_ritaregressor.json
       hash: md5
-      md5: d4e9f41b76e69c209f6b0257e4f1eb41
-      size: 38
+      md5: 502f6aa5367f050ff5edfdaa6279a381
+      size: 37
   create_training_job@dataset1-model0:
     cmd:
     - docker build -f $(dirname 

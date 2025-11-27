@@ -1,0 +1,21 @@
+cmd:
+- docker run --rm -v $(realpath 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/ranganathan.pgdata):/$(basename
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/ranganathan.pgdata)
+  -v $(realpath prediction):/opt/program/output esm:latest train --dataset-file 
+  /$(basename 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/ranganathan.pgdata);
+deps:
+- path: ../../datasets/ranganathan.pgdata
+  hash: md5
+  md5: 705ae59ddb902d5874ac418556bd9955
+  size: 90838
+- path: logs/setup.txt
+  hash: md5
+  md5: c861b0c201d5e28492f5dff8fab634f5
+  size: 26
+outs:
+- path: prediction/ranganathan_esm.csv
+  hash: md5
+  md5: b564ad013a83ee41027cb89fb038d3e8
+  size: 185963

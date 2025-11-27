@@ -1,0 +1,19 @@
+cmd: METRICS=$(python -c "import yaml; data = 
+  yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))") && 
+  python $(dvc root)/scripts/metric.py --prediction-path 
+  prediction/ranganathan_esm.csv --metric-path metric/ranganathan_esm.json 
+  --selected-metrics $METRICS
+deps:
+- path: ../../scripts/metric.py
+  hash: md5
+  md5: 142f206b77cdc15f43c6144e4609c26e
+  size: 6746
+- path: prediction/ranganathan_esm.csv
+  hash: md5
+  md5: b564ad013a83ee41027cb89fb038d3e8
+  size: 185963
+outs:
+- path: metric/ranganathan_esm.json
+  hash: md5
+  md5: 602b917e826a6ec7b27b4cf2cffe4d5c
+  size: 38
