@@ -40,7 +40,7 @@ jobs:
             context_dir=$(dirname "$input_filename")
             echo "Building Docker image for $model_name with context $context_dir"
             docker build \
-              -f models/$model_name/Dockerfile \
+              -f $context_dir/Dockerfile \
               -t $model_name:latest \
               $context_dir
           done
@@ -50,7 +50,7 @@ jobs:
             context_dir=$(dirname "$input_filename")
             echo "Building Docker image for $model_name with context $context_dir"
             docker build \
-              -f models/$model_name/Dockerfile \
+              -f $context_dir/Dockerfile \
               -t $model_name:latest \
               $context_dir
           done
