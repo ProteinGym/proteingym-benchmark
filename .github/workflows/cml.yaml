@@ -125,7 +125,7 @@ jobs:
           git config --local user.name "github-actions[bot]"
 
           # Add all files except report.md
-          git add -f .
+          git add .
           git reset -- report.md || true
 
           # Check if there are changes to commit
