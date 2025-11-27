@@ -32,7 +32,29 @@ jobs:
           # Zero-shot game: Generate datasets and models
           proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/zero_shot/datasets.json
           proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-shot"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/zero_shot/models.json
-          
+      
+      - name: Build Docker images for models
+        run: |
+          # Build Docker images for supervised models
+          jq -r '.models[] | "\(.name) \(.input_filename)"' benchmark/supervised/models.json | while read -r model_name input_filename; do
+            context_dir=$(dirname "$input_filename")
+            echo "Building Docker image for $model_name with context $context_dir"
+            docker build \
+              -f models/$model_name/Dockerfile \
+              -t $model_name:latest \
+              $context_dir
+          done
+
+          # Build Docker images for zero-shot models
+          jq -r '.models[] | "\(.name) \(.input_filename)"' benchmark/zero_shot/models.json | while read -r model_name input_filename; do
+            context_dir=$(dirname "$input_filename")
+            echo "Building Docker image for $model_name with context $context_dir"
+            docker build \
+              -f models/$model_name/Dockerfile \
+              -t $model_name:latest \
+              $context_dir
+          done
+
       - name: Run model validation
         env:
           repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
