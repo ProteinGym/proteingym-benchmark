@@ -44,7 +44,7 @@ stages:
       --selected-metrics $METRICS
     
     deps:
-      - $(dvc root)/scripts/metric.py
+      - ../../scripts/metric.py
       - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
     metrics:
       - ${output.metric}/${item.dataset.name}_${item.model.name}.json:
