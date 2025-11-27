@@ -23,16 +23,35 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Generate datasets and models
+      - name: Generate datasets
         run: |
           # Supervised game: Generate datasets and models
           proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder" or .name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/supervised/datasets.json
-          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/supervised/models.json
           
           # Zero-shot game: Generate datasets and models
           proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/zero_shot/datasets.json
-          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-shot"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/zero_shot/models.json
-          
+      
+      - name: Build Docker images for models
+        run: |
+          # Build Docker images from models folder
+          for model_folder in models/*/; do
+            model_name=$(basename "$model_folder")
+            echo "Building Docker image for $model_name with context $model_folder"
+            docker build \
+              -f $model_folder/Dockerfile \
+              -t $model_name:latest \
+              $model_folder
+          done
+      
+      - name: Generate models
+        run: |
+          # Generate supervised models.json with name and image (folder name from input_filename)
+          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, image: "\(.input_filename | split("/")[-2]):latest"}) | {models: .}' > benchmark/supervised/models.json
+
+          # Generate zero-shot models.json with name and image (folder name from input_filename)
+          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-shot"]))] | map({name: .name, image: "\(.input_filename | split("/")[-2]):latest"}) | {models: .}' > benchmark/zero_shot/models.json
+
+
       - name: Run model validation
         env:
           repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}

@@ -19,24 +19,14 @@ stages:
 
     cmd:
       - >-
-        docker build
-        -f $(dirname ${item.model.input_filename})/Dockerfile
-        -t ${item.model.name}:latest
-        $(dirname ${item.model.input_filename})
-      - >-
         docker run --rm
         -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename})
-        -v $(realpath ${item.model.input_filename}):/$(basename ${item.model.input_filename})
         -v $(realpath ${output.prediction}):/opt/program/output
-        ${item.model.name}:latest
-        train
-        --dataset-file /$(basename ${item.dataset.input_filename})
-        --model-card-file /$(basename ${item.model.input_filename})
-      - docker image prune -a -f
+        ${item.model.image}
+        train --dataset-file /$(basename ${item.dataset.input_filename})
     deps:
       - logs/setup.txt
       - ${item.dataset.input_filename}
-      - ${item.model.input_filename}
     outs:
       - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv:
           cache: true
