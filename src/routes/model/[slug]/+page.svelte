@@ -10,7 +10,7 @@
   let model = $derived(models.find((m) => m.slug === $page.params.slug));
 
   function navigateBack() {
-    goto(`${base}/`);
+    goto(`${base}/model`);
   }
 </script>
 
