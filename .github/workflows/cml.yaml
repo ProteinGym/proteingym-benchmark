@@ -56,28 +56,62 @@ jobs:
       - name: Run benchmarking
         env:
           repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        run: | 
+        run: |
           # Supervised game: Run DVC repro
           dvc repro benchmark/supervised/dvc.yaml --single-item
-  
+
           # Zero-shot game: Run DVC repro
           dvc repro benchmark/zero_shot/dvc.yaml --single-item
 
-          # Create report with metrics
-          echo "# Model Validation Report" >> report.md
-          echo "" >> report.md
+      - name: Generate metrics CSV files
+        run: |
+          # Generate supervised metrics CSV
+          echo "model,dataset,spearman" > benchmark/supervised/metrics_summary.csv
 
-          # Pick one supervised model
+          # Get all dataset and model names from JSON files
+          dataset_names=$(jq -r '.datasets[].name' benchmark/supervised/datasets.json)
+          model_names=$(jq -r '.models[].name' benchmark/supervised/models.json)
+
+          # Iterate through all combinations and check if metric file exists
+          for dataset in $dataset_names; do
+            for model in $model_names; do
+              metric_file="benchmark/supervised/metric/${dataset}_${model}.json"
+              if [ -f "$metric_file" ]; then
+                spearman=$(jq -r '.spearman' "$metric_file")
+                echo "$model,$dataset,$spearman" >> benchmark/supervised/metrics_summary.csv
+              fi
+            done
+          done
+
+          # Generate zero-shot metrics CSV
+          echo "model,dataset,spearman" > benchmark/zero_shot/metrics_summary.csv
+
+          # Get all dataset and model names from JSON files
+          dataset_names=$(jq -r '.datasets[].name' benchmark/zero_shot/datasets.json)
+          model_names=$(jq -r '.models[].name' benchmark/zero_shot/models.json)
+
+          # Iterate through all combinations and check if metric file exists
+          for dataset in $dataset_names; do
+            for model in $model_names; do
+              metric_file="benchmark/zero_shot/metric/${dataset}_${model}.json"
+              if [ -f "$metric_file" ]; then
+                spearman=$(jq -r '.spearman' "$metric_file")
+                echo "$model,$dataset,$spearman" >> benchmark/zero_shot/metrics_summary.csv
+              fi
+            done
+          done
+      
+      - name: Create PR report
+        run: |
           cat <<EOF > report.md
-          ## Supervised Models
-          ✅ Supervised models have all passed validation.
-          \`\`\`json
-          $(cat ./benchmark/supervised/metric/NEIME_2019_pls.json)
+          ✅ The benchmark has been finished successfully.
+          For the supervised game, the result is as below:
+          \`\`\`csv
+          $(cat ./benchmark/supervised/metrics_summary.csv)
           \`\`\`
-          ## Zero-shot Models
-          ✅ Zero-shot models have all passed validation.
-          \`\`\`json
-          $(cat ./benchmark/zero_shot/metric/ranganathan_esm.json)
+          For the zero-shot game, the result is as below:
+          \`\`\`csv
+          $(cat ./benchmark/zero_shot/metrics_summary.csv)
           \`\`\`
           EOF
           
@@ -90,8 +124,9 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-          # Add all files
+          # Add all files except report.md
           git add -f .
+          git reset -- report.md || true
 
           # Check if there are changes to commit
           if git diff --staged --quiet; then
