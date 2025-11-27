@@ -37,50 +37,73 @@ for dataset in datasets:
         calculate_metric()
 ```
 
-### Generate `datasets.json` and `models.json`
+### Prerequisites
 
-In order to create your own benchmark and generate your own `datasets.json` and `models.json`, you can use the `proteingym-base` command as below:
+In order to benchmark a selected list of models and datasets, it depends on the following criteria:
+1. Generate your own `datasets.json`.
+2. Have Docker model images locally.
+3. Create your own `models.json`.
+
+#### Step 1: Generate `datasets.json`
+
+To generate the `datasets.json` , you need to use the `proteingym-base` command:
 
 * `proteingym-base list-datasets datasets` will list all datasets under the folder `datasets`.
-* `proteingym-base list-models models` will list all models under the folder `models`. Pay attention that in order for a model to be listed, it needs to define its model card as `README.md` with YAML front matter in its root folder.
-* `jq` is used to filter the datasets and models.
+* `jq` is used to filter the datasets.
 
 ```shell
 proteingym-base list-datasets datasets | jq ... > benchmark/supervised/local/datasets.json
-proteingym-base list-models models | jq ... > benchmark/supervised/local/models.json
 ```
 
-For more information, you can check out [CONTRIBUTING.md](CONTRIBUTING.md) to reference the detailed commands. Also in [cml.yaml](.github/workflows/cml.yaml), you can check out the detailed commands which run in the CI pipeline.
+For more information, you can check out [CONTRIBUTING.md](CONTRIBUTING.md).
 
-### Update `models.json` to run images from [Docker Hub](https://hub.docker.com/)
+#### Step 2: Build a Docker model image
 
-If you have images to run from [Docker Hub](https://hub.docker.com/), you can manually update `models.json` to mix local models with remote model images. As shown below as an example `models.json`, the local model `ritaregressor` has the field `input_filename` to point to a model card path with its direct folder containing a `Dockerfile` to build the image; whereas the remote model `pls` has the field `input_filename` to point to a Docker Hub repo with its image name and tag. For a remote model, DVC will pull the image from Docker Hub before `docker run` instead of building the Docker image locally.
+The DVC pipelines run based on the local Docker images of models. The local images can be either built from Dockerfile or pulled from a remote Docker registry.
+
+To build an image from Dockerfile:
+
+```shell
+docker build \
+  -f models/pls/Dockerfile \
+  -t pls:latest \
+  models/pls
+```
+
+To pull an image from a remote Docker registry:
+
+```shell
+docker pull <repo>/pls:latest
+docker tag <repo>/pls:latest pls:latest
+```
+
+#### Step 3: Create `models.json`
+
+The example `models.json` looks like below, with a list of models defined by its `name` and local `image` name:
 
 ```json
 {
   "models": [
     {
-      "name": "ritaregressor",
-      "input_filename": "/Users/nezumikozo/Documents/protein/proteingym-benchmark/models/huggingface-regressor/README.md"
-    },
-    {
       "name": "pls",
-      "input_filename": "<repo>/pls:latest"
+      "image": "pls:latest"
     }
   ]
 }
 ```
 
-Please note that for the remote Docker image, it is assumed that by default, its model card path is configured at its container path `/opt/program/README.md`, with sample code reference from [Dockerfile](models/pls/Dockerfile) and [__main__.py](models/pls/src/proteingym/models/pls/__main__.py). Otherwise, you still need to provide its model card path in order to configure the model hyperparameters.
+### Getting started
 
-### Supervised
+With `datasets.json` and `models.json` present in each game's folder: namely [supervised](benchmark/supervised/) and [zero_shot](benchmark/zero_shot/), and Docker is running with the local model images, you can start to benchmark.
+
+#### Supervised
 
 You can benchmark a group of supervised models:
 ```shell
 dvc repro benchmark/supervised/dvc.yaml -s
 ```
 
-### Zero-shot
+#### Zero-shot
 
 You can benchmark a group of zero-shot models:
 ```shell
