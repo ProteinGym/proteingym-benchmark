@@ -46,10 +46,10 @@ jobs:
       - name: Generate models
         run: |
           # Generate supervised models.json with name and image (folder name from input_filename)
-          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, image: "\(.input_filename | split("/")[1]):latest"}) | {models: .}' > benchmark/supervised/models.json
+          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, image: "\(.input_filename | split("/")[-2]):latest"}) | {models: .}' > benchmark/supervised/models.json
 
           # Generate zero-shot models.json with name and image (folder name from input_filename)
-          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-shot"]))] | map({name: .name, image: "\(.input_filename | split("/")[1]):latest"}) | {models: .}' > benchmark/zero_shot/models.json
+          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-shot"]))] | map({name: .name, image: "\(.input_filename | split("/")[-2]):latest"}) | {models: .}' > benchmark/zero_shot/models.json
 
 
       - name: Run model validation
