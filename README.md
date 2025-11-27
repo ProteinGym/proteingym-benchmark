@@ -128,10 +128,6 @@ dvc repro benchmark/zero_shot/dvc.yaml -s
 
 The CML (Continuous Machine Learning) pipeline is configured in [cml.yaml](.github/workflows/cml.yaml), which will be triggered every time there is a PR submitted.
 
-In the CML pipeline, it will check whether there exist `datasets.json` and `models.json` in the [supervised](benchmark/supervised/) and [zero_shot](benchmark/zero_shot/) folder. If there are no required files, it will generate them using `proteingym-base list-datasets` and `proteingym-base list-models` as mentioned above, otherwise CML pipeline will start based on the existing `datasets.json` and `models.json`.
-
-Besides, `dvc.lock` and `.dvc/cache` will be tracked in Git repo, so if the files, namely `datasets.json` and `models.json`, don't change (e.g., no new datasets added, no new models added), the DVC stages to run the training jobs and calculate the metrics will be skipped, because DVC will compare the cached files with the present `dvc.lock`. It will make the CML pipeline efficient to skip already-run datasets and models.
-
 > [!IMPORTANT]
 > If you add a new dataset in [datasets](datasets/) or add a new model in [models](models/), please also update the `datasets.json` and `models.json` respectively in either [supervised](benchmark/supervised/) folder or [zero_shot](benchmark/zero_shot/) folder.
 
