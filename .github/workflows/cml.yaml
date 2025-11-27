@@ -30,35 +30,37 @@ jobs:
       - name: Install requirements
         run: |
           pip install -r requirements.txt
-
-      - name: Generate datasets and models
+      
+      - name: Build Docker images for models
         run: |
-          # Supervised game: Generate datasets and models if they don't exist
-          if [ ! -f benchmark/supervised/datasets.json ]; then
-            proteingym-base list-datasets datasets | jq 'map(select(.name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/supervised/datasets.json
-          else
-            echo "benchmark/supervised/datasets.json already exists, skipping generation"
-          fi
+          # Build Docker images for supervised models
+          jq -r '.models[] | "\(.name) \(.input_filename)"' benchmark/supervised/models.json | while read -r model_name input_filename; do
+            context_dir=$(dirname "$input_filename")
+            echo "Building Docker image for $model_name with context $context_dir"
+            docker build \
+              -f $context_dir/Dockerfile \
+              -t $model_name:latest \
+              $context_dir
+          done
+          # Build Docker images for zero-shot models
+          jq -r '.models[] | "\(.name) \(.input_filename)"' benchmark/zero_shot/models.json | while read -r model_name input_filename; do
+            context_dir=$(dirname "$input_filename")
+            echo "Building Docker image for $model_name with context $context_dir"
+            docker build \
+              -f $context_dir/Dockerfile \
+              -t $model_name:latest \
+              $context_dir
+          done
+      
+      - name: Update models with local images
+        run: |
+          # Update supervised models.json with local image references
+          jq '.models |= map(. + {image: "\(.name):latest"})' benchmark/supervised/models.json > benchmark/supervised/models.json.tmp
+          mv benchmark/supervised/models.json.tmp benchmark/supervised/models.json
+          # Update zero-shot models.json with local image references
+          jq '.models |= map(. + {image: "\(.name):latest"})' benchmark/zero_shot/models.json > benchmark/zero_shot/models.json.tmp
+          mv benchmark/zero_shot/models.json.tmp benchmark/zero_shot/models.json
 
-          if [ ! -f benchmark/supervised/models.json ]; then
-            proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/supervised/models.json
-          else
-            echo "benchmark/supervised/models.json already exists, skipping generation"
-          fi
-
-          # Zero-shot game: Generate datasets and models if they don't exist
-          if [ ! -f benchmark/zero_shot/datasets.json ]; then
-            proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/zero_shot/datasets.json
-          else
-            echo "benchmark/zero_shot/datasets.json already exists, skipping generation"
-          fi
-
-          if [ ! -f benchmark/zero_shot/models.json ]; then
-            proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-shot"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/zero_shot/models.json
-          else
-            echo "benchmark/zero_shot/models.json already exists, skipping generation"
-          fi
-          
       - name: Run model validation
         env:
           repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
@@ -97,17 +99,13 @@ jobs:
           # Pull latest changes from remote
           git pull origin ${{ github.head_ref }} --rebase || true
 
-          # Add and commit files
-          git add .dvc/cache --force
-          git add benchmark/supervised/dvc.lock benchmark/zero_shot/dvc.lock
-          git add benchmark/supervised/datasets.json benchmark/zero_shot/datasets.json
-          git add benchmark/supervised/models.json benchmark/zero_shot/models.json
-          git add benchmark/supervised/metric benchmark/zero_shot/metric --force
+          # Add and commit all files
+          git add .
 
           # Commit if there are changes
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update DVC lock files with the results of metrics [skip ci]"
+            git commit -m "Update DVC lock files with the results of metrics"
             git push origin HEAD:${{ github.head_ref }}
           fi
