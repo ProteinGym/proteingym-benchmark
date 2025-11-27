@@ -1,0 +1,44 @@
+schema: '2.0'
+stages:
+  create_training_job@dataset0-model0:
+    cmd: docker run --rm -v $(realpath 
+      /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/ranganathan.pgdata):/$(basename
+      /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/ranganathan.pgdata)
+      -v $(realpath prediction):/opt/program/output esm:latest train 
+      --dataset-file /$(basename 
+      /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/ranganathan.pgdata);
+    deps:
+    - path: ../../datasets/ranganathan.pgdata
+      hash: md5
+      md5: 705ae59ddb902d5874ac418556bd9955
+      size: 90838
+    - path: ../../models
+      hash: md5
+      md5: 9a659b5061eb09fe7f626e5037a1056f.dir
+      size: 625106
+      nfiles: 41
+    outs:
+    - path: prediction/ranganathan_esm.csv
+      hash: md5
+      md5: b564ad013a83ee41027cb89fb038d3e8
+      size: 185963
+  calculate_metric@dataset0-model0:
+    cmd: METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))") 
+      && python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/ranganathan_esm.csv --metric-path metric/ranganathan_esm.json 
+      --selected-metrics $METRICS
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 142f206b77cdc15f43c6144e4609c26e
+      size: 6746
+    - path: prediction/ranganathan_esm.csv
+      hash: md5
+      md5: b564ad013a83ee41027cb89fb038d3e8
+      size: 185963
+    outs:
+    - path: metric/ranganathan_esm.json
+      hash: md5
+      md5: 602b917e826a6ec7b27b4cf2cffe4d5c
+      size: 38

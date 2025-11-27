@@ -1,0 +1,88 @@
+schema: '2.0'
+stages:
+  create_training_job@dataset0-model0:
+    cmd: docker run --rm -v $(realpath 
+      /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata):/$(basename
+      /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
+      -v $(realpath prediction):/opt/program/output pls:latest train 
+      --dataset-file /$(basename 
+      /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
+    deps:
+    - path: ../../datasets/NEIME_2019.pgdata
+      hash: md5
+      md5: 2e339b71c6bfa894c9480407ccbf35fd
+      size: 1331920
+    - path: ../../models
+      hash: md5
+      md5: 9a659b5061eb09fe7f626e5037a1056f.dir
+      size: 625106
+      nfiles: 41
+    outs:
+    - path: prediction/NEIME_2019_pls.csv
+      hash: md5
+      md5: 3eed6c0182a8ae942233169dd11758e6
+      size: 58523
+  create_training_job@dataset0-model1:
+    cmd: docker run --rm -v $(realpath 
+      /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata):/$(basename
+      /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
+      -v $(realpath prediction):/opt/program/output huggingface-regressor:latest
+      train --dataset-file /$(basename 
+      /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
+    deps:
+    - path: ../../datasets/NEIME_2019.pgdata
+      hash: md5
+      md5: 2e339b71c6bfa894c9480407ccbf35fd
+      size: 1331920
+    - path: ../../models
+      hash: md5
+      md5: 9a659b5061eb09fe7f626e5037a1056f.dir
+      size: 625106
+      nfiles: 41
+    outs:
+    - path: prediction/NEIME_2019_ritaregressor.csv
+      hash: md5
+      md5: 8f35a224333a6b09335a2e0a2788abba
+      size: 34933
+  calculate_metric@dataset0-model0:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))") 
+      && python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/NEIME_2019_pls.csv --metric-path metric/NEIME_2019_pls.json 
+      --selected-metrics $METRICS
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 142f206b77cdc15f43c6144e4609c26e
+      size: 6746
+    - path: prediction/NEIME_2019_pls.csv
+      hash: md5
+      md5: 3eed6c0182a8ae942233169dd11758e6
+      size: 58523
+    outs:
+    - path: metric/NEIME_2019_pls.json
+      hash: md5
+      md5: cfbbcc64fe83db66495adcb74dc0b304
+      size: 36
+  calculate_metric@dataset0-model1:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))") 
+      && python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/NEIME_2019_ritaregressor.csv --metric-path 
+      metric/NEIME_2019_ritaregressor.json --selected-metrics $METRICS
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 142f206b77cdc15f43c6144e4609c26e
+      size: 6746
+    - path: prediction/NEIME_2019_ritaregressor.csv
+      hash: md5
+      md5: 8f35a224333a6b09335a2e0a2788abba
+      size: 34933
+    outs:
+    - path: metric/NEIME_2019_ritaregressor.json
+      hash: md5
+      md5: 40b829ac2fe63b204c570d7be6882e2b
+      size: 37

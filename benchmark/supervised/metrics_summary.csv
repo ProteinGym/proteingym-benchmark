@@ -1,0 +1,3 @@
+model,dataset,spearman
+pls,NEIME_2019,0.0950824608163625
+ritaregressor,NEIME_2019,0.02815494611446483
