@@ -22,7 +22,7 @@ jobs:
       - name: Install requirements
         run: |
           pip install -r requirements.txt
-  
+
       - name: Build Docker images for models
         run: |
           # Build Docker images for supervised models
