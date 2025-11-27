@@ -52,6 +52,27 @@ proteingym-base list-models models | jq ... > benchmark/supervised/local/models.
 
 For more information, you can check out [CONTRIBUTING.md](CONTRIBUTING.md) to reference the detailed commands. Also in [cml.yaml](.github/workflows/cml.yaml), you can check out the detailed commands which run in the CI pipeline.
 
+### Update `models.json` to run images from [Docker Hub](https://hub.docker.com/)
+
+If you have images to run from [Docker Hub](https://hub.docker.com/), you can manually update `models.json` to mix local models with remote model images. As shown below as an example `models.json`, the local model `ritaregressor` has the field `input_filename` to point to a model card path with its direct folder containing a `Dockerfile` to build the image; whereas the remote model `pls` has the field `image` field to point to a Docker Hub repo with its image name and tag. For a remote model, DVC will pull the image from Docker Hub before `docker run` instead of building the Docker image locally.
+
+```json
+{
+  "models": [
+    {
+      "name": "ritaregressor",
+      "input_filename": "/Users/nezumikozo/Documents/protein/proteingym-benchmark/models/huggingface-regressor/README.md"
+    },
+    {
+      "name": "pls",
+      "image": "<repo>/pls:latest"
+    }
+  ]
+}
+```
+
+Please note that for the remote Docker image, it is assumed that by default, its model card path is configured as the container path `/opt/program/README.md`, with sample code reference from [Dockerfile](models/pls/Dockerfile) and [__main__.py](models/pls/src/proteingym/models/pls/__main__.py). Otherwise, you still need to provide its model card path in order to configure the model hyperparameters.
+
 ### Supervised
 
 You can benchmark a group of supervised models:
