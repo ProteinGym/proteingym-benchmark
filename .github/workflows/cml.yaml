@@ -126,6 +126,7 @@ jobs:
 
           # Add all files except report.md
           git add .
+          git add .dvc/cache --force
           git reset -- report.md || true
 
           # Check if there are changes to commit
