@@ -1,3 +1,8 @@
+<script>
+  import * as paths from "$app/paths";
+  const basePath = paths.base;
+</script>
+
 <div class="min-h-screen bg-gradient-to-b from-white to-gray-50">
   <!-- Hero Section -->
   <div class="max-w-7xl mx-auto px-6 py-16 md:py-24">
@@ -52,13 +57,13 @@
     <!-- CTA Section -->
     <div class="mt-16 text-center">
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <a href="/benchmark" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+        <a href="{basePath}/benchmark" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
           View Benchmarks
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="ml-2 h-5 w-5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
           </svg>
         </a>
-        <a href="/model" class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+        <a href="{basePath}/model" class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
           Explore Models
         </a>
       </div>
