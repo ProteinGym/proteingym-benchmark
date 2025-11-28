@@ -1,6 +1,7 @@
 <script>
     import { page } from "$app/stores";
     import * as paths from "$app/paths";
+    import logo from "$lib/assets/logo.png";
 
     const basePath = paths.base;
     let mobileMenuOpen = $state(false);
@@ -10,7 +11,7 @@
   <div class="flex items-center justify-between h-16 px-6 max-w-7xl mx-auto">
     <!-- Logo -->
     <a href="{basePath}/" class="cursor-pointer w-10 flex-shrink-0">
-      <img src="{basePath}/logo.png" alt="proteingym-logo" />
+      <img src={logo} alt="proteingym-logo" />
     </a>
 
     <!-- Desktop Navigation -->
