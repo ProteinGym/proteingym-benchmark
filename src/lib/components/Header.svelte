@@ -1,6 +1,7 @@
 <script>
     import logo from "$lib/assets/logo.png";
     import { page } from "$app/stores";
+    import { base } from "$app/paths";
 
     let mobileMenuOpen = $state(false);
 </script>
@@ -8,7 +9,7 @@
 <header class="sticky top-0 border-b border-gray-100 bg-white z-30">
   <div class="flex items-center justify-between h-16 px-6 max-w-7xl mx-auto">
     <!-- Logo -->
-    <a href="/" class="cursor-pointer w-10 flex-shrink-0">
+    <a href="{base}/" class="cursor-pointer w-10 flex-shrink-0">
       <img src={logo} alt="proteingym-logo" />
     </a>
 
