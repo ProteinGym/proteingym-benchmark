@@ -12,6 +12,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: iterative/setup-cml@v2
 
@@ -23,44 +25,108 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Generate datasets and models
+      - name: Check for relevant changes
+        id: check_changes
         run: |
-          # Supervised game: Generate datasets and models
-          proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder" or .name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/supervised/datasets.json
-          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/supervised/models.json
-          
-          # Zero-shot game: Generate datasets and models
-          proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename}) | . = {"datasets": .}' > benchmark/zero_shot/datasets.json
-          proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-shot"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/zero_shot/models.json
-          
-      - name: Run model validation
-        env:
-          repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        run: | 
+          # Get the base branch to compare against
+          git fetch origin ${{ github.base_ref }}
+
+          # Check if there are changes to datasets.json, models.json, or any files in models/
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '(datasets\.json|models\.json|models/)'; then
+            echo "build_images=true" >> $GITHUB_OUTPUT
+            echo "Relevant changes detected - will build images"
+          else
+            echo "build_images=false" >> $GITHUB_OUTPUT
+            echo "No relevant changes detected - skipping image build"
+          fi
+
+      - name: Build Docker images for models
+        if: steps.check_changes.outputs.build_images == 'true'
+        run: |
+          # Build Docker images from models folder
+          for model_folder in models/*/; do
+            model_name=$(basename "$model_folder")
+            echo "Building Docker image for $model_name with context $model_folder"
+            docker build \
+              -f $model_folder/Dockerfile \
+              -t $model_name:latest \
+              $model_folder
+          done
+
+      - name: Run benchmarking
+        run: |
           # Supervised game: Run DVC repro
           dvc repro benchmark/supervised/dvc.yaml --single-item
-  
+
           # Zero-shot game: Run DVC repro
           dvc repro benchmark/zero_shot/dvc.yaml --single-item
 
-          # Create report with metrics
-          echo "# Model Validation Report" >> report.md
-          echo "" >> report.md
+      - name: Generate metrics CSV files
+        run: |
+          # Generate metrics CSV
+          echo "game,model,dataset,spearman" > benchmark/metrics.csv
 
-          # Pick one supervised model
+          # Generate supervised metrics CSV
+          dataset_names=$(jq -r '.datasets[].name' benchmark/supervised/datasets.json)
+          model_names=$(jq -r '.models[].name' benchmark/supervised/models.json)
+
+          # Iterate through all combinations and check if metric file exists
+          for dataset in $dataset_names; do
+            for model in $model_names; do
+              metric_file="benchmark/supervised/metric/${dataset}_${model}.json"
+              if [ -f "$metric_file" ]; then
+                spearman=$(jq -r '.spearman' "$metric_file")
+                echo "supervised,$model,$dataset,$spearman" >> benchmark/metrics.csv
+              fi
+            done
+          done
+
+          # Generate zero-shot metrics CSV
+          dataset_names=$(jq -r '.datasets[].name' benchmark/zero_shot/datasets.json)
+          model_names=$(jq -r '.models[].name' benchmark/zero_shot/models.json)
+
+          # Iterate through all combinations and check if metric file exists
+          for dataset in $dataset_names; do
+            for model in $model_names; do
+              metric_file="benchmark/zero_shot/metric/${dataset}_${model}.json"
+              if [ -f "$metric_file" ]; then
+                spearman=$(jq -r '.spearman' "$metric_file")
+                echo "zero-shot,$model,$dataset,$spearman" >> benchmark/metrics.csv
+              fi
+            done
+          done
+      
+      - name: Create PR report
+        env:
+          repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
           cat <<EOF > report.md
-          ## Supervised Models
-          ✅ Supervised models have all passed validation.
-          \`\`\`json
-          $(cat ./benchmark/supervised/metric/charge_ladder_pls.json)
-          \`\`\`
-          ## Zero-shot Models
-          ✅ Zero-shot models have all passed validation.
-          \`\`\`json
-          $(cat ./benchmark/zero_shot/metric/ranganathan_esm.json)
+          ✅ The benchmark has been finished successfully.
+          📈 The result is as below:
+          \`\`\`csv
+          $(cat ./benchmark/metrics.csv)
           \`\`\`
           EOF
           
           # Send comment to PR
           echo "Send comment to PR"
           cml comment create report.md
+
+      - name: Commit and push DVC lock files
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # Add all files except report.md
+          git add .
+          git add .dvc/cache --force
+          git reset -- report.md || true
+
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update DVC lock files with the results of metrics"
+            git pull origin ${{ github.head_ref }} --rebase || true
+            git push origin HEAD:${{ github.head_ref }}
+          fi

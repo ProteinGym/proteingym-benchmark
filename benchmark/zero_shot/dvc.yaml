@@ -5,38 +5,20 @@ vars:
 
 stages:
 
-  setup:
-    cmd:
-      - mkdir -p logs ${output.prediction} ${output.metric}
-      - echo "Created local directories" > logs/setup.txt
-    outs:
-      - logs/setup.txt
-
   create_training_job:
     matrix:
       dataset: ${datasets}
       model: ${models}
 
-    cmd:
-      - >-
-        docker build 
-        -f $(dirname ${item.model.input_filename})/Dockerfile
-        -t ${item.model.name}:latest
-        $(dirname ${item.model.input_filename})
-      - >-
-        docker run --rm
-        -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename})
-        -v $(realpath ${item.model.input_filename}):/$(basename ${item.model.input_filename})
-        -v $(realpath ${output.prediction}):/opt/program/output
-        ${item.model.name}:latest
-        train
-        --dataset-file /$(basename ${item.dataset.input_filename})
-        --model-card-file /$(basename ${item.model.input_filename})
-      - docker image prune -a -f
+    cmd: >-
+      docker run --rm
+      -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename})
+      -v $(realpath ${output.prediction}):/opt/program/output
+      ${item.model.image}
+      train --dataset-file /$(basename ${item.dataset.input_filename});
     deps:
-      - logs/setup.txt
+      - ../../models
       - ${item.dataset.input_filename}
-      - ${item.model.input_filename}
     outs:
       - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv:
           cache: true
@@ -54,6 +36,7 @@ stages:
       --selected-metrics $METRICS
     
     deps:
+      - ../../scripts/metric.py
       - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
     metrics:
       - ${output.metric}/${item.dataset.name}_${item.model.name}.json:

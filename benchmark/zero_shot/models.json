@@ -1,0 +1,8 @@
+{
+  "models": [
+    {
+      "name": "esm",
+      "image": "esm:latest"
+    }
+  ]
+}

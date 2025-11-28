@@ -1,0 +1,21 @@
+cmd: docker run --rm -v $(realpath 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata):/$(basename
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
+  -v $(realpath prediction):/opt/program/output pls:latest train --dataset-file 
+  /$(basename 
+  /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
+deps:
+- path: ../../datasets/NEIME_2019.pgdata
+  hash: md5
+  md5: 2e339b71c6bfa894c9480407ccbf35fd
+  size: 1331920
+- path: ../../models
+  hash: md5
+  md5: 9a659b5061eb09fe7f626e5037a1056f.dir
+  size: 625106
+  nfiles: 41
+outs:
+- path: prediction/NEIME_2019_pls.csv
+  hash: md5
+  md5: 3eed6c0182a8ae942233169dd11758e6
+  size: 58523

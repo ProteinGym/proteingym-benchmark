@@ -1,0 +1,4 @@
+game,model,dataset,spearman
+supervised,pls,NEIME_2019,0.0950824608163625
+supervised,ritaregressor,NEIME_2019,-0.009147395684344445
+zero-shot,esm,ranganathan,-0.04390739267156756
