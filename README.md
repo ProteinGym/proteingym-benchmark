@@ -130,5 +130,9 @@ The CML (Continuous Machine Learning) pipeline is configured in [cml.yaml](.gith
 
 > [!IMPORTANT]
 > If you add a new dataset in [datasets](datasets/) or add a new model in [models](models/), please also update the `datasets.json` and `models.json` respectively in either [supervised](benchmark/supervised/) folder or [zero_shot](benchmark/zero_shot/) folder.
+>
+> * For datasets, keep the folder name `/home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/` (as this is the path where it is located in the runner) and only change your file name.
+> * For models, it is in the format `<model_folder_name>:latest`, where `model_folder_name` is the root folder name of each model in [models](models).
 
-You can find the latest metrics result in either [supervised](benchmark/supervised) folder or [zero_shot](benchmark/zero_shot/) folder, as the latest CML pipeline will commit the metrics back in the main branch, once it is merged.
+
+You can find the latest metrics result in [metrics.csv](benchmark/metrics.csv) as the single source of truth, as the latest CML pipeline will commit the metrics back in the main branch, once it is merged.
