@@ -46,8 +46,9 @@
 </script>
 
 <!-- Search Bar -->
-<div class="flex relative mt-6 mx-auto w-full max-w-xs px-6 md:px-0">
-  <div class="absolute top-2.5 left-8 md:left-2">
+<div class="max-w-7xl mx-auto px-6 mt-6">
+  <div class="flex relative max-w-xs">
+    <div class="absolute top-2.5 left-2">
     <svg
       xmlns="http://www.w3.org/2000/svg"
       class="h-4 w-4 text-gray-500"
@@ -69,6 +70,7 @@
     type="text"
     placeholder="Filter by model name"
   />
+  </div>
 </div>
 
 <!-- Model Card -->
