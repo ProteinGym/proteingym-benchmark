@@ -123,3 +123,16 @@ dvc repro benchmark/zero_shot/dvc.yaml -s
 
 > [!TIP]
 > By default, DVC will stop execution when any stage fails. If one dataset-model pair's metric calculation fails (e.g., due to a missing prediction file, script error, or invalid data), DVC will halt the entire pipeline run. In order to prevent this blocking behavior, you can use: `dvc repro --keep-going`. This flag tells DVC to continue executing other stages even if some fail.
+
+## CML pipeline
+
+The CML (Continuous Machine Learning) pipeline is configured in [cml.yaml](.github/workflows/cml.yaml), which will be triggered every time there is a PR submitted.
+
+> [!IMPORTANT]
+> If you add a new dataset in [datasets](datasets/) or add a new model in [models](models/), please also update the `datasets.json` and `models.json` respectively in either [supervised](benchmark/supervised/) folder or [zero_shot](benchmark/zero_shot/) folder.
+>
+> * For datasets, keep the folder name `/home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/` (as this is the path where it is located in the runner) and only change your file name.
+> * For models, it is in the format `<model_folder_name>:latest`, where `model_folder_name` is the root folder name of each model in [models](models).
+
+
+You can find the latest metrics result in [metrics.csv](benchmark/metrics.csv) as the single source of truth, as the latest CML pipeline will commit the metrics back in the main branch, once it is merged.
