@@ -23,7 +23,7 @@ for (const file of pgdataFiles) {
   try {
     execSync(`unzip -q -o "${archivePath}" manifest.lock -d "${extractDir}"`);
     
-    const manifestPath = path.join(extractDir, "Manifest.lock");
+    const manifestPath = path.join(extractDir, "manifest.lock");
     if (fs.existsSync(manifestPath)) {
       const manifestContent = fs.readFileSync(manifestPath, "utf-8");
       const manifest = TOML.parse(manifestContent);
