@@ -14,14 +14,12 @@
 
   let filteredModels = $derived(
     searchQuery
-      ? models.filter((model) =>
-          (typeof model.frontmatter.name === "string"
-            ? model.frontmatter.name
-            : ""
-          )
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()),
-        )
+      ? models.filter((model) => {
+          const query = searchQuery.toLowerCase();
+          const name = (typeof model.frontmatter.name === "string" ? model.frontmatter.name : "").toLowerCase();
+          const tags = (model.frontmatter.tags || []).map((t: string) => t.toLowerCase()).join(" ");
+          return name.includes(query) || tags.includes(query);
+        })
       : models,
   );
 
@@ -68,7 +66,7 @@
     bind:value={searchQuery}
     class="w-full text-base text-gray-700 pl-8 rounded-md border border-gray-100 h-9 pr-8 shadow-sm focus:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-100 focus:border-gray-100"
     type="text"
-    placeholder="Filter by model name"
+    placeholder="Filter by model name or tags"
   />
   </div>
 </div>
