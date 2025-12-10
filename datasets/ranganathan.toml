@@ -1,0 +1,25 @@
+version = "1.0.0"
+name = "ranganathan"
+description = "BLAT ECOLX Ranganathan 2015"
+_archive_filename = "ranganathan.pgdata"
+
+[[assay_variables]]
+name = "R"
+unit = "R"
+description = "Reference protein sequence to be mutated"
+
+[[assay_targets]]
+name = "target"
+description = "target"
+
+[[assays]]
+name = "assays"
+sequence = "sequence"
+sequence_alphabet = "AA"
+path = "assays/assays.csv"
+
+[assays.targets]
+target = "target"
+
+[assays.variables]
+R = "HPETLVKVKDAEDQLGARVGYIELDLNSGKILESFRPEERFPMMSTFKVLLCGAVLSRVDAGQEQLGRRIHYSQNDLVEYSPVTEKHLTDGMTVRELCSAAITMSDNTAANLLLTTIGGPKELTAFLHNMGDHVTRLDRWEPELNEAIPNDERDTTMPAAMATTLRKLLTGELLTLASRQQLIDWMEADKVAGPLLRSALPAGWFIADKSGAGERGSRGIIAALGPDGKPSRIVVIYTTGSQATMDERNRQIAEIGASLIKHW"

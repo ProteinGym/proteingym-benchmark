@@ -1,0 +1,52 @@
+version = "1.0.0"
+name = "NEIME_2019"
+description = "The NEIME Kennouche 2019 (UniProt id: A0A1I9GEU1) datase"
+_archive_filename = "NEIME_2019.pgdata"
+
+[[assay_variables]]
+name = "PH"
+unit = "pH"
+description = "pH level of the samples"
+
+[[assay_variables]]
+name = "T"
+unit = "C"
+description = "Temperature level of the samples"
+
+[[assay_targets]]
+name = "target"
+description = "target"
+
+[[assays]]
+name = "Assay1"
+sequence = "sequence"
+sequence_alphabet = "AA"
+path = "assays/Assay1.csv"
+
+[assays.targets]
+target = "target"
+
+[assays.variables]
+T = 37
+PH = 7
+
+[[sequences]]
+type = "wild_type"
+alphabet = "AA"
+path = "sequences/tr|A0A1I9GEU1|A0A1I9GEU1_NEIME.fasta"
+
+[[structures]]
+path = "structures/A0A1I9GEU1.pdb"
+name = "A0A1I9GEU1"
+description = "ALPHAFOLD MONOMER V2.0 PREDICTION FOR PILIN"
+
+[structures.metadata]
+source = "alphafold"
+version = "v2.0"
+avg_plddt = "90"
+link = "alphafold.ebi.ac.uk/entry/A0A1I9GEU1"
+
+[[msas]]
+path = "msas/msa.fasta"
+name = "msa"
+format = "fasta"

@@ -1,0 +1,17 @@
+version = "1.0.0"
+name = "charge_ladder"
+description = "Dummy test dataset"
+_archive_filename = "charge_ladder.pgdata"
+
+[[assay_targets]]
+name = "target"
+description = "target"
+
+[[assays]]
+name = "assays"
+sequence = "sequence"
+sequence_alphabet = "AA"
+path = "assays/assays.csv"
+
+[assays.targets]
+target = "target"
