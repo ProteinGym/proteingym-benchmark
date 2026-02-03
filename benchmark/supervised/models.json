@@ -3,10 +3,6 @@
     {
       "name": "pls",
       "image": "pls:latest"
-    },
-    {
-      "name": "ritaregressor",
-      "image": "huggingface-regressor:latest"
     }
   ]
 }
