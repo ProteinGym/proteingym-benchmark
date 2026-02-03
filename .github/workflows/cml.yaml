@@ -9,6 +9,9 @@ on:
 jobs:
   cml:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
@@ -98,7 +101,7 @@ jobs:
       
       - name: Create PR report
         env:
-          repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cat <<EOF > report.md
           ✅ The benchmark has been finished successfully.
