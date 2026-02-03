@@ -2,80 +2,40 @@ import logging
 from typing import Any
 
 import numpy as np
-from proteingym.base import Dataset
+import polars as pl
+from proteingym.base import Subsets
 
 logger = logging.getLogger(__name__)
 
+def load_x_and_y(subset: Subsets, split: str, test_fold: int, target: str) -> tuple[list[Any], list[Any], list[Any], list[Any]]:
+        """Load train/test splits for k-fold cross-validation.
+        
+        Args:
+            subset: a split dataset in the Subsets format
+            split: name of the split
+            test_fold: Which kfold split to take as test set
+            target: name of the target we are classifying
+        """
+        
+        test_dataset = subset[split].slices[test_fold]
+        test_df = subset[split].dataset[test_dataset].to_df()
+        
+        train_dfs = []
+        for i in range(len(subset[split].slices)):
+            if i != test_fold:
+                train_slice = subset[split].slices[i]
+                train_dfs.append(subset[split].dataset[train_slice].to_df())
+        
+        train_df = pl.concat(train_dfs)
+        
+        train_X = train_df['sequence'].to_list()
+        train_Y = train_df[target].to_list()
+        test_X = test_df['sequence'].to_list()
+        test_Y = test_df[target].to_list()
+        
+        return train_X, train_Y, test_X, test_Y
 
-def load_x_and_y(dataset: Dataset, split) -> tuple[list[Any], list[Any]]:
-    """Load feature and target data from a dataset archive file for a specified split.
-
-    This function applies the configured split strategy for the dataset,
-    and returns the features (X) and targets (Y)
-    for the requested data split.
-
-    Args:
-        dataset: The dataset object loaded by proteingym.base.Dataset.from_path.
-        split: The data split to load (train, validation, or test).
-
-    Returns:
-        tuple[list[Any], list[Any]]: A tuple containing:
-            - split_X (list[Any]): Feature data for the specified split, where each
-                inner list represents features for a single sample.
-            - split_Y (list[Any]): Target values for the specified split.
-
-    Note:
-        - Currently only supports single target and single feature column (index 0).
-        - The split strategy is determined by the dataset's metadata configuration.
-        - Multiple targets and features support is planned for future implementation.
-    """
-
-    # TODO: Update split below
-    # dataset.assays.add_split(
-    #     split_strategy=SPLIT_STRATEGY_MAPPING[dataset.assays.meta.split_strategy](),
-    #     targets=targets,
-    # )
-
-    # TODO: Replace this dummy split with above split method
-    split_size = len(dataset.assays[0].records) // 3
-
-    match split:
-        case 1:
-            split_X = [
-                str(seq.value) for seq, _ in dataset.assays[0].records[:split_size]
-            ]
-            split_Y = [
-                target["target"] for _, target in dataset.assays[0].records[:split_size]
-            ]
-
-        case 2:
-            split_X = [
-                str(seq.value)
-                for seq, _ in dataset.assays[0].records[split_size : split_size * 2]
-            ]
-            split_Y = [
-                target["target"]
-                for _, target in dataset.assays[0].records[split_size : split_size * 2]
-            ]
-
-        case 3:
-            split_X = [
-                str(seq.value)
-                for seq, _ in dataset.assays[0].records[split_size * 2 : split_size * 3]
-            ]
-            split_Y = [
-                target["target"]
-                for _, target in dataset.assays[0].records[
-                    split_size * 2 : split_size * 3
-                ]
-            ]
-
-    logger.info("Loaded the dataset with splits X and Y.")
-
-    return split_X, split_Y
-
-
-def encode(spit_X: list[Any], hyper_params: dict[str, Any]) -> np.ndarray:
+def encode(split_X: list[Any], hyper_params: dict[str, Any]) -> np.ndarray:
     """Encode protein sequences into one-hot encoded numerical arrays.
 
     This function converts a list of protein sequences into a numerical representation
@@ -83,7 +43,7 @@ def encode(spit_X: list[Any], hyper_params: dict[str, Any]) -> np.ndarray:
     based on its position in the amino acid alphabet.
 
     Args:
-        spit_X: List of protein sequences to encode. Each sequence should
+        split_X: List of protein sequences to encode. Each sequence should
             be a string or iterable of amino acid residues.
         hyper_params: Dictionary containing encoding parameters:
             - "aa_alphabet_length": Number of amino acids in the alphabet
@@ -111,16 +71,16 @@ def encode(spit_X: list[Any], hyper_params: dict[str, Any]) -> np.ndarray:
             sequence_length * aa_alphabet_length
     """
 
-    sequence_length = len(spit_X[0])
+    sequence_length = len(split_X[0])
 
     encodings = np.empty(
         (
-            len(spit_X),
+            len(split_X),
             sequence_length * hyper_params["aa_alphabet_length"],
         )
     )
 
-    for idx, sequence in enumerate(spit_X):
+    for idx, sequence in enumerate(split_X):
         encoding = np.concatenate(
             [
                 np.eye(hyper_params["aa_alphabet_length"])[
