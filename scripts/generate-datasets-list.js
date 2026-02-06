@@ -3,20 +3,36 @@ import path from "path";
 import { execSync } from "child_process";
 import TOML from "smol-toml";
 
-const datasetsDir = path.resolve("datasets");
+const datasetsOriginalDir = path.resolve("datasets/original");
+const datasetsSplitsDir = path.resolve("datasets/splits");
 const staticDir = path.resolve("static");
 const tempDir = path.resolve(".temp-datasets");
 
 fs.mkdirSync(tempDir, { recursive: true });
 fs.mkdirSync(path.join(staticDir, "datasets"), { recursive: true });
 
-const files = fs.readdirSync(datasetsDir);
-const pgdataFiles = files.filter((file) => file.endsWith(".pgdata"));
+const originalFiles = fs.existsSync(datasetsOriginalDir) ? fs.readdirSync(datasetsOriginalDir).filter(f => f.endsWith(".pgdata")) : [];
+const splitsFiles = fs.existsSync(datasetsSplitsDir) ? fs.readdirSync(datasetsSplitsDir).filter(f => f.endsWith(".splits.pgdata")) : [];
+
+const datasetMap = new Map();
+originalFiles.forEach(f => {
+  const baseName = f.replace(".pgdata", "");
+  if (!datasetMap.has(baseName)) datasetMap.set(baseName, {});
+  datasetMap.get(baseName).original = f;
+});
+splitsFiles.forEach(f => {
+  const baseName = f.replace(".splits.pgdata", "");
+  if (!datasetMap.has(baseName)) datasetMap.set(baseName, {});
+  datasetMap.get(baseName).splits = f;
+});
+
 const slugs = [];
 
-for (const file of pgdataFiles) {
-  const archivePath = path.join(datasetsDir, file);
-  const extractDir = path.join(tempDir, file.replace(".pgdata", ""));
+for (const [baseName, files] of datasetMap) {
+  const archivePath = files.original 
+    ? path.join(datasetsOriginalDir, files.original)
+    : path.join(datasetsSplitsDir, files.splits);
+  const extractDir = path.join(tempDir, baseName);
   
   fs.mkdirSync(extractDir, { recursive: true });
   
@@ -27,9 +43,10 @@ for (const file of pgdataFiles) {
     if (fs.existsSync(manifestPath)) {
       const manifestContent = fs.readFileSync(manifestPath, "utf-8");
       const manifest = TOML.parse(manifestContent);
-      const datasetName = manifest.name || file.replace(".pgdata", "");
+      const datasetName = manifest.name || baseName;
       
-      manifest._archive_filename = file;
+      manifest._original_filename = files.original || null;
+      manifest._splits_filename = files.splits || null;
       
       fs.writeFileSync(
         path.join(staticDir, "datasets", `${datasetName}.toml`),
@@ -37,10 +54,10 @@ for (const file of pgdataFiles) {
       );
       
       slugs.push(datasetName);
-      console.log(`Extracted ${datasetName} from ${file}`);
+      console.log(`Extracted ${datasetName} from ${files.original || files.splits}`);
     }
   } catch (error) {
-    console.warn(`Failed to extract ${file}:`, error.message);
+    console.warn(`Failed to extract ${baseName}:`, error.message);
   }
 }
 

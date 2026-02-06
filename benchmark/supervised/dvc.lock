@@ -4,8 +4,8 @@ stages:
     cmd: docker run --rm -v $(realpath 
       /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata):/$(basename
       /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
-      -v $(realpath prediction):/opt/program/output pls:latest train 
-      --dataset-file /$(basename 
+      -v $(realpath prediction):/opt/program/output pls:latest train --dataset-file
+      /$(basename 
       /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
     deps:
     - path: ../../datasets/NEIME_2019.pgdata
@@ -26,8 +26,8 @@ stages:
     cmd: docker run --rm -v $(realpath 
       /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata):/$(basename
       /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
-      -v $(realpath prediction):/opt/program/output huggingface-regressor:latest
-      train --dataset-file /$(basename 
+      -v $(realpath prediction):/opt/program/output huggingface-regressor:latest train
+      --dataset-file /$(basename 
       /home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/NEIME_2019.pgdata)
     deps:
     - path: ../../datasets/NEIME_2019.pgdata
@@ -46,11 +46,10 @@ stages:
       size: 34917
   calculate_metric@dataset0-model0:
     cmd:
-    - METRICS=$(python -c "import yaml; data = 
-      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))") 
-      && python $(dvc root)/scripts/metric.py --prediction-path 
-      prediction/NEIME_2019_pls.csv --metric-path metric/NEIME_2019_pls.json 
-      --selected-metrics $METRICS
+    - METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml'));
+      print(' '.join(data['metrics']))") && python $(dvc root)/scripts/metric.py --prediction-path
+      prediction/NEIME_2019_pls.csv --metric-path metric/NEIME_2019_pls.json --selected-metrics
+      $METRICS
     deps:
     - path: ../../scripts/metric.py
       hash: md5
@@ -67,11 +66,10 @@ stages:
       size: 36
   calculate_metric@dataset0-model1:
     cmd:
-    - METRICS=$(python -c "import yaml; data = 
-      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))") 
-      && python $(dvc root)/scripts/metric.py --prediction-path 
-      prediction/NEIME_2019_ritaregressor.csv --metric-path 
-      metric/NEIME_2019_ritaregressor.json --selected-metrics $METRICS
+    - METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml'));
+      print(' '.join(data['metrics']))") && python $(dvc root)/scripts/metric.py --prediction-path
+      prediction/NEIME_2019_ritaregressor.csv --metric-path metric/NEIME_2019_ritaregressor.json
+      --selected-metrics $METRICS
     deps:
     - path: ../../scripts/metric.py
       hash: md5
@@ -86,3 +84,254 @@ stages:
       hash: md5
       md5: 4368c66e33ad3420f5b6d1b071aad2a6
       size: 39
+  generate_targets:
+    cmd: python $(dvc root)/scripts/generate_targets.py datasets.json targets.json
+    deps:
+    - path: ../../scripts/generate_targets.py
+      hash: md5
+      md5: af5ee180fb4a86b0d47a5798d187c706
+      size: 1477
+    - path: datasets.json
+      hash: md5
+      md5: 7af4ac84686bcb062f972a0e7623cd7d
+      size: 199
+    outs:
+    - path: targets.json
+      hash: md5
+      md5: 1607ac203c6edea5adbb3a05e435f5d9
+      size: 93
+  create_training_job@dataset0-model0-0:
+    cmd: mkdir -p prediction && docker run --rm -v $(realpath 
+      /Users/vanderweg/Projects/PG2/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      /Users/vanderweg/Projects/PG2/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata)
+      -v $(realpath prediction):/opt/program/output pls:latest train --dataset-file
+      /$(basename 
+      /Users/vanderweg/Projects/PG2/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata)
+      --split modulo --test-fold 0
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 31fe87063f2cb5a264175a3fe0ab3edf
+      size: 1605005
+    - path: ../../models
+      hash: md5
+      md5: 2126bb15917ff4731ab07267757361ca.dir
+      size: 598504
+      nfiles: 40
+    outs:
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold0_Activity.csv
+      hash: md5
+      md5: 2b9a2c3ea42faa9d064adc175e3530ce
+      size: 36682
+  create_training_job@dataset0-model0-1:
+    cmd: mkdir -p prediction && docker run --rm -v $(realpath 
+      /Users/vanderweg/Projects/PG2/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      /Users/vanderweg/Projects/PG2/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata)
+      -v $(realpath prediction):/opt/program/output pls:latest train --dataset-file
+      /$(basename 
+      /Users/vanderweg/Projects/PG2/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata)
+      --split modulo --test-fold 1
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 31fe87063f2cb5a264175a3fe0ab3edf
+      size: 1605005
+    - path: ../../models
+      hash: md5
+      md5: 2126bb15917ff4731ab07267757361ca.dir
+      size: 598504
+      nfiles: 40
+    outs:
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold1_Activity.csv
+      hash: md5
+      md5: 5de9a05a6d7ebb8a413f3d9135c98a14
+      size: 34860
+  create_training_job@dataset0-model0-2:
+    cmd: mkdir -p prediction && docker run --rm -v $(realpath 
+      /Users/vanderweg/Projects/PG2/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      /Users/vanderweg/Projects/PG2/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata)
+      -v $(realpath prediction):/opt/program/output pls:latest train --dataset-file
+      /$(basename 
+      /Users/vanderweg/Projects/PG2/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata)
+      --split modulo --test-fold 2
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 31fe87063f2cb5a264175a3fe0ab3edf
+      size: 1605005
+    - path: ../../models
+      hash: md5
+      md5: 2126bb15917ff4731ab07267757361ca.dir
+      size: 598504
+      nfiles: 40
+    outs:
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold2_Activity.csv
+      hash: md5
+      md5: c9940fa05a295d711111b963a7dbaea9
+      size: 34129
+  create_training_job@dataset0-model0-3:
+    cmd: mkdir -p prediction && docker run --rm -v $(realpath 
+      /Users/vanderweg/Projects/PG2/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      /Users/vanderweg/Projects/PG2/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata)
+      -v $(realpath prediction):/opt/program/output pls:latest train --dataset-file
+      /$(basename 
+      /Users/vanderweg/Projects/PG2/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata)
+      --split modulo --test-fold 3
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 31fe87063f2cb5a264175a3fe0ab3edf
+      size: 1605005
+    - path: ../../models
+      hash: md5
+      md5: 2126bb15917ff4731ab07267757361ca.dir
+      size: 598504
+      nfiles: 40
+    outs:
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold3_Activity.csv
+      hash: md5
+      md5: 2ac4b1a99ead3f60c38222dd2cfa62b5
+      size: 36082
+  create_training_job@dataset0-model0-4:
+    cmd: mkdir -p prediction && docker run --rm -v $(realpath 
+      /Users/vanderweg/Projects/PG2/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      /Users/vanderweg/Projects/PG2/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata)
+      -v $(realpath prediction):/opt/program/output pls:latest train --dataset-file
+      /$(basename 
+      /Users/vanderweg/Projects/PG2/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata)
+      --split modulo --test-fold 4
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 31fe87063f2cb5a264175a3fe0ab3edf
+      size: 1605005
+    - path: ../../models
+      hash: md5
+      md5: 2126bb15917ff4731ab07267757361ca.dir
+      size: 598504
+      nfiles: 40
+    outs:
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold4_Activity.csv
+      hash: md5
+      md5: a433057b1e30a76b0be6ef91102d83ab
+      size: 34498
+  calculate_metric@dataset0-model0-0:
+    cmd: "METRICS=$(python -c \"import yaml; data = yaml.safe_load(open('default.yaml'));
+      print(' '.join(data['metrics']))\"); mkdir -p metric; for pred_file in prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold0_*.csv;
+      do target=$(basename $pred_file .csv | rev | cut -d'_' -f1 | rev); python $(dvc
+      root)/scripts/metric.py --prediction-path $pred_file --metric-path metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold0_$target.json
+      --selected-metrics $METRICS; done\n"
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 142f206b77cdc15f43c6144e4609c26e
+      size: 6746
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold0_Activity.csv
+      hash: md5
+      md5: 2b9a2c3ea42faa9d064adc175e3530ce
+      size: 36682
+    outs:
+    - path: metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold0_Activity.json
+      hash: md5
+      md5: 65b3d323e14d7277356bf376e2902390
+      size: 38
+  calculate_metric@dataset0-model0-1:
+    cmd: "METRICS=$(python -c \"import yaml; data = yaml.safe_load(open('default.yaml'));
+      print(' '.join(data['metrics']))\"); mkdir -p metric; for pred_file in prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold1_*.csv;
+      do target=$(basename $pred_file .csv | rev | cut -d'_' -f1 | rev); python $(dvc
+      root)/scripts/metric.py --prediction-path $pred_file --metric-path metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold1_$target.json
+      --selected-metrics $METRICS; done\n"
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 142f206b77cdc15f43c6144e4609c26e
+      size: 6746
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold1_Activity.csv
+      hash: md5
+      md5: 5de9a05a6d7ebb8a413f3d9135c98a14
+      size: 34860
+    outs:
+    - path: metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold1_Activity.json
+      hash: md5
+      md5: 95face48eb5590ebf11947c29029d173
+      size: 37
+  calculate_metric@dataset0-model0-2:
+    cmd: "METRICS=$(python -c \"import yaml; data = yaml.safe_load(open('default.yaml'));
+      print(' '.join(data['metrics']))\"); mkdir -p metric; for pred_file in prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold2_*.csv;
+      do target=$(basename $pred_file .csv | rev | cut -d'_' -f1 | rev); python $(dvc
+      root)/scripts/metric.py --prediction-path $pred_file --metric-path metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold2_$target.json
+      --selected-metrics $METRICS; done\n"
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 142f206b77cdc15f43c6144e4609c26e
+      size: 6746
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold2_Activity.csv
+      hash: md5
+      md5: c9940fa05a295d711111b963a7dbaea9
+      size: 34129
+    outs:
+    - path: metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold2_Activity.json
+      hash: md5
+      md5: e81c6cfbd96d3c4107a5a4e8038127ac
+      size: 37
+  calculate_metric@dataset0-model0-3:
+    cmd: "METRICS=$(python -c \"import yaml; data = yaml.safe_load(open('default.yaml'));
+      print(' '.join(data['metrics']))\"); mkdir -p metric; for pred_file in prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold3_*.csv;
+      do target=$(basename $pred_file .csv | rev | cut -d'_' -f1 | rev); python $(dvc
+      root)/scripts/metric.py --prediction-path $pred_file --metric-path metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold3_$target.json
+      --selected-metrics $METRICS; done\n"
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 142f206b77cdc15f43c6144e4609c26e
+      size: 6746
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold3_Activity.csv
+      hash: md5
+      md5: 2ac4b1a99ead3f60c38222dd2cfa62b5
+      size: 36082
+    outs:
+    - path: metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold3_Activity.json
+      hash: md5
+      md5: 9cee1969347b9d0851befb55421339b9
+      size: 39
+  calculate_metric@dataset0-model0-4:
+    cmd: "METRICS=$(python -c \"import yaml; data = yaml.safe_load(open('default.yaml'));
+      print(' '.join(data['metrics']))\"); mkdir -p metric; for pred_file in prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold4_*.csv;
+      do target=$(basename $pred_file .csv | rev | cut -d'_' -f1 | rev); python $(dvc
+      root)/scripts/metric.py --prediction-path $pred_file --metric-path metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold4_$target.json
+      --selected-metrics $METRICS; done\n"
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 142f206b77cdc15f43c6144e4609c26e
+      size: 6746
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold4_Activity.csv
+      hash: md5
+      md5: a433057b1e30a76b0be6ef91102d83ab
+      size: 34498
+    outs:
+    - path: metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold4_Activity.json
+      hash: md5
+      md5: a4fccbe56d25b9d0084e5d01f612eaee
+      size: 39
+  aggregate_metrics@dataset0-model0:
+    cmd: "python $(dvc root)/scripts/fold_metrics.py --metric-dir metric --dataset-name
+      A0A1I9GEU1_NEIME_Kennouche_2019 --model-name pls --output-path metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_aggregated.json
+      --prediction-dir prediction && rm -f metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold*.json
+      && rm -f prediction/A0A1I9GEU1_NEIME_Kennouche_2019_pls_fold*.csv\n"
+    deps:
+    - path: ../../scripts/fold_metrics.py
+      hash: md5
+      md5: 4595e4971c54b5fa16507a3b16dbed47
+      size: 2576
+    - path: metric
+      hash: md5
+      md5: 6fe8bfa204e004e1da45625bf8740479.dir
+      size: 246
+      nfiles: 1
+    outs:
+    - path: metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_aggregated.json
+      hash: md5
+      md5: e7e4f88a8d6d548fc9d01beb234490d9
+      size: 246

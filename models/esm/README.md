@@ -8,7 +8,7 @@ hyper_parameters:
     # HuggingFace model checkpoint identifier for the specific ESM-2 variant
     location: "esm2_t30_150M_UR50D"
     # Scoring method: calculates marginal probabilities for wild-type amino acids
-    scoring_strategy: "wt-marginals"
+    scoring_strategy: "pseudo-ppl"
     # Whether to disable GPU usage (false = use GPU if available)
     nogpu: false
     # Offset index for sequence position alignment in tokenization

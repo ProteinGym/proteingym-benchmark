@@ -9,35 +9,77 @@ stages:
     matrix:
       dataset: ${datasets}
       model: ${models}
+      fold: ${folds}
 
     cmd: >-
+      mkdir -p ${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold} &&
       docker run --rm
       -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename})
-      -v $(realpath ${output.prediction}):/opt/program/output
+      -v $(realpath ${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold}):/opt/program/output
       ${item.model.image}
-      train --dataset-file /$(basename ${item.dataset.input_filename});
+      train
+      --dataset-file /$(basename ${item.dataset.input_filename})
+      --split ${item.dataset.split}
+      --test-fold ${item.fold}
     deps:
       - ../../models
       - ${item.dataset.input_filename}
     outs:
-      - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv:
+      - ${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold}:
           cache: true
-  
+
   calculate_metric:
-    matrix: 
+    matrix:
+      dataset: ${datasets}
+      model: ${models}
+      fold: ${folds}
+
+    cmd: >
+      METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))");
+      mkdir -p ${output.metric}/${item.dataset.name}_${item.model.name}_fold${item.fold};
+      find "${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold}" -name "*.csv" | while read pred_file; do
+      target=$(basename "$pred_file" .csv | rev | cut -d'_' -f1 | rev);
+      python $(dvc root)/scripts/metric.py --prediction-path "$pred_file" --metric-path ${output.metric}/${item.dataset.name}_${item.model.name}_fold${item.fold}/$target.json --selected-metrics $METRICS;
+      done
+
+    deps:
+      - ../../scripts/metric.py
+      - ${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold}
+    metrics:
+      - ${output.metric}/${item.dataset.name}_${item.model.name}_fold${item.fold}:
+          cache: false
+
+  aggregate_metrics:
+    matrix:
       dataset: ${datasets}
       model: ${models}
 
-    cmd: >-
-      METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))") &&
-      python $(dvc root)/scripts/metric.py
-      --prediction-path ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
-      --metric-path ${output.metric}/${item.dataset.name}_${item.model.name}.json
-      --selected-metrics $METRICS
-    
+    cmd: >
+      python $(dvc root)/scripts/utils.py aggregate
+      --metric-dir ${output.metric}
+      --dataset-name ${item.dataset.name}
+      --model-name ${item.model.name}
+      --output-path ${output.metric}/${item.dataset.name}_${item.model.name}_aggregated.json
+      --prediction-dir ${output.prediction} &&
+      rm -rf ${output.metric}/${item.dataset.name}_${item.model.name}_fold* &&
+      rm -rf ${output.prediction}/${item.dataset.name}_${item.model.name}_fold*
+
     deps:
-      - ../../scripts/metric.py
-      - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
+      - ../../scripts/utils.py
+      - ${output.metric}
     metrics:
-      - ${output.metric}/${item.dataset.name}_${item.model.name}.json:
+      - ${output.metric}/${item.dataset.name}_${item.model.name}_aggregated.json:
+          cache: false
+
+  generate_metrics_csv:
+    cmd: >
+      python $(dvc root)/scripts/utils.py generate-csv
+      --metric-dir ${output.metric}
+      --output-path $(dvc root)/benchmark/metrics.csv
+      --game zero_shot
+    deps:
+      - ../../scripts/utils.py
+      - ${output.metric}
+    outs:
+      - ../metrics.csv:
           cache: false
