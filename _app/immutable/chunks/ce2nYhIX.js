@@ -1,4 +1,4 @@
-import{w as j}from"./CNw5quZ4.js";import{b as p}from"./d5Y8u2Ut.js";/*!
+import{w as j}from"./CNw5quZ4.js";import{b as p}from"./BzFXOTpT.js";/*!
  * Copyright (c) Squirrel Chat et al., All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  *
