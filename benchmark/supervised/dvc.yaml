@@ -12,10 +12,10 @@ stages:
       fold: ${folds}
 
     cmd: >-
-      mkdir -p ${output.prediction} &&
+      mkdir -p ${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold} &&
       docker run --rm
       -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename})
-      -v $(realpath ${output.prediction}):/opt/program/output
+      -v $(realpath ${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold}):/opt/program/output
       ${item.model.image}
       train
       --dataset-file /$(basename ${item.dataset.input_filename})
@@ -25,7 +25,7 @@ stages:
       - ../../models
       - ${item.dataset.input_filename}
     outs:
-      - ${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold}_Activity.csv:
+      - ${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold}:
           cache: true
 
   calculate_metric:
@@ -36,17 +36,17 @@ stages:
 
     cmd: >
       METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))");
-      mkdir -p ${output.metric};
-      for pred_file in ${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold}_*.csv; do
-      target=$(basename $pred_file .csv | rev | cut -d'_' -f1 | rev);
-      python $(dvc root)/scripts/metric.py --prediction-path $pred_file --metric-path ${output.metric}/${item.dataset.name}_${item.model.name}_fold${item.fold}_$target.json --selected-metrics $METRICS;
+      mkdir -p ${output.metric}/${item.dataset.name}_${item.model.name}_fold${item.fold};
+      find "${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold}" -name "*.csv" | while read pred_file; do
+      target=$(basename "$pred_file" .csv | rev | cut -d'_' -f1 | rev);
+      python $(dvc root)/scripts/metric.py --prediction-path "$pred_file" --metric-path ${output.metric}/${item.dataset.name}_${item.model.name}_fold${item.fold}/$target.json --selected-metrics $METRICS;
       done
 
     deps:
       - ../../scripts/metric.py
-      - ${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold}.csv
+      - ${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold}
     metrics:
-      - ${output.metric}/${item.dataset.name}_${item.model.name}_fold${item.fold}.json:
+      - ${output.metric}/${item.dataset.name}_${item.model.name}_fold${item.fold}:
           cache: false
 
   aggregate_metrics:
@@ -61,8 +61,8 @@ stages:
       --model-name ${item.model.name}
       --output-path ${output.metric}/${item.dataset.name}_${item.model.name}_aggregated.json
       --prediction-dir ${output.prediction} &&
-      rm -f ${output.metric}/${item.dataset.name}_${item.model.name}_fold*.json &&
-      rm -f ${output.prediction}/${item.dataset.name}_${item.model.name}_fold*.csv
+      rm -rf ${output.metric}/${item.dataset.name}_${item.model.name}_fold* &&
+      rm -rf ${output.prediction}/${item.dataset.name}_${item.model.name}_fold*
 
     deps:
       - ../../scripts/utils.py
@@ -81,5 +81,5 @@ stages:
       - ../../scripts/utils.py
       - ${output.metric}
     outs:
-      - ../../metrics.csv:
+      - ../metrics.csv:
           cache: false

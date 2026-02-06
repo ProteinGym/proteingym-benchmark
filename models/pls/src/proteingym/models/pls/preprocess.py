@@ -50,9 +50,10 @@ def encode(split_X: list[Any], hyper_params: dict[str, Any]) -> np.ndarray:
             - "aa_alphabet": Ordered amino acid alphabet used for encoding
 
     Returns:
-        np.ndarray: 2D numpy array of shape (n_sequences, sequence_length * aa_alphabet_length)
+        np.ndarray: 2D numpy array of shape (n_sequences, max_length * aa_alphabet_length)
             containing one-hot encoded sequences. Each row represents one sequence,
             flattened from its original (sequence_length, aa_alphabet_length) matrix form.
+            Shorter sequences are zero-padded.
 
     Example:
         >>> sequences = ["ACG", "AGC"]
@@ -65,18 +66,17 @@ def encode(split_X: list[Any], hyper_params: dict[str, Any]) -> np.ndarray:
         (2, 60)  # 2 sequences, each 3 * 20 = 60 features
 
     Note:
-        - Sequences are assumed to match the specified sequence_length
         - All amino acids in the sequences must be present in the aa_alphabet
         - The output is flattened; each sequence becomes a 1D array of length
-            sequence_length * aa_alphabet_length
+            max_length * aa_alphabet_length
     """
 
-    sequence_length = len(split_X[0])
+    max_length = max(len(seq) for seq in split_X)
 
-    encodings = np.empty(
+    encodings = np.zeros(
         (
             len(split_X),
-            sequence_length * hyper_params["aa_alphabet_length"],
+            max_length * hyper_params["aa_alphabet_length"],
         )
     )
 
@@ -90,6 +90,6 @@ def encode(split_X: list[Any], hyper_params: dict[str, Any]) -> np.ndarray:
             ]
         )
 
-        encodings[idx] = encoding
+        encodings[idx, :len(encoding)] = encoding
 
     return encodings

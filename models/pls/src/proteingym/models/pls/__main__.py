@@ -56,14 +56,12 @@ def train(
 
     targets = [target.name for target in dataset.assay_targets]
     
-    multi_y = getattr(model_card, 'multi_y', False)
-    
-    if multi_y:
+    for target in targets:
         model = train_model(
             split_dataset=subsets,
             split=split,
             test_fold=test_fold,
-            target=targets,
+            target=target,
             model_card=model_card,
         )
 
@@ -71,36 +69,14 @@ def train(
             split_dataset=subsets,
             split=split,
             test_fold=test_fold,
-            target=targets,
+            target=target,
             model_card=model_card,
             model=model,
         )
 
-        output_file = f"{ContainerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}_fold{test_fold}_all.csv"
+        output_file = f"{ContainerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}_fold{test_fold}_{target}.csv"
         df.write_csv(output_file)
         console.print(f"Saved predictions to {output_file}")
-    else:
-        for target in targets:
-            model = train_model(
-                split_dataset=subsets,
-                split=split,
-                test_fold=test_fold,
-                target=target,
-                model_card=model_card,
-            )
-
-            df = infer(
-                split_dataset=subsets,
-                split=split,
-                test_fold=test_fold,
-                target=target,
-                model_card=model_card,
-                model=model,
-            )
-
-            output_file = f"{ContainerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}_fold{test_fold}_{target}.csv"
-            df.write_csv(output_file)
-            console.print(f"Saved predictions to {output_file}")
 
 
 @app.command()

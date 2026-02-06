@@ -9,7 +9,7 @@ multi_y: false
 
 hyper_parameters:
     # Number of PLS components to extract (dimensionality of the reduced space)
-    n_components: 10
+    n_components: 2
     # Standard 20 amino acid single-letter codes
     aa_alphabet: ["A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y"]
     # Total number of amino acids in the alphabet (must match aa_alphabet length)

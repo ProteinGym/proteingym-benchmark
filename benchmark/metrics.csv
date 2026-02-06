@@ -1,2 +1,2 @@
 game,model,dataset,target,spearman,stdev
-supervised,pls,A0A1I9GEU1_NEIME_Kennouche_2019,Activity,0.021617962937499405,0.0415401803540112
+zero_shot,esm,A4_HUMAN_Seuma_2022_indels,Stability,-0.07823613354613047,0.034296786534000215

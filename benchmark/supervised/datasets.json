@@ -1,9 +1,9 @@
 {
   "datasets": [
     {
-      "name": "A0A1I9GEU1_NEIME_Kennouche_2019",
-      "input_filename": "/home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata",
-      "split": "modulo"
+      "name": "A4_HUMAN_Seuma_2022_indels",
+      "input_filename": "/home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/splits/A4_HUMAN_Seuma_2022_indels.splits.pgdata",
+      "split": "random"
     }
   ]
 }

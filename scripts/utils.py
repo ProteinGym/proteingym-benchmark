@@ -9,28 +9,29 @@ import polars as pl
 def aggregate_metrics(metric_dir: Path, dataset_name: str, model_name: str, output_path: Path, prediction_dir: Path = None):
     """Aggregate metrics from all folds into a single JSON file."""
     
-    pattern = f"{dataset_name}_{model_name}_fold*_*.json"
-    metric_files = list(metric_dir.glob(pattern))
+    pattern = f"{dataset_name}_{model_name}_fold*"
+    fold_dirs = [d for d in metric_dir.glob(pattern) if d.is_dir()]
     
-    if not metric_files:
-        print(f"No metric files found for {dataset_name}_{model_name}")
+    if not fold_dirs:
+        print(f"No fold directories found for {dataset_name}_{model_name}")
         return
     
     targets = {}
-    for metric_file in metric_files:
-        parts = metric_file.stem.split('_')
-        fold = parts[-2].replace('fold', '')
-        target = parts[-1]
+    for fold_dir in fold_dirs:
+        fold = fold_dir.name.split('fold')[-1]
         
-        if target not in targets:
-            targets[target] = {}
-        
-        with open(metric_file) as f:
-            data = json.load(f)
-            for metric_name, value in data.items():
-                if metric_name not in targets[target]:
-                    targets[target][metric_name] = {}
-                targets[target][metric_name][fold] = value
+        for metric_file in fold_dir.glob("*.json"):
+            target = metric_file.stem
+            
+            if target not in targets:
+                targets[target] = {}
+            
+            with open(metric_file) as f:
+                data = json.load(f)
+                for metric_name, value in data.items():
+                    if metric_name not in targets[target]:
+                        targets[target][metric_name] = {}
+                    targets[target][metric_name][fold] = value
     
     result = {}
     for target, metrics in targets.items():
@@ -46,14 +47,18 @@ def aggregate_metrics(metric_dir: Path, dataset_name: str, model_name: str, outp
     
     """Also combines the CSV files."""
     if prediction_dir:
-        pred_pattern = f"{dataset_name}_{model_name}_fold*_*.csv"
-        pred_files = sorted(prediction_dir.glob(pred_pattern))
+        pred_pattern = f"{dataset_name}_{model_name}_fold*"
+        pred_dirs = [d for d in prediction_dir.glob(pred_pattern) if d.is_dir()]
         
-        if pred_files:
-            dfs = [pl.read_csv(f) for f in pred_files]
-            combined = pl.concat(dfs)
-            combined_path = prediction_dir / f"{dataset_name}_{model_name}_combined.csv"
-            combined.write_csv(combined_path)
+        if pred_dirs:
+            dfs = []
+            for pred_dir in pred_dirs:
+                for csv_file in pred_dir.glob("*.csv"):
+                    dfs.append(pl.read_csv(csv_file))
+            if dfs:
+                combined = pl.concat(dfs)
+                combined_path = prediction_dir / f"{dataset_name}_{model_name}_combined.csv"
+                combined.write_csv(combined_path)
 
 
 def generate_metrics_csv(metric_dir: Path, output_path: Path, game: str):
