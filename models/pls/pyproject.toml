@@ -25,3 +25,11 @@ packages = ["src/proteingym"]
 
 [tool.uv.sources]
 proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base.git" }
+
+[tool.ruff]
+line-length = 88
+
+[dependency-groups]
+dev = [
+    "pytest~=8.4.1",
+]
