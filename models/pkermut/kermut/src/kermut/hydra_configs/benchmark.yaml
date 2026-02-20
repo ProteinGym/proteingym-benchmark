@@ -1,0 +1,33 @@
+defaults:
+  - kernel: kermut
+  - data: paths
+  - _self_
+  - override hydra/job_logging: disabled
+
+dataset: ???
+cv_scheme: null
+single:
+  id: null
+  use_id: false
+
+seed: 2024
+overwrite: false
+use_gpu: true
+progress_bar: true
+
+optim:
+  n_steps: 150
+  lr: 0.1
+  progress_bar: false
+
+hydra:
+  output_subdir: null
+  job:
+    chdir: false
+  run:
+    dir: .
+  sweep:
+    dir: .
+    subdir: .
+
+  

@@ -1,0 +1,24 @@
+defaults:
+- embedding: esm2
+- _self_
+
+data_dir: data
+paths:
+  reference_file: data/DMS_substitutions.csv
+  DMS_input_folder: ${data.data_dir}/cv_folds_singles_substitutions
+  conditional_probs: ${data.data_dir}/conditional_probs/ProteinMPNN
+  raw_conditional_probs: ${data.data_dir}/conditional_probs/raw_ProteinMPNN_outputs
+  embeddings_singles: ${data.data_dir}/embeddings/substitutions_singles/ESM2
+  embeddings_multiples: ${data.data_dir}/embeddings/substitutions_multiples/ESM2
+  pdbs: ${data.data_dir}/structures/pdbs
+  coords: ${data.data_dir}/structures/coords
+  zero_shot: ${data.data_dir}/zero_shot_fitness_predictions
+  output_folder: outputs
+  calibration_metrics: results/calibration_metrics
+  merged_scores: results/merged_scores
+  processed_scores: results/processed_scores
+
+test_index: -1
+standardize: true
+sequence_col: mutated_sequence
+target_col: DMS_score

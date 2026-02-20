@@ -1,0 +1,34 @@
+[project]
+name = "pkermut"
+version = "0.1.0"
+description = "Kermut with support for preferential training"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "kermut",
+    "pg_model",
+]
+
+[project.scripts]
+pkermut = "proteingym.models.pg_model.__main__:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+kermut = { workspace = true }
+pg-model = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+    "kermut",
+    "pg_model",
+]
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+    "pytest>=9.0.1",
+    "ruff>=0.14.7",
+]
