@@ -14,8 +14,8 @@ stages:
       size: 90838
     - path: ../../models
       hash: md5
-      md5: 9a659b5061eb09fe7f626e5037a1056f.dir
-      size: 625106
+      md5: 9d041eb5e64e4926b3b4253ed8d0b7e0.dir
+      size: 628421
       nfiles: 41
     outs:
     - path: prediction/ranganathan_esm.csv
