@@ -31,7 +31,7 @@ stages:
     cmd:      
       - >- 
         METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))") &&
-        python $(dvc root)/scripts/metric.py
+        python ../../../scripts/metric.py
         --prediction-path ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
         --metric-path ${output.metric}/${item.dataset.name}_${item.model.name}.json
         --selected-metrics $METRICS
