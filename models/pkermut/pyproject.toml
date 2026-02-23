@@ -5,30 +5,30 @@ description = "Kermut with support for preferential training"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "kermut",
-    "pg_model",
+    "biopython>=1.86",
+    "botorch>=0.17.0",
+    "fair-esm>=2.0.0",
+    "gpytorch>=1.15.1",
+    "h5py>=3.15.1",
+    "hydra-core>=1.3.2",
+    "loguru>=0.7.3",
+    "numpy>=2.4.2",
+    "pandas>=3.0.1",
+    "proteingym-base",
+    "scipy>=1.17.0",
+    "torch>=2.10.0",
+    "tqdm>=4.67.3",
 ]
 
 [project.scripts]
-pkermut = "proteingym.models.pg_model.__main__:app"
+pkermut = "proteingym.models.pkermut.__main__:app"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/proteingym"]
+
 [tool.uv.sources]
-kermut = { workspace = true }
-pg-model = { workspace = true }
-
-[tool.uv.workspace]
-members = [
-    "kermut",
-    "pg_model",
-]
-
-[dependency-groups]
-dev = [
-    "jupyter>=1.1.1",
-    "pytest>=9.0.1",
-    "ruff>=0.14.7",
-]
+proteingym-base = { path = "dist/proteingym_base-0.1.0b1-py3-none-any.whl" }

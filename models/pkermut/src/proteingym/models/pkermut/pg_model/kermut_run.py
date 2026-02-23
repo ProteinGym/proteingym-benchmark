@@ -12,9 +12,9 @@ from kermut.data import (
     split_inputs,
     standardize,
 )
-from kermut.gp import instantiate_gp, optimize_gp, predict
-from pg_model.constants import HYDRA_TEMP_CONFIG_PATH
-from pg_model.pair_sampling import pair_sampling_factory
+from proteingym.models.pkermut.kermut.gp import instantiate_gp, optimize_gp, predict
+from proteingym.models.pkermut.pg_model.constants import HYDRA_TEMP_CONFIG_PATH
+from proteingym.models.pkermut.pg_model.pair_sampling import pair_sampling_factory
 
 
 def _evaluate_dms(cfg: DictConfig) -> None:

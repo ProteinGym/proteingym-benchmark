@@ -4,11 +4,11 @@ from loguru import logger
 import typer
 from typing import Annotated
 
-from pg_model.scripts.coords import extract_3d_coords
-from pg_model.scripts.conditionals import extract_proteinmpnn_conditional_probabilities
-from pg_model.scripts.process_conditionals import process_probabilities
-from pg_model.scripts.embeddings import extract_esm2_embeddings
-from pg_model.scripts.zero_shot import extract_esm2_zero_shots
+from proteingym.models.pkermut.pg_model.scripts.coords import extract_3d_coords
+from proteingym.models.pkermut.pg_model.scripts.conditionals import extract_proteinmpnn_conditional_probabilities
+from proteingym.models.pkermut.pg_model.scripts.process_conditionals import process_probabilities
+from proteingym.models.pkermut.pg_model.scripts.embeddings import extract_esm2_embeddings
+from proteingym.models.pkermut.pg_model.scripts.zero_shot import extract_esm2_zero_shots
 
 
 app = typer.Typer(
