@@ -16,16 +16,16 @@ from proteingym.base import Dataset
 from proteingym.base.model import ModelCard
 from proteingym.base.sequence import SequenceType
 
-from pg_model.kermut_run import main as kermut_run
-from pg_model.scripts.precompute_artifacts import precompute_artifacts
-from pg_model.utils import (
+from .pg_model.kermut_run import main as kermut_run
+from .pg_model.scripts.precompute_artifacts import precompute_artifacts
+from .pg_model.utils import (
     download_file_from_s3,
     download_artifacts_from_s3,
     prepare_hydra_configs,
     log_and_save_metrics,
 )
-from pg_model.utils import variant_sequence_to_mutations, prepare_dataframe, dump_pg_structure
-from pg_model.constants import HYDRA_CONFIG_PATH, HYDRA_TEMP_CONFIG_PATH
+from .pg_model.utils import variant_sequence_to_mutations, prepare_dataframe, dump_pg_structure
+from .pg_model.constants import HYDRA_CONFIG_PATH, HYDRA_TEMP_CONFIG_PATH
 
 
 CUDA_AVAILABLE = torch.cuda.is_available()
