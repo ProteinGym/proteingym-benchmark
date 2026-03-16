@@ -4,7 +4,7 @@ import hydra
 import pandas as pd
 from omegaconf import DictConfig
 
-from kermut.calibration import (
+from proteingym.models.pkermut.kermut.calibration import (
     compute_confidence_interval_based_metrics,
     compute_error_based_metrics,
 )

@@ -6,7 +6,7 @@ from gpytorch.models import ExactGP
 from gpytorch.means import LinearMean
 from omegaconf import DictConfig
 
-from kermut.kernels import CompositeKernel
+from proteingym.models.pkermut.kermut.kernels import CompositeKernel
 
 from botorch.models.pairwise_gp import (
     PairwiseGP,

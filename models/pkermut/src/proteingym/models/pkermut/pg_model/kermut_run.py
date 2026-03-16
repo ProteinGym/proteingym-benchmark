@@ -6,7 +6,7 @@ import torch
 from omegaconf import DictConfig
 
 
-from kermut.data import (
+from proteingym.models.pkermut.kermut.data import (
     prepare_GP_inputs,
     prepare_GP_kwargs,
     split_inputs,
