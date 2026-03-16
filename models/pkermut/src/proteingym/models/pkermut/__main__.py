@@ -3,11 +3,9 @@ from pathlib import Path
 from typing import Annotated
 import typer
 from rich.console import Console
-import json
-import os
 from loguru import logger
 
-import pandas as pd
+import polars as pl
 from hydra import initialize_config_dir, compose
 
 import torch
@@ -19,8 +17,6 @@ from proteingym.base.sequence import SequenceType
 from .pg_model.kermut_run import main as kermut_run
 from .pg_model.scripts.precompute_artifacts import precompute_artifacts
 from .pg_model.utils import (
-    download_file_from_s3,
-    download_artifacts_from_s3,
     prepare_hydra_configs,
     log_and_save_metrics,
 )
@@ -78,15 +74,18 @@ def train(
 
         if "mutant" not in df.columns:
             logger.info("No mutant column in the dataframe. Creating a copy with mutation information")
-            df["mutant"] = df["sequence"].map(lambda x: variant_sequence_to_mutations(x, reference_sequence))
+            df = df.with_columns(
+                pl.col("sequence").map_elements(lambda x: variant_sequence_to_mutations(x, reference_sequence),
+                                                return_dtype=pl.String).alias("mutant")
+            )
             variant_matches_reference = df["sequence"] == reference_sequence
             if variant_matches_reference.any():
                 logger.error("Dataframe contains variants identical to reference!")
                 logger.error(df[variant_matches_reference])
-            df.to_csv(data_path, index=False)
+            df.write_csv(data_path)
 
         # TODO: Parse structure form dataset object
-        pdb_path = str(Path(temp_dir / "structure.pdb"))
+        pdb_path = str(Path(temp_dir) / "structure.pdb")
         structure = dataset.structures[0]
         dump_pg_structure(pdb_path, structure)
 
@@ -124,7 +123,7 @@ def train(
             cfg = compose(config_name="benchmark")
             kermut_run(cfg)
 
-    results = pd.read_csv(Path(output_path) / f"{dataset.name}.csv")
+    results = pl.read_csv(Path(output_path) / f"{dataset.name}.csv")
     results.rename(columns={"y_var": "y_pred_var"}, inplace=True)
     results[["sequence", "split", "y", "y_pred", "y_pred_var"]].to_csv(
         Path(output_path) / "predictions.csv"

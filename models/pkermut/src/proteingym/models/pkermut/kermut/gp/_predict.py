@@ -4,7 +4,7 @@ import pandas as pd
 import torch
 from gpytorch.likelihoods import GaussianLikelihood
 
-from kermut.gp import KermutGP
+from proteingym.models.pkermut.kermut.gp import KermutGP
 
 
 def predict(

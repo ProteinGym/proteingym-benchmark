@@ -2,7 +2,7 @@ from typing import Sequence
 
 import torch
 
-from kermut.constants import ALPHABET, AA_TO_IDX
+from proteingym.models.pkermut.kermut.constants import ALPHABET, AA_TO_IDX
 
 
 class Tokenizer:

@@ -8,7 +8,7 @@ import pandas as pd
 import torch
 from omegaconf import DictConfig
 
-from kermut.constants import ZERO_SHOT_NAME_TO_COL
+from proteingym.models.pkermut.kermut.constants import ZERO_SHOT_NAME_TO_COL
 
 from ._tokenizer import Tokenizer
 
