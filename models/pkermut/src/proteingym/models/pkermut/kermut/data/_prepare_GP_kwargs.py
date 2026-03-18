@@ -24,7 +24,9 @@ def prepare_GP_kwargs(cfg: DictConfig, DMS_id: str, wt_sequence: str, dtype) -> 
         cfg.kernel.structure_kernel.use_site_comparison
         or cfg.kernel.structure_kernel.use_mutation_comparison
     ):
-        conditional_probs = np.load(Path(cfg.data.paths.conditional_probs) / f"{DMS_id}.npy")
+        conditional_probs = np.load(
+            Path(cfg.data.paths.conditional_probs) / f"{DMS_id}.npy"
+        )
         inputs["conditional_probs"] = torch.tensor(
             conditional_probs, dtype=torch.get_default_dtype()
         )

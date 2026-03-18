@@ -49,11 +49,17 @@ class BaseKernel(Kernel):
         x2_idx: torch.Tensor,
         device: torch.device,
     ) -> torch.Tensor:
-        one_hot_x1 = torch.zeros(x1_idx[:, 0].size(0), x1_idx[:, 0].max().item() + 1).to(device)
-        one_hot_x2 = torch.zeros(x2_idx[:, 0].size(0), x2_idx[:, 0].max().item() + 1).to(device)
+        one_hot_x1 = torch.zeros(
+            x1_idx[:, 0].size(0), x1_idx[:, 0].max().item() + 1
+        ).to(device)
+        one_hot_x2 = torch.zeros(
+            x2_idx[:, 0].size(0), x2_idx[:, 0].max().item() + 1
+        ).to(device)
         one_hot_x1.scatter_(1, x1_idx[:, 0].unsqueeze(1), 1)
         one_hot_x2.scatter_(1, x2_idx[:, 0].unsqueeze(1), 1)
-        return torch.transpose(torch.transpose(k_mult @ one_hot_x2, 0, 1) @ one_hot_x1, 0, 1)
+        return torch.transpose(
+            torch.transpose(k_mult @ one_hot_x2, 0, 1) @ one_hot_x1, 0, 1
+        )
 
 
 class SiteComparisonKernel(BaseKernel):
@@ -81,8 +87,12 @@ class SiteComparisonKernel(BaseKernel):
         h_lengthscale: float = 1.0,
     ):
         super(SiteComparisonKernel, self).__init__(wt_sequence)
-        self.register_buffer("hellinger", _hellinger_distance(conditional_probs, conditional_probs))
-        self.register_parameter("raw_lengthscale", torch.nn.Parameter(torch.tensor(h_lengthscale)))
+        self.register_buffer(
+            "hellinger", _hellinger_distance(conditional_probs, conditional_probs)
+        )
+        self.register_parameter(
+            "raw_lengthscale", torch.nn.Parameter(torch.tensor(h_lengthscale))
+        )
         self.register_constraint("raw_lengthscale", Positive())
 
     def forward(
@@ -127,7 +137,9 @@ class ProbabilityKernel(BaseKernel):
     ):
         super(ProbabilityKernel, self).__init__(wt_sequence)
         self.register_buffer("conditional_probs", conditional_probs.float())
-        self.register_parameter("raw_lengthscale", torch.nn.Parameter(torch.tensor(p_lengthscale)))
+        self.register_parameter(
+            "raw_lengthscale", torch.nn.Parameter(torch.tensor(p_lengthscale))
+        )
         self.register_constraint("raw_lengthscale", Positive())
 
     def forward(
@@ -176,14 +188,20 @@ class DistanceKernel(BaseKernel):
     ):
         super(DistanceKernel, self).__init__(wt_sequence)
         self.register_buffer("coords", coords.float())
-        self.register_parameter("raw_lengthscale", torch.nn.Parameter(torch.tensor(d_lengthscale)))
+        self.register_parameter(
+            "raw_lengthscale", torch.nn.Parameter(torch.tensor(d_lengthscale))
+        )
         self.register_constraint("raw_lengthscale", Positive())
 
-    def forward(self, x1_idx: torch.Tensor, x2_idx: torch.Tensor, **kwargs) -> torch.Tensor:
+    def forward(
+        self, x1_idx: torch.Tensor, x2_idx: torch.Tensor, **kwargs
+    ) -> torch.Tensor:
         """Compute distance-based kernel between mutation sites."""
         x1_coords = self.coords[x1_idx[:, 1]]
         x2_coords = self.coords[x2_idx[:, 1]]
-        distances = torch.cdist(x1_coords, x2_coords, p=2.0, compute_mode=CDIST_COMPUTE_MODE)
+        distances = torch.cdist(
+            x1_coords, x2_coords, p=2.0, compute_mode=CDIST_COMPUTE_MODE
+        )
         return torch.exp(-self.lengthscale * distances)
 
     @property
@@ -242,7 +260,9 @@ class StructureKernel(BaseKernel):
 
         if use_site_comparison:
             assert conditional_probs is not None
-            self.k_H = SiteComparisonKernel(wt_sequence, conditional_probs, h_lengthscale)
+            self.k_H = SiteComparisonKernel(
+                wt_sequence, conditional_probs, h_lengthscale
+            )
 
         if use_mutation_comparison:
             assert conditional_probs is not None
@@ -252,7 +272,9 @@ class StructureKernel(BaseKernel):
             assert coords is not None
             self.k_d = DistanceKernel(wt_sequence, coords, d_lengthscale)
 
-    def forward(self, x1: torch.LongTensor, x2: torch.LongTensor, **kwargs) -> torch.Tensor:
+    def forward(
+        self, x1: torch.LongTensor, x2: torch.LongTensor, **kwargs
+    ) -> torch.Tensor:
         # Get mutation indices
         x1_idx, x2_idx, _, _ = self._get_mutation_indices(x1, x2)
 

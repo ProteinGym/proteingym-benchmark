@@ -63,7 +63,8 @@ def compute_error_based_metrics(
 
         # Compute expected normalized calibration error
         ence = df_curve.groupby(["fold"]).apply(
-            lambda x: np.mean(np.abs(x["RMV"] - x["RMSE"]) / x["RMV"]), include_groups=False
+            lambda x: np.mean(np.abs(x["RMV"] - x["RMSE"]) / x["RMV"]),
+            include_groups=False,
         )
         # Compute coefficient of variation
         cv = np.zeros(len(_df["fold"].unique()))
@@ -71,10 +72,14 @@ def compute_error_based_metrics(
         for fold in _df["fold"].unique():
             df_fold = _df[_df["fold"] == fold]
             mu_sig = np.mean(df_fold["y_std"])
-            _cv = np.sqrt(np.sum((df_fold["y_std"] - mu_sig) ** 2 / (len(df_fold) - 1)) / mu_sig)
+            _cv = np.sqrt(
+                np.sum((df_fold["y_std"] - mu_sig) ** 2 / (len(df_fold) - 1)) / mu_sig
+            )
             cv[fold] = _cv
 
-        df_metrics = pd.DataFrame(dict(fold=_df["fold"].unique(), ENCE=ence.values, CV=cv))
+        df_metrics = pd.DataFrame(
+            dict(fold=_df["fold"].unique(), ENCE=ence.values, CV=cv)
+        )
 
     except ValueError:
         if DMS_id is None and cv_scheme is None:
@@ -84,7 +89,9 @@ def compute_error_based_metrics(
                 f"Error-based calibration metrics could not be computed for {DMS_id} ({cv_scheme})"
             )
 
-        df_metrics = pd.DataFrame(dict(fold=_df["fold"].unique(), ENCE=np.nan, CV=np.nan))
+        df_metrics = pd.DataFrame(
+            dict(fold=_df["fold"].unique(), ENCE=np.nan, CV=np.nan)
+        )
         df_curve = pd.DataFrame(dict(bin=np.nan, fold=np.nan, RMSE=np.nan, RMV=np.nan))
 
     df_metrics["fold"] = df_metrics["fold"].astype(int)

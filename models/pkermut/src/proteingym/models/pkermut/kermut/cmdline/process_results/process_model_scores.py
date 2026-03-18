@@ -39,9 +39,12 @@ def _process_single_model(cfg: DictConfig, df: pd.DataFrame, model_name: str) ->
         for DMS_id in df_cv["DMS_id"]:
             df_predictions = pd.read_csv(cv_dir / f"{DMS_id}.csv")
             corr, _ = spearmanr(
-                df_predictions[cfg.target_col].values, df_predictions[cfg.pred_col].values
+                df_predictions[cfg.target_col].values,
+                df_predictions[cfg.pred_col].values,
             )
-            mse = ((df_predictions[cfg.target_col] - df_predictions[cfg.pred_col]) ** 2).mean()
+            mse = (
+                (df_predictions[cfg.target_col] - df_predictions[cfg.pred_col]) ** 2
+            ).mean()
             df_cv.loc[df_cv["DMS_id"] == DMS_id, "Spearman"] = corr
             df_cv.loc[df_cv["DMS_id"] == DMS_id, "MSE"] = mse
         out[cv_scheme] = df_cv

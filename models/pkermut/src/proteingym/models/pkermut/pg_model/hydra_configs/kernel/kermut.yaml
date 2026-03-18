@@ -1,0 +1,21 @@
+composition: weighted_sum
+embedding_dim: 1280
+embedding_type: ESM2
+name: kermut
+noise_prior_scale: 0.1
+sequence_kernel:
+  _target_: proteingym.models.pkermut.kermut.kernels.SequenceKernel
+  kernel_type: RBF
+structure_kernel:
+  _target_: proteingym.models.pkermut.kermut.kernels.StructureKernel
+  d_lengthscale: 1.0
+  h_lengthscale: 1.0
+  p_lengthscale: 1.0
+  use_distance_comparison: true
+  use_mutation_comparison: true
+  use_site_comparison: true
+use_prior: true
+use_sequence_kernel: true
+use_structure_kernel: true
+use_zero_shot: true
+zero_shot_method: ESM2/650M

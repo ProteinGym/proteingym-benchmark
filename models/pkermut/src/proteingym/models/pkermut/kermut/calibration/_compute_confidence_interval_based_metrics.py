@@ -48,7 +48,8 @@ def compute_confidence_interval_based_metrics(
         df_metrics = df_metrics.assign(ECE=np.nan)
         n = (n_bins + 1) * len(_df["fold"].unique())
         df_curve = pd.DataFrame(
-            np.full((n, 3), fill_value=np.nan), columns=["fold", "confidence", "percentile"]
+            np.full((n, 3), fill_value=np.nan),
+            columns=["fold", "confidence", "percentile"],
         )
 
         for i, fold in enumerate(_df["fold"].unique()):
@@ -60,7 +61,9 @@ def compute_confidence_interval_based_metrics(
             count_arr = np.vstack(
                 [
                     np.abs(y_target - y_pred)
-                    <= stats.norm.interval(q, loc=np.zeros(len(y_pred)), scale=np.sqrt(y_var))[1]
+                    <= stats.norm.interval(
+                        q, loc=np.zeros(len(y_pred)), scale=np.sqrt(y_var)
+                    )[1]
                     for q in perc
                 ]
             )
@@ -78,7 +81,9 @@ def compute_confidence_interval_based_metrics(
         if DMS_id is None and cv_scheme is None:
             print("CI-based calibration metrics could not be computed")
         else:
-            print(f"CI-based calibration metrics could not be computed for {DMS_id} ({cv_scheme})")
+            print(
+                f"CI-based calibration metrics could not be computed for {DMS_id} ({cv_scheme})"
+            )
         df_metrics = pd.DataFrame(dict(fold=_df["fold"].unique(), ECE=np.nan))
         df_curve = pd.DataFrame(
             dict(fold=_df["fold"].unique(), confidence=np.nan, percentile=np.nan)

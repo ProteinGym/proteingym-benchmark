@@ -52,7 +52,10 @@ def predict(
 
     if preferential:
         x_test = (
-            torch.cat([x.unsqueeze(-1) if len(x.shape) == 1 else x for x in test_inputs], dim=1),
+            torch.cat(
+                [x.unsqueeze(-1) if len(x.shape) == 1 else x for x in test_inputs],
+                dim=1,
+            ),
         )
     else:
         x_test = tuple([x for x in test_inputs if x is not None])

@@ -35,7 +35,9 @@ def filter_datasets(cfg: DictConfig) -> pd.DataFrame:
 
     df_ref = df_ref[["DMS_id", "target_seq"]]
     if not cfg.overwrite:
-        output_dir = Path(cfg.data.paths.output_folder) / cfg.cv_scheme / cfg.kernel.name
+        output_dir = (
+            Path(cfg.data.paths.output_folder) / cfg.cv_scheme / cfg.kernel.name
+        )
         existing_results = []
         for DMS_id in df_ref["DMS_id"]:
             if (output_dir / f"{DMS_id}.csv").exists():

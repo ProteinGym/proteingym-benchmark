@@ -34,7 +34,9 @@ def _compute_calibration_metrics_single_model(cfg: DictConfig, model_name: str) 
         out_dir.mkdir(exist_ok=True, parents=True)
 
         df_metrics = pd.DataFrame(columns=["DMS_id", "fold", "ENCE", "CV", "ECE"])
-        df_ci_curve = pd.DataFrame(columns=["DMS_id", "fold", "confidence", "percentile"])
+        df_ci_curve = pd.DataFrame(
+            columns=["DMS_id", "fold", "confidence", "percentile"]
+        )
         df_error_curve = pd.DataFrame(columns=["DMS_id", "fold", "bin", "RMSE", "RMV"])
 
         for i, row in df_ref.iterrows():
@@ -44,19 +46,23 @@ def _compute_calibration_metrics_single_model(cfg: DictConfig, model_name: str) 
             except FileNotFoundError:
                 print(f"File not found: {DMS_id}.csv")
                 continue
-            _df_error_based_metrics, _df_error_based_curve = compute_error_based_metrics(
-                df=df,
-                n_bins=cfg.postprocessing.error_bins,
-                DMS_id=DMS_id,
-                split=cv_scheme,
-                return_calibration_curve=True,
+            _df_error_based_metrics, _df_error_based_curve = (
+                compute_error_based_metrics(
+                    df=df,
+                    n_bins=cfg.postprocessing.error_bins,
+                    DMS_id=DMS_id,
+                    split=cv_scheme,
+                    return_calibration_curve=True,
+                )
             )
-            _df_ci_based_metrics, _df_ci_based_curve = compute_confidence_interval_based_metrics(
-                df=df,
-                n_bins=cfg.postprocessing.confidence_interval_bins,
-                DMS_id=DMS_id,
-                split=cv_scheme,
-                return_calibration_curve=True,
+            _df_ci_based_metrics, _df_ci_based_curve = (
+                compute_confidence_interval_based_metrics(
+                    df=df,
+                    n_bins=cfg.postprocessing.confidence_interval_bins,
+                    DMS_id=DMS_id,
+                    split=cv_scheme,
+                    return_calibration_curve=True,
+                )
             )
             _df_metrics = pd.merge(
                 left=_df_error_based_metrics, right=_df_ci_based_metrics, on="fold"
@@ -67,8 +73,12 @@ def _compute_calibration_metrics_single_model(cfg: DictConfig, model_name: str) 
             _df_ci_based_curve["DMS_id"] = DMS_id
 
             df_metrics = pd.concat([df_metrics, _df_metrics], ignore_index=True)
-            df_error_curve = pd.concat([df_error_curve, _df_error_based_curve], ignore_index=True)
-            df_ci_curve = pd.concat([df_ci_curve, _df_ci_based_curve], ignore_index=True)
+            df_error_curve = pd.concat(
+                [df_error_curve, _df_error_based_curve], ignore_index=True
+            )
+            df_ci_curve = pd.concat(
+                [df_ci_curve, _df_ci_based_curve], ignore_index=True
+            )
 
         df_metrics.to_csv(out_dir / "metrics.csv", index=False)
         df_ci_curve.to_csv(out_dir / "ci_curve.csv", index=False)

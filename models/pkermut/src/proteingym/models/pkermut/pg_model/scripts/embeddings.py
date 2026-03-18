@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 app = typer.Typer(
     help="Extract ESM2 embeddings for each sequence in a protein variant dataset",
-    add_completion=True
+    add_completion=True,
 )
 
 
@@ -48,36 +48,20 @@ def _filter_datasets(cfg: DictConfig, embedding_dir: Path) -> pd.DataFrame:
 
 @app.command()
 def extract_esm2_embeddings(
-    data_path: Annotated[
-        str,
-        typer.Option(
-            help="Path the the variant dataset."
-        )
-    ],
+    data_path: Annotated[str, typer.Option(help="Path the the variant dataset.")],
     dataset_name: Annotated[
         str,
         typer.Option(
             help="Name of the dataset. Used for naming the dataframe containing zero shot scores"
-        )
+        ),
     ],
     embedding_dir: Annotated[
-        str,
-        typer.Option(
-            help="Directory to store the embeddings"
-        )
+        str, typer.Option(help="Directory to store the embeddings")
     ],
     toks_per_batch: Annotated[
-        int,
-        typer.Option(
-            help="Number of tokens to process per batch"
-        )
+        int, typer.Option(help="Number of tokens to process per batch")
     ] = 16384,
-    device: Annotated[
-        str,
-        typer.Option(
-            help="PyTorch backend device"
-        )
-    ] = "cpu"
+    device: Annotated[str, typer.Option(help="PyTorch backend device")] = "cpu",
 ) -> None:
     data_path = Path(data_path)
     model_name = "esm2_t33_650M_UR50D"
@@ -95,11 +79,11 @@ def extract_esm2_embeddings(
 
     mutants = df["mutant"].tolist()
     sequences = df["sequence"].tolist()
-    batched_dataset = FastaBatchedDataset(sequence_strs=sequences, sequence_labels=mutants)
-
-    batches = batched_dataset.get_batch_indices(
-        toks_per_batch, extra_toks_per_seq=1
+    batched_dataset = FastaBatchedDataset(
+        sequence_strs=sequences, sequence_labels=mutants
     )
+
+    batches = batched_dataset.get_batch_indices(toks_per_batch, extra_toks_per_seq=1)
     data_loader = torch.utils.data.DataLoader(
         batched_dataset,
         collate_fn=alphabet.get_batch_converter(truncation_seq_length=1022),
@@ -124,7 +108,10 @@ def extract_esm2_embeddings(
                 truncate_len = min(1022, len(strs[i]))
                 all_labels.append(label)
                 all_representations.append(
-                    representations[33][i, 1 : truncate_len + 1].mean(axis=0).clone().numpy()
+                    representations[33][i, 1 : truncate_len + 1]
+                    .mean(axis=0)
+                    .clone()
+                    .numpy()
                 )
 
     assert mutants == all_labels
@@ -136,7 +123,9 @@ def extract_esm2_embeddings(
     # Store data as HDF5
     with h5py.File(embedding_dir / f"{dataset_name}.h5", "w") as h5f:
         for key, value in embeddings_dict.items():
-            h5f.create_dataset(key, data=value, dtype=h5py.string_dtype() if key == "mutant" else None)
+            h5f.create_dataset(
+                key, data=value, dtype=h5py.string_dtype() if key == "mutant" else None
+            )
 
 
 if __name__ == "__main__":

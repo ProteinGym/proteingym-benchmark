@@ -43,7 +43,9 @@ def instantiate_gp(
     train_inputs = tuple([x for x in train_inputs if x is not None])
 
     if cfg.preferential:
-        train_inputs = [x.unsqueeze(-1) if len(x.shape) == 1 else x for x in train_inputs]
+        train_inputs = [
+            x.unsqueeze(-1) if len(x.shape) == 1 else x for x in train_inputs
+        ]
         input_shapes = [x.shape for x in train_inputs if x is not None]
         train_inputs = torch.cat(train_inputs, dim=1)
         gp = PKermutGP(

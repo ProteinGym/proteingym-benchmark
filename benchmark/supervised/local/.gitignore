@@ -1,4 +1,0 @@
-.dvc/cache
-.dvc/tmp
-dvc.lock
-*.json

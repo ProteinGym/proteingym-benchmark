@@ -18,20 +18,14 @@ def extract_3d_coords(
         str,
         typer.Option(
             help="Name of the dataset. Used for naming the dataframe containing zero shot scores"
-        )
+        ),
     ],
     pdb_file: Annotated[
-        str,
-        typer.Option(
-            help="PDB file to extract 3D coordinates from"
-        )
+        str, typer.Option(help="PDB file to extract 3D coordinates from")
     ],
     coords_dir: Annotated[
-        str,
-        typer.Option(
-            help="Directory to save the coordinates to"
-        )
-    ]
+        str, typer.Option(help="Directory to save the coordinates to")
+    ],
 ) -> None:
     coords_dir = Path(coords_dir)
     coords_dir.mkdir(exist_ok=True, parents=True)

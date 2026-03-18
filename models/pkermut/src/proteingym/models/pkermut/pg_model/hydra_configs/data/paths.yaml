@@ -1,0 +1,23 @@
+data_dir: /var/folders/d8/bxgj52rj3w934zctbjr8v2hh0000gn/T/tmpzm4vfal3
+defaults:
+- embedding: esm2
+- _self_
+paths:
+  DMS_input_folder: /var/folders/d8/bxgj52rj3w934zctbjr8v2hh0000gn/T/tmpzm4vfal3
+  calibration_metrics: results/calibration_metrics
+  conditional_probs: /var/folders/d8/bxgj52rj3w934zctbjr8v2hh0000gn/T/tmpzm4vfal3/conditional_probs
+  coords: ${data.data_dir}/structures/coords
+  embeddings: /var/folders/d8/bxgj52rj3w934zctbjr8v2hh0000gn/T/tmpzm4vfal3/embeddings
+  embeddings_multiples: ${data.data_dir}/embeddings/substitutions_multiples/ESM2
+  embeddings_singles: ${data.data_dir}/embeddings/substitutions_singles/ESM2
+  merged_scores: results/merged_scores
+  output_folder: /var/folders/d8/bxgj52rj3w934zctbjr8v2hh0000gn/T/tmpzm4vfal3/output
+  pdbs: ${data.data_dir}/structures/pdbs
+  processed_scores: results/processed_scores
+  raw_conditional_probs: ${data.data_dir}/conditional_probs/raw_ProteinMPNN_outputs
+  reference_file: data/DMS_substitutions.csv
+  zero_shot: ${data.data_dir}/zero_shot_fitness_predictions
+sequence_col: sequence
+standardize: true
+target_col: target
+test_index: -1

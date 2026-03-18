@@ -28,17 +28,14 @@ def process_probabilities(
         ),
     ],
     pdb_file: Annotated[
-        str,
-        typer.Option(
-            help="PDB file to extract 3D coordinates from"
-        )
+        str, typer.Option(help="PDB file to extract 3D coordinates from")
     ],
     conditional_probs_dir: Annotated[
         str,
         typer.Option(
             help="Where to store the processed probabilities",
         ),
-    ]
+    ],
 ) -> None:
     proteinmpnn_dir = Path(conditional_probs_dir)
     raw_proteinmpnn_dir = Path(conditional_probs_dir) / "raw_ProteinMPNN_outputs"

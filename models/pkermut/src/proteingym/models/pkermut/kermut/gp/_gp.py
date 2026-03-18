@@ -93,6 +93,7 @@ class PKermutGP(PairwiseGP):
     """Minimally modified version of the class above to make the GP preferential.
     A number of the PairwiseGP methods are overwritten conform with Kermut's composite kernel
     and to implement the linear mean module."""
+
     def __init__(
         self,
         train_inputs,
@@ -128,7 +129,9 @@ class PKermutGP(PairwiseGP):
     def _calc_covar(self, X1: Tensor, X2: Tensor) -> Tensor | LinearOperator:
         # Return spherical covar (unit variance, zero covar) when covar module not initialized yet
         if self.covar_module.__class__.__name__ != "CompositeKernel":
-            return torch.eye(X1.shape[0], device=self.device, dtype=torch.get_default_dtype())
+            return torch.eye(
+                X1.shape[0], device=self.device, dtype=torch.get_default_dtype()
+            )
         X1_split = self.reconstruct_input_tuple(X1)[
             :2
         ]  # only first two for now since zeroshot is ignored
