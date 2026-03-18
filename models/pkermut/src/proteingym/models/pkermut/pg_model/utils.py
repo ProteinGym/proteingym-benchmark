@@ -144,5 +144,5 @@ def variant_sequence_to_mutations(variant: str, reference: str) -> str:
     )
 
 
-def is_sagemaker() -> bool:
-    return os.path.exists("/opt/ml") or "SM_TRAINING_ENV" in os.environ
+def is_container() -> bool:
+    return os.path.exists("/opt/program")
