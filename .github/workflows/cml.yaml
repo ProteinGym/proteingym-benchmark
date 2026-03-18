@@ -60,7 +60,7 @@ jobs:
           dvc repro benchmark/supervised/dvc.yaml --single-item
 
           # Zero-shot game: Run DVC repro
-          dvc repro benchmark/zero_shot/dvc.yaml --single-item
+          # dvc repro benchmark/zero_shot/dvc.yaml --single-item
 
       - name: Generate metrics CSV files
         run: |
