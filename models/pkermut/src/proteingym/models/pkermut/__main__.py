@@ -16,7 +16,7 @@ from proteingym.base.sequence import SequenceType
 
 from .pg_model.kermut_run import main as kermut_run
 from .pg_model.scripts.precompute_artifacts import precompute_artifacts
-from .pg_model.utils import prepare_hydra_configs, log_and_save_metrics, is_sagemaker
+from .pg_model.utils import prepare_hydra_configs, log_and_save_metrics, is_container
 from .pg_model.utils import (
     variant_sequence_to_mutations,
     prepare_dataframe,
@@ -74,7 +74,7 @@ def train(
     with tempfile.TemporaryDirectory() as temp_dir:
         # TODO: Read splits from dataset object
         data_path = str(Path(temp_dir) / f"{dataset.name}.csv")
-        if is_sagemaker():
+        if is_container():
             output_path = str(ContainerTrainingJobPath.OUTPUT_PATH)
         else:
             output_path = str(Path(temp_dir) / "output")
