@@ -16,11 +16,12 @@ from proteingym.base.sequence import SequenceType
 
 from .pg_model.kermut_run import main as kermut_run
 from .pg_model.scripts.precompute_artifacts import precompute_artifacts
+from .pg_model.utils import prepare_hydra_configs, log_and_save_metrics, is_sagemaker
 from .pg_model.utils import (
-    prepare_hydra_configs,
-    log_and_save_metrics,
+    variant_sequence_to_mutations,
+    prepare_dataframe,
+    dump_pg_structure,
 )
-from .pg_model.utils import variant_sequence_to_mutations, prepare_dataframe, dump_pg_structure
 from .pg_model.constants import HYDRA_CONFIG_PATH, HYDRA_TEMP_CONFIG_PATH
 
 
@@ -60,7 +61,11 @@ def train(
 
     dataset = Dataset.from_path(dataset_file)
     model_card = ModelCard.from_path(model_card_file)
-    reference_sequence = str(next(seq.value for seq in dataset.sequences if seq.type == SequenceType.WILD_TYPE))
+    reference_sequence = str(
+        next(
+            seq.value for seq in dataset.sequences if seq.type == SequenceType.WILD_TYPE
+        )
+    )
 
     torch.set_default_dtype(torch.float32)
     if model_card.hyper_parameters["preferential"]:
@@ -68,15 +73,24 @@ def train(
 
     with tempfile.TemporaryDirectory() as temp_dir:
         # TODO: Read splits from dataset object
-        data_path = str(Path(temp_dir) / "data.csv")
-        output_path = str(ContainerTrainingJobPath.OUTPUT_PATH)
+        data_path = str(Path(temp_dir) / f"{dataset.name}.csv")
+        if is_sagemaker():
+            output_path = str(ContainerTrainingJobPath.OUTPUT_PATH)
+        else:
+            output_path = str(Path(temp_dir) / "output")
         df = prepare_dataframe(dataset, test_size=0.2)
 
         if "mutant" not in df.columns:
-            logger.info("No mutant column in the dataframe. Creating a copy with mutation information")
+            logger.info(
+                "No mutant column in the dataframe. Creating a copy with mutation information"
+            )
             df = df.with_columns(
-                pl.col("sequence").map_elements(lambda x: variant_sequence_to_mutations(x, reference_sequence),
-                                                return_dtype=pl.String).alias("mutant")
+                pl.col("sequence")
+                .map_elements(
+                    lambda x: variant_sequence_to_mutations(x, reference_sequence),
+                    return_dtype=pl.String,
+                )
+                .alias("mutant")
             )
             variant_matches_reference = df["sequence"] == reference_sequence
             if variant_matches_reference.any():
@@ -101,19 +115,23 @@ def train(
             )
 
         params_to_update = {
-            "dataset.name": dataset.name,
+            "dataset_name": dataset.name,
             # TODO: Parse target from Dataset object
-            "target": dataset.assay_targets[0].name,
+            "target": "target",
             "data_artifact_path": temp_dir,
-            "DMS_input_folder": str(Path(temp_dir) / "datasets"),
+            "DMS_input_folder": temp_dir,
             "embedding_path": str(Path(temp_dir) / "embeddings"),
             "conditional_probs_path": str(Path(temp_dir) / "conditional_probs"),
             "reference_sequence": reference_sequence,
             "output_path": output_path,
             "n_steps": model_card.hyper_parameters["n_steps"],
-            "use_gpu": True if model_card.hyper_parameters["device"] == "cuda" else False,
+            "use_gpu": True
+            if model_card.hyper_parameters["device"] == "cuda"
+            else False,
             "preferential": model_card.hyper_parameters["preferential"],
-            "preference_sampling_strategy": model_card.hyper_parameters["preference_sampling_strategy"],
+            "preference_sampling_strategy": model_card.hyper_parameters[
+                "preference_sampling_strategy"
+            ],
         }
         prepare_hydra_configs(
             HYDRA_CONFIG_PATH, HYDRA_TEMP_CONFIG_PATH, params_to_update
@@ -123,13 +141,13 @@ def train(
             cfg = compose(config_name="benchmark")
             kermut_run(cfg)
 
-    results = pl.read_csv(Path(output_path) / f"{dataset.name}.csv")
-    results.rename(columns={"y_var": "y_pred_var"}, inplace=True)
-    results[["sequence", "split", "y", "y_pred", "y_pred_var"]].to_csv(
-        Path(output_path) / "predictions.csv"
-    )
-    log_and_save_metrics(results, str(output_path))
-    console.print("Finished")
+        results = pl.read_csv(Path(output_path) / f"{dataset.name}.csv")
+        results = results.rename({"y_var": "y_pred_var"})
+        results.select(["sequence", "split", "y", "y_pred", "y_pred_var"]).write_csv(
+            Path(output_path) / "predictions.csv"
+        )
+        log_and_save_metrics(results, str(output_path))
+        console.print("Finished")
 
 
 @app.command()

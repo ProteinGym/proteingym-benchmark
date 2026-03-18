@@ -1,0 +1,14 @@
+name: kermut_no_m
+
+kernel:
+  _target_: kermut.kernels.SequenceKernel
+  kernel_type: RBF
+
+use_sequence_kernel: true
+use_structure_kernel: false
+use_zero_shot: true
+zero_shot_method: ESM2/650M
+embedding_type: ESM2
+embedding_dim: 1280
+noise_prior_scale: 0.1
+use_prior: true

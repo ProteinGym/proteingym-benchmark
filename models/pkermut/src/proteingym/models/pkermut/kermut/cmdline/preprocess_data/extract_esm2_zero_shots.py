@@ -15,12 +15,16 @@ def _label_row(row, sequence, token_probs, alphabet, offset_idx):
     score = 0
     for mutation in mutations:
         wt, idx, mt = mutation[0], int(mutation[1:-1]) - offset_idx, mutation[-1]
-        assert sequence[idx] == wt, "The listed wildtype does not match the provided sequence"
+        assert sequence[idx] == wt, (
+            "The listed wildtype does not match the provided sequence"
+        )
 
         wt_encoded, mt_encoded = alphabet.get_idx(wt), alphabet.get_idx(mt)
 
         # add 1 for BOS
-        score += (token_probs[0, 1 + idx, mt_encoded] - token_probs[0, 1 + idx, wt_encoded]).item()
+        score += (
+            token_probs[0, 1 + idx, mt_encoded] - token_probs[0, 1 + idx, wt_encoded]
+        ).item()
 
     return score
 
@@ -99,7 +103,9 @@ def extract_esm2_zero_shots(cfg: DictConfig) -> None:
             with torch.no_grad():
                 if use_gpu:
                     batch_tokens_masked = batch_tokens_masked.cuda()
-                token_probs = torch.log_softmax(model(batch_tokens_masked)["logits"], dim=-1)
+                token_probs = torch.log_softmax(
+                    model(batch_tokens_masked)["logits"], dim=-1
+                )
             all_token_probs.append(token_probs[:, i])
         token_probs = torch.cat(all_token_probs, dim=0).unsqueeze(0)
         df[score_key] = df.apply(

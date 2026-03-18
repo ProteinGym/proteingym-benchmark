@@ -5,15 +5,21 @@ import typer
 from typing import Annotated
 
 from proteingym.models.pkermut.pg_model.scripts.coords import extract_3d_coords
-from proteingym.models.pkermut.pg_model.scripts.conditionals import extract_proteinmpnn_conditional_probabilities
-from proteingym.models.pkermut.pg_model.scripts.process_conditionals import process_probabilities
-from proteingym.models.pkermut.pg_model.scripts.embeddings import extract_esm2_embeddings
+from proteingym.models.pkermut.pg_model.scripts.conditionals import (
+    extract_proteinmpnn_conditional_probabilities,
+)
+from proteingym.models.pkermut.pg_model.scripts.process_conditionals import (
+    process_probabilities,
+)
+from proteingym.models.pkermut.pg_model.scripts.embeddings import (
+    extract_esm2_embeddings,
+)
 from proteingym.models.pkermut.pg_model.scripts.zero_shot import extract_esm2_zero_shots
 
 
 app = typer.Typer(
     help="Precompute artifacts for Kermut using the configuration as presented in the paper.",
-    add_completion=True
+    add_completion=True,
 )
 
 
@@ -23,19 +29,11 @@ def precompute_artifacts(
         str,
         typer.Option(
             help="Name of the dataset. Used for naming the dataframe containing zero shot scores"
-        )
+        ),
     ],
-    data_path: Annotated[
-        str,
-        typer.Option(
-            help="Path the the variant dataset."
-        )
-    ],
+    data_path: Annotated[str, typer.Option(help="Path the the variant dataset.")],
     pdb_file: Annotated[
-        str,
-        typer.Option(
-            help="PDB file to extract 3D coordinates from"
-        )
+        str, typer.Option(help="PDB file to extract 3D coordinates from")
     ],
     reference_sequence: Annotated[
         str,
@@ -44,23 +42,12 @@ def precompute_artifacts(
         ),
     ],
     artifact_dir: Annotated[
-        str,
-        typer.Option(
-            help="Directory to save the precomputed artifacts to"
-        )
+        str, typer.Option(help="Directory to save the precomputed artifacts to")
     ],
     toks_per_batch: Annotated[
-        int,
-        typer.Option(
-            help="Number of tokens to process per batch"
-        )
+        int, typer.Option(help="Number of tokens to process per batch")
     ] = 16384,
-    device: Annotated[
-        str,
-        typer.Option(
-            help="PyTorch backend device"
-        )
-    ] = "cpu",
+    device: Annotated[str, typer.Option(help="PyTorch backend device")] = "cpu",
 ) -> dict:
     path_conf = {
         "coords_dir": Path(artifact_dir) / "structures/coords",
@@ -75,20 +62,20 @@ def precompute_artifacts(
     extract_3d_coords(
         dataset_name=dataset_name,
         pdb_file=pdb_file,
-        coords_dir=str(path_conf["coords_dir"])
+        coords_dir=str(path_conf["coords_dir"]),
     )
     logger.info(f"Obtaining conditional probabilities from ProteinMPNN")
     extract_proteinmpnn_conditional_probabilities(
         pdb_file=pdb_file,
         dataset_name=dataset_name,
-        conditional_probs_dir=str(path_conf["conditional_probs_dir"])
+        conditional_probs_dir=str(path_conf["conditional_probs_dir"]),
     )
     logger.info(f"Processing conditional probabilities")
     process_probabilities(
         dataset_name=dataset_name,
         reference_sequence=reference_sequence,
         pdb_file=pdb_file,
-        conditional_probs_dir=str(path_conf["conditional_probs_dir"])
+        conditional_probs_dir=str(path_conf["conditional_probs_dir"]),
     )
     logger.info(f"Extracting embeddings from ESM2")
     extract_esm2_embeddings(
@@ -96,7 +83,7 @@ def precompute_artifacts(
         dataset_name=dataset_name,
         embedding_dir=str(path_conf["embedding_dir"]),
         toks_per_batch=toks_per_batch,
-        device=device
+        device=device,
     )
     logger.info(f"Extracting zeroshot scores from ESM2")
     extract_esm2_zero_shots(

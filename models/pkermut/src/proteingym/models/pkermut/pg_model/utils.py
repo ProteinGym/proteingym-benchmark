@@ -1,11 +1,10 @@
 import shutil
+import os
 
 import pandas as pd
 import yaml
 import json
 from pathlib import Path
-from typing import Tuple
-from urllib.parse import urlparse
 from loguru import logger
 
 import numpy as np
@@ -23,7 +22,10 @@ def prepare_dataframe(dataset: Dataset, test_size: float = 0.2) -> pl.DataFrame:
     data = pl.DataFrame(
         {
             "sequence": [str(seq.value) for seq, _ in dataset.assays[0].records],
-            "target": [target["target"] for _, target in dataset.assays[0].records],
+            "target": [
+                target[dataset.assay_targets[0].name]
+                for _, target in dataset.assays[0].records
+            ],
         }
     )
     embedding_indices = np.arange(len(data))
@@ -54,14 +56,20 @@ def prepare_hydra_configs(
         hydra_paths_config = yaml.safe_load(fp)
     with open(Path(hydra_dest_config_path) / "data/dataset.yaml", "r") as fp:
         hydra_datasets_config = yaml.safe_load(fp)
+    with open(Path(hydra_dest_config_path) / "kernel/kermut.yaml", "r") as fp:
+        hydra_kernel_config = yaml.safe_load(fp)
     with open(Path(hydra_dest_config_path) / "benchmark.yaml", "r") as fp:
         hydra_benchmark_config = yaml.safe_load(fp)
 
     hydra_paths_config["data_dir"] = params_to_update["data_artifact_path"]
     hydra_paths_config["sequence_col"] = "sequence"
     hydra_paths_config["paths"]["embeddings"] = params_to_update["embedding_path"]
-    hydra_paths_config["paths"]["conditional_probs"] = params_to_update["conditional_probs_path"]
-    hydra_paths_config["paths"]["DMS_input_folder"] = params_to_update["DMS_input_folder"]
+    hydra_paths_config["paths"]["conditional_probs"] = params_to_update[
+        "conditional_probs_path"
+    ]
+    hydra_paths_config["paths"]["DMS_input_folder"] = params_to_update[
+        "DMS_input_folder"
+    ]
     hydra_paths_config["paths"]["output_folder"] = params_to_update["output_path"]
     hydra_paths_config["target_col"] = params_to_update["target"]
 
@@ -75,10 +83,19 @@ def prepare_hydra_configs(
         "preference_sampling_strategy"
     ]
 
+    hydra_kernel_config["structure_kernel"]["_target_"] = (
+        "proteingym.models.pkermut.kermut.kernels.StructureKernel"
+    )
+    hydra_kernel_config["sequence_kernel"]["_target_"] = (
+        "proteingym.models.pkermut.kermut.kernels.SequenceKernel"
+    )
+
     with open(Path(hydra_dest_config_path) / "data/paths.yaml", "w") as fp:
         yaml.dump(hydra_paths_config, fp)
     with open(Path(hydra_dest_config_path) / "data/dataset.yaml", "w") as fp:
         yaml.dump(hydra_datasets_config, fp)
+    with open(Path(hydra_dest_config_path) / "kernel/kermut.yaml", "w") as fp:
+        yaml.dump(hydra_kernel_config, fp)
     with open(Path(hydra_dest_config_path) / "benchmark.yaml", "w") as fp:
         yaml.dump(hydra_benchmark_config, fp)
 
@@ -108,9 +125,9 @@ def log_and_save_metrics(results: pd.DataFrame, output_dir: str) -> None:
     }
     metric_stats = {}
     for split in results["split"].unique():
-        split_df = results[results["split"] == split]
+        split_df = results.filter(pl.col("split") == split)
         for metric_name, metric in metrics.items():
-            value = metric(split_df["y"].values, split_df["y_pred"].values)
+            value = metric(split_df["y"].to_numpy(), split_df["y_pred"].to_numpy())
             metric_stats[f"{split}_{metric_name}"] = value
             logger.info(f"{split}_{metric_name}: {value:.4f}")
     with open(Path(output_dir) / "metrics.json", "w") as fh:
@@ -127,3 +144,5 @@ def variant_sequence_to_mutations(variant: str, reference: str) -> str:
     )
 
 
+def is_sagemaker() -> bool:
+    return os.path.exists("/opt/ml") or "SM_TRAINING_ENV" in os.environ

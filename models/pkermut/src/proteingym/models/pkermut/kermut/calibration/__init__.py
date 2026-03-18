@@ -1,2 +1,4 @@
-from ._compute_confidence_interval_based_metrics import compute_confidence_interval_based_metrics
+from ._compute_confidence_interval_based_metrics import (
+    compute_confidence_interval_based_metrics,
+)
 from ._compute_error_based_metrics import compute_error_based_metrics

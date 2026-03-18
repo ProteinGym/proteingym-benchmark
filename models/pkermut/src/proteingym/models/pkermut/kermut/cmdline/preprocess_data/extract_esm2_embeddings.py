@@ -47,10 +47,15 @@ def extract_esm2_embeddings(cfg: DictConfig) -> None:
     match cfg.data.embedding.mode:
         case "singles":
             embedding_dir = Path(cfg.data.paths.embeddings_singles)
-            DMS_dir = Path(cfg.data.paths.DMS_input_folder) / "cv_folds_singles_substitutions"
+            DMS_dir = (
+                Path(cfg.data.paths.DMS_input_folder) / "cv_folds_singles_substitutions"
+            )
         case "multiples":
             embedding_dir = Path(cfg.data.paths.embeddings_multiples)
-            DMS_dir = Path(cfg.data.paths.DMS_input_folder) / "cv_folds_multiples_substitutions"
+            DMS_dir = (
+                Path(cfg.data.paths.DMS_input_folder)
+                / "cv_folds_multiples_substitutions"
+            )
         case _:
             raise ValueError(f"Invalid mode: {cfg.data.embedding.mode}")
 
@@ -75,7 +80,9 @@ def extract_esm2_embeddings(cfg: DictConfig) -> None:
 
         mutants = df["mutant"].tolist()
         sequences = df["mutated_sequence"].tolist()
-        batched_dataset = FastaBatchedDataset(sequence_strs=sequences, sequence_labels=mutants)
+        batched_dataset = FastaBatchedDataset(
+            sequence_strs=sequences, sequence_labels=mutants
+        )
 
         batches = batched_dataset.get_batch_indices(
             cfg.data.embedding.toks_per_batch, extra_toks_per_seq=1
@@ -97,14 +104,18 @@ def extract_esm2_embeddings(cfg: DictConfig) -> None:
 
                 out = model(toks, repr_layers=repr_layers, return_contacts=False)
                 representations = {
-                    layer: t.to(device="cpu") for layer, t in out["representations"].items()
+                    layer: t.to(device="cpu")
+                    for layer, t in out["representations"].items()
                 }
 
                 for i, label in enumerate(labels):
                     truncate_len = min(1022, len(strs[i]))
                     all_labels.append(label)
                     all_representations.append(
-                        representations[33][i, 1 : truncate_len + 1].mean(axis=0).clone().numpy()
+                        representations[33][i, 1 : truncate_len + 1]
+                        .mean(axis=0)
+                        .clone()
+                        .numpy()
                     )
 
         assert mutants == all_labels

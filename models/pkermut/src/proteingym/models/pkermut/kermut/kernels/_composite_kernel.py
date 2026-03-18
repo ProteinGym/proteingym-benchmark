@@ -43,7 +43,9 @@ class CompositeKernel(Module):
     ):
         super().__init__()
 
-        self.structure_kernel: StructureKernel = hydra.utils.instantiate(structure_kernel, **kwargs)
+        self.structure_kernel: StructureKernel = hydra.utils.instantiate(
+            structure_kernel, **kwargs
+        )
         self.sequence_kernel: SequenceKernel = hydra.utils.instantiate(sequence_kernel)
 
         self.composition = composition
@@ -75,7 +77,9 @@ class CompositeKernel(Module):
 
         match self.composition:
             case "weighted_sum":
-                return k_struct * torch.sigmoid(self.pi) + k_seq * (1 - torch.sigmoid(self.pi))
+                return k_struct * torch.sigmoid(self.pi) + k_seq * (
+                    1 - torch.sigmoid(self.pi)
+                )
             case "add":
                 return k_struct + k_seq
             case "multiply":

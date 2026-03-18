@@ -71,7 +71,9 @@ def extract_ProteinMPNN_probs(cfg: DictConfig) -> None:
                 p_mean = p_mean[:, :20]
 
                 # Load sequence from ProteinMPNN outputs
-                wt_seq_from_toks = "".join([proteinmpnn_tok_to_aa[tok] for tok in wt_toks])
+                wt_seq_from_toks = "".join(
+                    [proteinmpnn_tok_to_aa[tok] for tok in wt_toks]
+                )
 
                 # Mismatch between WT and PDB
                 if DMS_id == "CAS9_STRP1_Spencer_2017_positive":
@@ -83,7 +85,9 @@ def extract_ProteinMPNN_probs(cfg: DictConfig) -> None:
                     "P53_HUMAN_Giacomelli_2018_WT_Nutlin",
                 ]:
                     # Replace index 71 with "R"
-                    wt_seq_from_toks = wt_seq_from_toks[:71] + "R" + wt_seq_from_toks[72:]
+                    wt_seq_from_toks = (
+                        wt_seq_from_toks[:71] + "R" + wt_seq_from_toks[72:]
+                    )
 
                 # Special case where PDB is domain of a larger protein
                 if DMS_id in [

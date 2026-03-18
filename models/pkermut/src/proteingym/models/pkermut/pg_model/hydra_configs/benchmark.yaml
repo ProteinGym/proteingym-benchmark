@@ -1,0 +1,31 @@
+DMS_id: OTU7A_HUMAN_Tsuboyama_2023_2L2D
+cv_scheme: null
+dataset: ???
+defaults:
+- kernel: kermut
+- data: paths
+- _self_
+- override hydra/job_logging: disabled
+hydra:
+  job:
+    chdir: false
+  output_subdir: null
+  run:
+    dir: .
+  sweep:
+    dir: .
+    subdir: .
+optim:
+  lr: 0.1
+  n_steps: 2
+  progress_bar: false
+overwrite: false
+preference_sampling_strategy: uniform_2.5
+preferential: true
+progress_bar: true
+seed: 2024
+single:
+  id: null
+  use_id: false
+target_seq: TLDMDAVLSDFVRSTGAEPGLARDLLEGKNWDLTAALSDYEQ
+use_gpu: false
