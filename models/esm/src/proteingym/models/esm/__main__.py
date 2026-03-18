@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Annotated
 
+import polars as pl
 import typer
 from proteingym.base import Subsets
 from proteingym.base.model import ModelCard
@@ -42,6 +43,12 @@ def train(
             help="Test fold index",
         ),
     ],
+    target: Annotated[
+        str,
+        typer.Option(
+            help="Target name to use",
+        ),
+    ],
     model_card_file: Annotated[
         Path,
         typer.Option(
@@ -53,24 +60,21 @@ def train(
     dataset = subsets[split].dataset
     model_card = ModelCard.from_path(model_card_file)
 
-    targets = [target.name for target in dataset.assay_targets]
-
     model, alphabet = load(model_card)
 
-    for target in targets:
-        df = infer(
-            split_dataset=subsets,
-            split=split,
-            test_fold=test_fold,
-            target=target,
-            model_card=model_card,
-            model=model,
-            alphabet=alphabet,
-        )
+    df = infer(
+        split_dataset=subsets,
+        split=split,
+        test_fold=test_fold,
+        target=target,
+        model_card=model_card,
+        model=model,
+        alphabet=alphabet,
+    )
 
-        output_file = f"{ContainerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}_fold{test_fold}_{target}.csv"
-        df.to_csv(output_file, index=False)
-        console.print(f"Saved predictions to {output_file}")
+    output_file = f"{ContainerTrainingJobPath.OUTPUT_PATH}/predictions.json"
+    df.write_json(output_file)
+    console.print(f"Saved predictions to {output_file}")
 
 
 @app.command()

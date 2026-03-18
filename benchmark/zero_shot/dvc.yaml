@@ -12,20 +12,22 @@ stages:
       fold: ${folds}
 
     cmd: >-
-      mkdir -p ${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold} &&
+      mkdir -p ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold} &&
       docker run --rm
       -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename})
-      -v $(realpath ${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold}):/opt/program/output
+      -v $(realpath ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}):/opt/program/output
       ${item.model.image}
       train
       --dataset-file /$(basename ${item.dataset.input_filename})
       --split ${item.dataset.split}
       --test-fold ${item.fold}
+      --target ${item.dataset.target}
+
     deps:
       - ../../models
       - ${item.dataset.input_filename}
     outs:
-      - ${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold}:
+      - ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}:
           cache: true
 
   calculate_metric:
@@ -34,19 +36,24 @@ stages:
       model: ${models}
       fold: ${folds}
 
-    cmd: >
+    cmd:
+    - >-
       METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))");
-      mkdir -p ${output.metric}/${item.dataset.name}_${item.model.name}_fold${item.fold};
-      find "${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold}" -name "*.csv" | while read pred_file; do
-      target=$(basename "$pred_file" .csv | rev | cut -d'_' -f1 | rev);
-      python $(dvc root)/scripts/metric.py --prediction-path "$pred_file" --metric-path ${output.metric}/${item.dataset.name}_${item.model.name}_fold${item.fold}/$target.json --selected-metrics $METRICS;
-      done
+      python $(dvc root)/scripts/metric.py
+      --prediction-path ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/predictions.json
+      --metric-path ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}.json
+      --selected-metrics $METRICS
+      --dataset-name ${item.dataset.name}
+      --model-name ${item.model.name}
+      --split ${item.dataset.split}
+      --target ${item.dataset.target}
+      --fold ${item.fold};
 
     deps:
       - ../../scripts/metric.py
-      - ${output.prediction}/${item.dataset.name}_${item.model.name}_fold${item.fold}
+      - ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/predictions.json
     metrics:
-      - ${output.metric}/${item.dataset.name}_${item.model.name}_fold${item.fold}:
+      - ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}.json:
           cache: false
 
   aggregate_metrics:
@@ -59,16 +66,16 @@ stages:
       --metric-dir ${output.metric}
       --dataset-name ${item.dataset.name}
       --model-name ${item.model.name}
-      --output-path ${output.metric}/${item.dataset.name}_${item.model.name}_aggregated.json
-      --prediction-dir ${output.prediction} &&
-      rm -rf ${output.metric}/${item.dataset.name}_${item.model.name}_fold* &&
-      rm -rf ${output.prediction}/${item.dataset.name}_${item.model.name}_fold*
+      --split ${item.dataset.split}
+      --target ${item.dataset.target}
+      --output-path ${output.metric}/${item.dataset.name}_${item.model.name}_${item.dataset.split}_${item.dataset.target}_aggregated.json
+      --prediction-dir ${output.prediction}
 
     deps:
       - ../../scripts/utils.py
       - ${output.metric}
     metrics:
-      - ${output.metric}/${item.dataset.name}_${item.model.name}_aggregated.json:
+      - ${output.metric}/${item.dataset.name}_${item.model.name}_${item.dataset.split}_${item.dataset.target}_aggregated.json:
           cache: false
 
   generate_metrics_csv:

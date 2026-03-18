@@ -1,57 +1,55 @@
 import torch
 
 
-def label_row(
-    row: str,
-    sequence: str,
+def score_sequence_difference(
+    mutant_seq: str,
+    wt_seq: str,
     token_probs: torch.Tensor,
     alphabet: object,
-    offset_idx: int,
 ) -> float:
-    """Calculate the log probability difference between a mutant and wildtype amino acid at a specific position.
+    """Calculate the log probability difference between mutant and wildtype sequences.
 
-    This function computes the mutation effect score by comparing the log probabilities of the
-    mutant amino acid versus the wildtype amino acid at a given sequence position.
+    This function identifies positions where the mutant differs from wildtype and computes
+    the sum of log probability differences at those positions.
 
     Args:
-        row: A mutation string in the format "WT{position}MT" where:
-                  - WT is the wildtype amino acid (single letter)
-                  - {position} is the 1-indexed position in the sequence
-                  - MT is the mutant amino acid (single letter)
-                  Example: "A123V" means Alanine at position 123 mutated to Valine
-        sequence: The reference protein sequence used to validate the wildtype amino acid
+        mutant_seq: The mutant protein sequence
+        wt_seq: The wildtype protein sequence
         token_probs: Log probability tensor with shape (batch_size, seq_len + 1, vocab_size)
-                                   where seq_len + 1 accounts for the BOS (Beginning of Sequence) token
+                     where seq_len + 1 accounts for the BOS (Beginning of Sequence) token
         alphabet: An alphabet object with a get_idx() method that returns the vocabulary index
                  for a given amino acid character
-        offset_idx: Offset to convert from 1-indexed position notation to 0-indexed sequence indexing
 
     Returns:
-        float: The mutation effect score calculated as:
-               log_prob(mutant_aa) - log_prob(wildtype_aa) at the specified position
-               Positive values indicate the mutation is more likely than wildtype,
-               negative values indicate the mutation is less likely than wildtype
+        float: The mutation effect score calculated as the sum of:
+               log_prob(mutant_aa) - log_prob(wildtype_aa) at each differing position
+               Positive values indicate mutations are more likely than wildtype,
+               negative values indicate mutations are less likely than wildtype
 
     Raises:
-        AssertionError: If the wildtype amino acid in the mutation string doesn't match
-                       the amino acid at that position in the provided sequence
+        ValueError: If sequences have different lengths (indels not supported for this method)
 
     Example:
-        >>> row = "A50V"  # Alanine at position 50 to Valine
-        >>> sequence = "MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQAPILSRVGDGTQDNLSGAEKAVQVKVKALPDAQFEVVHSLAKWKRQTLGQHDFSAGEGLYTHMKALRPDEDRLSLEVKNEQKQIAYIKLAQLPLEVQEKQGLTQVVK"
-        >>> score = label_row(row, sequence, token_probs, alphabet, offset_idx=1)
+        >>> mutant_seq = "MKTAYIAK...QVVK"  # Mutant sequence
+        >>> wt_seq = "MKTAYIAK...QVVK"      # Wildtype sequence
+        >>> score = score_sequence_difference(mutant_seq, wt_seq, token_probs, alphabet)
         >>> print(f"Mutation effect score: {score}")
     """
-    wt, idx, mt = row[0], int(row[1:-1]) - offset_idx, row[-1]
-    assert sequence[idx] == wt, (
-        "The listed wildtype does not match the provided sequence"
-    )
+    if len(mutant_seq) != len(wt_seq):
+        raise ValueError(
+            "Sequences must have the same length. Indels are not supported for marginal scoring strategies."
+        )
 
-    wt_encoded, mt_encoded = alphabet.get_idx(wt), alphabet.get_idx(mt)
+    total_score = 0.0
+    for idx, (wt_aa, mt_aa) in enumerate(zip(wt_seq, mutant_seq)):
+        if wt_aa != mt_aa:
+            wt_encoded = alphabet.get_idx(wt_aa)
+            mt_encoded = alphabet.get_idx(mt_aa)
+            # add 1 for BOS token
+            score = token_probs[0, 1 + idx, mt_encoded] - token_probs[0, 1 + idx, wt_encoded]
+            total_score += score.item()
 
-    # add 1 for BOS
-    score = token_probs[0, 1 + idx, mt_encoded] - token_probs[0, 1 + idx, wt_encoded]
-    return score.item()
+    return total_score
 
 
 def compute_pppl(
@@ -77,7 +75,6 @@ def compute_pppl(
                Higher (less negative) values indicate the sequence is more likely
                according to the model.
     """
-    # encode the sequence
     data = [
         ("protein1", sequence),
     ]
@@ -85,7 +82,10 @@ def compute_pppl(
     batch_converter = alphabet.get_batch_converter()
     _, _, batch_tokens = batch_converter(data)
 
-    # compute probabilities at each position
+    # Move batch_tokens to same device as model
+    model_device = next(model.parameters()).device
+    batch_tokens = batch_tokens.to(model_device)
+
     log_probs = []
 
     for i in range(1, len(sequence) - 1):
@@ -102,13 +102,3 @@ def compute_pppl(
     return sum(log_probs)
 
 
-def compute_pppl_from_mutation(
-    row: str, sequence: str, model: object, alphabet: object, offset_idx: int
-) -> float:
-    """Compute pseudo-perplexity for a mutation string by applying it to the sequence."""
-    wt, idx, mt = row[0], int(row[1:-1]) - offset_idx, row[-1]
-    assert sequence[idx] == wt, (
-        "The listed wildtype does not match the provided sequence"
-    )
-    mutated_sequence = sequence[:idx] + mt + sequence[(idx + 1) :]
-    return compute_pppl(mutated_sequence, model, alphabet)

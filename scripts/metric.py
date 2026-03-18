@@ -125,16 +125,26 @@ def evaluate(
     prediction_path: Path,
     metric_path: Path,
     selected_metrics: list[str] | None = None,
+    dataset_name: str | None = None,
+    model_name: str | None = None,
+    split: str | None = None,
+    target: str | None = None,
+    fold: str | None = None,
 ) -> Path:
     """Calculate performance metrics from prediction output and save to metric JSON formats.
 
     Reads prediction results from a CSV file, computes classification metrics using
-    a confusion matrix. All metrics are saved to a JSON file.
+    a confusion matrix. All metrics are saved to a JSON file with metadata.
 
     Args:
         prediction_path: Path to the CSV file containing prediction results
         metric_path: Path where the calculated metrics JSON will be saved
         selected_metrics: Optional list of metric names to include. If None, all metrics are included.
+        dataset_name: Name of the dataset (for metadata)
+        model_name: Name of the model (for metadata)
+        split: Name of the split (for metadata)
+        target: Target column name (for metadata)
+        fold: Fold number (for metadata)
 
     Returns:
         Metric path where the files were saved
@@ -148,7 +158,7 @@ def evaluate(
             "error": f"Prediction file not found: {prediction_path}",
             "status": "failed"
         }
-        
+
         if selected_metrics:
             for metric_name in selected_metrics:
                 error_result[metric_name] = None
@@ -156,14 +166,32 @@ def evaluate(
         metric_path.write_text(json.dumps(error_result, indent=2))
         return metric_path
 
-    prediction_dataframe = pl.read_csv(prediction_path).drop_nulls()
+    prediction_dataframe = pl.read_json(prediction_path).drop_nulls()
 
     actual_values = prediction_dataframe.to_series(0)
     predicted_values = prediction_dataframe.to_series(1)
 
     metrics_result = calculate_selected_metrics(actual_values, predicted_values, selected_metrics)
 
-    metric_path.write_text(json.dumps(metrics_result, indent=2))
+    # Add metadata to result (hybrid approach: metadata in JSON AND in paths)
+    result_with_metadata = {}
+    if any([dataset_name, model_name, split, target, fold]):
+        result_with_metadata["metadata"] = {}
+        if dataset_name:
+            result_with_metadata["metadata"]["dataset"] = dataset_name
+        if model_name:
+            result_with_metadata["metadata"]["model"] = model_name
+        if split:
+            result_with_metadata["metadata"]["split"] = split
+        if target:
+            result_with_metadata["metadata"]["target"] = target
+        if fold:
+            result_with_metadata["metadata"]["fold"] = fold
+
+    result_with_metadata.update(metrics_result)
+
+    metric_path.parent.mkdir(parents=True, exist_ok=True)
+    metric_path.write_text(json.dumps(result_with_metadata, indent=2))
     return metric_path
 
 
@@ -191,13 +219,48 @@ def main():
         default=None,
         help="Optional list of metric names to include (e.g., 'Overall ACC' 'F1 Macro'). If not specified, all metrics are included.",
     )
+    parser.add_argument(
+        "--dataset-name",
+        type=str,
+        default=None,
+        help="Dataset name for metadata",
+    )
+    parser.add_argument(
+        "--model-name",
+        type=str,
+        default=None,
+        help="Model name for metadata",
+    )
+    parser.add_argument(
+        "--split",
+        type=str,
+        default=None,
+        help="Split name for metadata",
+    )
+    parser.add_argument(
+        "--target",
+        type=str,
+        default=None,
+        help="Target name for metadata",
+    )
+    parser.add_argument(
+        "--fold",
+        type=str,
+        default=None,
+        help="Fold number for metadata",
+    )
 
     args = parser.parse_args()
-    
+
     return evaluate(
         prediction_path=args.prediction_path,
         metric_path=args.metric_path,
         selected_metrics=args.selected_metrics,
+        dataset_name=args.dataset_name,
+        model_name=args.model_name,
+        split=args.split,
+        target=args.target,
+        fold=args.fold,
     )
 
 
