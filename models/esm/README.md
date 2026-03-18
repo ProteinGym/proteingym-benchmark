@@ -4,7 +4,7 @@ name: esm
 
 tags: ["zero-shot"]
 
-# Multi-target support flag (accepted because ModelCard allows extras)
+# Multi-target support flag
 multi_y: false
 
 hyper_parameters:
@@ -13,8 +13,6 @@ hyper_parameters:
     # Scoring method: pseudo-ppl computes sequence likelihood via masked position prediction
     # Other options: "wt-marginals" (wildtype probabilities), "masked-marginals" (position-specific masking)
     scoring_strategy: "pseudo-ppl"
-    # Whether to disable accelerator usage (false = use MPS/CUDA if available)
-    # Device priority: MPS (macOS Metal) > CUDA (NVIDIA) > CPU
     nogpu: false
     # Offset index for sequence position alignment in tokenization
     offset_idx: 24

@@ -10,35 +10,40 @@ import typer
 def aggregate_metrics(metric_dir: Path, dataset_name: str, model_name: str, split: str, target: str, output_path: Path, prediction_dir: Path = None):
     """Aggregate metrics from all folds into a single JSON file.
 
-    This function aggregates metrics across folds and stores metadata both in the JSON
-    structure and in the file path (hybrid approach for easier aggregation and caching).
+    Reads all fold metric files from the directory structure and aggregates them.
+    All metrics are handled generically using the same aggregation logic.
     """
 
-    pattern = f"{dataset_name}/{model_name}/{target}/{split}/fold*"
-    fold_dirs = list(metric_dir.glob(pattern))
+    pattern = f"{dataset_name}/{model_name}/{target}/{split}/fold*.json"
+    fold_files = list(metric_dir.glob(pattern))
 
-    if not fold_dirs:
-        print(f"No fold directories found for {dataset_name}/{model_name}/{target}/{split}")
+    if not fold_files:
+        print(f"No fold files found for {dataset_name}/{model_name}/{target}/{split}")
         return
 
     metrics_data = {}
-    for fold_dir in fold_dirs:
-        fold = fold_dir.name.replace('fold', '')
-        metric_file = fold_dir.with_suffix('.json')
+    metadata = None
 
-        if metric_file.exists():
-            with open(metric_file) as f:
-                data = json.load(f)
-                # Skip metadata key when aggregating metrics
-                for metric_name, value in data.items():
-                    if metric_name == "metadata":
-                        continue
-                    if metric_name not in metrics_data:
-                        metrics_data[metric_name] = {}
-                    metrics_data[metric_name][fold] = value
+    for fold_file in fold_files:
+        with open(fold_file) as f:
+            data = json.load(f)
+
+            # Extract metadata from the first file (should be consistent across folds)
+            # Exclude "fold" since aggregated file represents all folds, not a specific one
+            if metadata is None and "metadata" in data:
+                metadata = {k: v for k, v in data["metadata"].items() if k != "fold"}
+
+            fold_id = data.get("metadata", {}).get("fold", fold_file.stem.replace('fold', ''))
+
+            for metric_name, value in data.items():
+                if metric_name == "metadata":
+                    continue
+                if metric_name not in metrics_data:
+                    metrics_data[metric_name] = {}
+                metrics_data[metric_name][fold_id] = value
 
     result = {
-        "metadata": {
+        "metadata": metadata or {
             "dataset": dataset_name,
             "model": model_name,
             "split": split,
@@ -54,12 +59,11 @@ def aggregate_metrics(metric_dir: Path, dataset_name: str, model_name: str, spli
         }
 
     output_path.write_text(json.dumps(result, indent=2))
-    
-    """Also combines the CSV files."""
+
     if prediction_dir:
         pred_pattern = f"{dataset_name}/{model_name}/{target}/{split}/fold*"
         pred_paths = list(prediction_dir.glob(pred_pattern))
-        
+
         if pred_paths:
             dfs = []
             for pred_path in pred_paths:
@@ -75,43 +79,68 @@ def aggregate_metrics(metric_dir: Path, dataset_name: str, model_name: str, spli
 def generate_metrics_csv(metric_dir: Path, output_path: Path, game: str):
     """Generate metrics CSV from aggregated JSON files.
 
-    Reads metadata from JSON files (hybrid approach) with fallback to filename parsing
-    for backward compatibility with existing files without metadata.
+    Reads metadata from JSON files and generates a CSV with all available metrics.
+    All metrics are handled generically - no special casing for specific metric types.
+    Each metric discovered in the JSON files gets its own mean and stdev columns.
     """
-    rows = ["game,model,dataset,split,target,spearman,stdev"]
+    # First pass: discover all metrics across all files
+    all_metrics = set()
+    aggregated_files = list(metric_dir.glob("*_aggregated.json"))
 
-    for metric_file in sorted(metric_dir.glob("*_aggregated.json")):
+    for metric_file in aggregated_files:
+        with open(metric_file) as f:
+            data = json.load(f)
+            for key in data.keys():
+                if key != "metadata":
+                    all_metrics.add(key)
+
+    sorted_metrics = sorted(all_metrics)
+
+    header_cols = ["game", "model", "dataset", "split", "target"]
+    for metric in sorted_metrics:
+        header_cols.append(metric)
+        header_cols.append(f"{metric}_stdev")
+
+    rows = [",".join(header_cols)]
+
+    for metric_file in sorted(aggregated_files):
         with open(metric_file) as f:
             data = json.load(f)
 
-        # Try to read metadata from JSON first (new hybrid approach)
-        if "metadata" in data:
-            metadata = data["metadata"]
-            dataset = metadata.get("dataset")
-            model = metadata.get("model")
-            split = metadata.get("split")
-            target = metadata.get("target")
-        else:
-            # Fallback: parse from filename for backward compatibility
-            filename = metric_file.stem.replace("_aggregated", "")
-            parts = filename.split('_')
-            target = parts[-1]
-            split = parts[-2]
-            model = parts[-3]
-            dataset = '_'.join(parts[:-3])
+        if "metadata" not in data:
+            print(f"Warning: No metadata found in {metric_file}, skipping")
+            continue
 
-        if 'spearman' in data:
-            spearman_data = data['spearman']
-            fold_values = [v for k, v in spearman_data.items() if k != 'all' and v is not None]
-            mean = spearman_data.get('all')
-            if mean is None and fold_values:
-                mean = sum(fold_values) / len(fold_values)
-            if len(fold_values) > 1:
-                variance = sum((x - mean) ** 2 for x in fold_values) / len(fold_values)
-                stdev = math.sqrt(variance)
+        metadata = data["metadata"]
+        dataset = metadata.get("dataset", "unknown")
+        model = metadata.get("model", "unknown")
+        split = metadata.get("split", "unknown")
+        target = metadata.get("target", "unknown")
+
+        row_values = [game, model, dataset, split, target]
+
+        for metric_name in sorted_metrics:
+            if metric_name in data:
+                metric_data = data[metric_name]
+                fold_values = [v for k, v in metric_data.items() if k != 'all' and v is not None]
+
+                mean = metric_data.get('all')
+                if mean is None and fold_values:
+                    mean = sum(fold_values) / len(fold_values)
+
+                if len(fold_values) > 1 and mean is not None:
+                    variance = sum((x - mean) ** 2 for x in fold_values) / len(fold_values)
+                    stdev = math.sqrt(variance)
+                else:
+                    stdev = 0.0
+
+                row_values.append(str(mean) if mean is not None else "")
+                row_values.append(str(stdev))
             else:
-                stdev = 0.0
-            rows.append(f"{game},{model},{dataset},{split},{target},{mean},{stdev}")
+                row_values.append("")
+                row_values.append("")
+
+        rows.append(",".join(row_values))
 
     output_path.write_text('\n'.join(rows) + '\n')
 
