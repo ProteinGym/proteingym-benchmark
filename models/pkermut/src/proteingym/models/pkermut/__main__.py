@@ -147,6 +147,22 @@ def train(
             Path(output_path) / "predictions.csv"
         )
         log_and_save_metrics(results, str(output_path))
+
+        # TODO: pg-benchmark expects a dataframe with only test gt and predictions,
+        # This should be removed later
+        test_data = results.filter(pl.col("split") == "test")
+        df = pl.DataFrame(
+            {
+                "sequence": test_data["sequence"],
+                "test": test_data["y"],
+                "pred": test_data["y_pred"],
+            }
+        )
+
+        df.write_csv(
+            f"{output_path}/{dataset.name}_{model_card.name}.csv"
+        )
+
         console.print("Finished")
 
 
