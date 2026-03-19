@@ -168,8 +168,8 @@ def evaluate(
 
     prediction_dataframe = pl.read_json(prediction_path).drop_nulls()
 
-    actual_values = prediction_dataframe.to_series(0)
-    predicted_values = prediction_dataframe.to_series(1)
+    actual_values = prediction_dataframe["test"]
+    predicted_values = prediction_dataframe["pred"]
 
     metrics_result = calculate_selected_metrics(actual_values, predicted_values, selected_metrics)
 
