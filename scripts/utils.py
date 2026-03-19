@@ -77,72 +77,40 @@ def aggregate_metrics(metric_dir: Path, dataset_name: str, model_name: str, spli
 
 
 def generate_metrics_csv(metric_dir: Path, output_path: Path, game: str):
-    """Generate metrics CSV from aggregated JSON files.
-
-    Reads metadata from JSON files and generates a CSV with all available metrics.
-    All metrics are handled generically - no special casing for specific metric types.
-    Each metric discovered in the JSON files gets its own mean and stdev columns.
-    """
-    # First pass: discover all metrics across all files
-    all_metrics = set()
-    aggregated_files = list(metric_dir.glob("*_aggregated.json"))
-
-    for metric_file in aggregated_files:
+    """Generate metrics CSV from aggregated JSON files."""
+    rows = []
+    for metric_file in sorted(metric_dir.glob("*_aggregated.json")):
         with open(metric_file) as f:
             data = json.load(f)
-            for key in data.keys():
-                if key != "metadata":
-                    all_metrics.add(key)
-
-    sorted_metrics = sorted(all_metrics)
-
-    header_cols = ["game", "model", "dataset", "split", "target"]
-    for metric in sorted_metrics:
-        header_cols.append(metric)
-        header_cols.append(f"{metric}_stdev")
-
-    rows = [",".join(header_cols)]
-
-    for metric_file in sorted(aggregated_files):
-        with open(metric_file) as f:
-            data = json.load(f)
-
         if "metadata" not in data:
             print(f"Warning: No metadata found in {metric_file}, skipping")
             continue
-
         metadata = data["metadata"]
-        dataset = metadata.get("dataset", "unknown")
-        model = metadata.get("model", "unknown")
-        split = metadata.get("split", "unknown")
-        target = metadata.get("target", "unknown")
+        row = {
+            "game": game,
+            "model": metadata.get("model", "unknown"),
+            "dataset": metadata.get("dataset", "unknown"),
+            "split": metadata.get("split", "unknown"),
+            "target": metadata.get("target", "unknown"),
+        }
+        for metric_name, metric_data in data.items():
+            if metric_name == "metadata":
+                continue
+            fold_values = [v for k, v in metric_data.items() if k != "all" and v is not None]
+            mean = metric_data.get("all") or (sum(fold_values) / len(fold_values) if fold_values else None)
+            stdev = math.sqrt(sum((x - mean) ** 2 for x in fold_values) / len(fold_values)) if len(fold_values) > 1 and mean is not None else 0.0
+            row[metric_name] = mean
+            row[f"{metric_name}_stdev"] = stdev
+        rows.append(row)
 
-        row_values = [game, model, dataset, split, target]
+    key_cols = ["game", "model", "dataset", "split", "target"]
+    new_df = pl.DataFrame(rows)
 
-        for metric_name in sorted_metrics:
-            if metric_name in data:
-                metric_data = data[metric_name]
-                fold_values = [v for k, v in metric_data.items() if k != 'all' and v is not None]
-
-                mean = metric_data.get('all')
-                if mean is None and fold_values:
-                    mean = sum(fold_values) / len(fold_values)
-
-                if len(fold_values) > 1 and mean is not None:
-                    variance = sum((x - mean) ** 2 for x in fold_values) / len(fold_values)
-                    stdev = math.sqrt(variance)
-                else:
-                    stdev = 0.0
-
-                row_values.append(str(mean) if mean is not None else "")
-                row_values.append(str(stdev))
-            else:
-                row_values.append("")
-                row_values.append("")
-
-        rows.append(",".join(row_values))
-
-    output_path.write_text('\n'.join(rows) + '\n')
+    if output_path.exists():
+        combined = pl.concat([pl.read_csv(output_path), new_df], how="diagonal")
+        combined.unique(subset=key_cols, keep="first").write_csv(output_path)
+    else:
+        new_df.write_csv(output_path)
 
 
 app = typer.Typer()
