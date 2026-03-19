@@ -1,0 +1,26 @@
+cmd: mkdir -p 
+  prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold2 && docker
+  run --rm -v $(realpath 
+  ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+  ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+  $(realpath 
+  prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold2):/opt/program/output
+  pls:latest train --dataset-file /$(basename 
+  ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) --split 
+  modulo --test-fold 2 --target Activity
+deps:
+- path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+  hash: md5
+  md5: 870a47c70f8164be95a7540efd7cf4d2
+  size: 1604923
+- path: ../../models
+  hash: md5
+  md5: 0db524682ac4e51b04bf9db411ee8010.dir
+  size: 568242
+  nfiles: 37
+outs:
+- path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold2
+  hash: md5
+  md5: dd0fe6bd08fb1e46b79f60b514ec80d1.dir
+  size: 39299
+  nfiles: 1

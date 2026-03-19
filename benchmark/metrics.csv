@@ -1,2 +1,1 @@
-game,model,dataset,target,spearman,stdev
-zero_shot,esm,A4_HUMAN_Seuma_2022_indels,Stability,-0.07823613354613047,0.034296786534000215
+game,model,dataset,spearman

@@ -1,0 +1,20 @@
+cmd: "python $(dvc root)/scripts/utils.py aggregate --metric-dir metric --dataset-name
+  A0A1I9GEU1_NEIME_Kennouche_2019 --model-name pls --split random --target Activity
+  --output-path metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_random_Activity_aggregated.json
+  --prediction-dir prediction\n"
+deps:
+- path: ../../scripts/utils.py
+  hash: md5
+  md5: 23b7c7cbdfcdca9216a206ebc9374d2a
+  size: 6113
+- path: metric
+  hash: md5
+  md5: 8b20b54bc4b5ea2d73844d2bf5268d1c.dir
+  size: 3974
+  nfiles: 18
+outs:
+- path: 
+    metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_random_Activity_aggregated.json
+  hash: md5
+  md5: 5dc958089ee80acee7e47e965e1f29f7
+  size: 347

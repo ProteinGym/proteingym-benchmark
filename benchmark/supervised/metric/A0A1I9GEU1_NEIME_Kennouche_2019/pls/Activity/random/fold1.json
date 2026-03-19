@@ -1,0 +1,10 @@
+{
+  "metadata": {
+    "dataset": "A0A1I9GEU1_NEIME_Kennouche_2019",
+    "model": "pls",
+    "split": "random",
+    "target": "Activity",
+    "fold": "1"
+  },
+  "spearman": 0.010780371976661434
+}
