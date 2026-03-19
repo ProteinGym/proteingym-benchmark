@@ -12,7 +12,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      workflows: write
 
     steps:
       - uses: actions/checkout@v4
@@ -118,7 +117,10 @@ jobs:
           cml comment create report.md
 
       - name: Commit and push DVC lock files
+        env:
+          repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
+          git remote set-url origin https://x-access-token:${repo_token}@github.com/${{ github.repository }}
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
