@@ -2,9 +2,9 @@
     "datasets": [
       {
         "name": "Dummy_test_P0DX94",
-        "input_filename": "Dummy_test_P0DX94.splits.pgdata",
+        "input_filename": "../../datasets/Dummy_test_P0DX94.splits.pgdata",
         "split": "random",
         "target": "charge"
-      },
+      }
     ]
   }
