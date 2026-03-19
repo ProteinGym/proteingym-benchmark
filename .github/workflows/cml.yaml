@@ -10,7 +10,6 @@ jobs:
   cml:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
       pull-requests: write
 
     steps:
@@ -35,13 +34,10 @@ jobs:
           # Get the base branch to compare against
           git fetch origin ${{ github.base_ref }}
 
-          # Check if there are changes to datasets.json, models.json, or any files in models/
-          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '(datasets\.json|models\.json|models/)'; then
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E 'models/'; then
             echo "build_images=true" >> $GITHUB_OUTPUT
-            echo "Relevant changes detected - will build images"
           else
             echo "build_images=false" >> $GITHUB_OUTPUT
-            echo "No relevant changes detected - skipping image build"
           fi
 
       - name: Build Docker images for models
@@ -57,50 +53,21 @@ jobs:
               $model_folder
           done
 
+      - name: Set up CI datasets
+        if: steps.check_changes.outputs.build_images == 'true'
+        run: |
+          cp .github/workflows/ci_datasets.json benchmark/supervised/datasets.json
+          cp .github/workflows/ci_datasets.json benchmark/zero_shot/datasets.json
+          cp .github/workflows/Dummy_test_P0DX94.splits.pgdata datasets/
+
       - name: Run benchmarking
+        if: steps.check_changes.outputs.build_images == 'true'
         run: |
-          # Supervised game: Run DVC repro
           dvc repro benchmark/supervised/dvc.yaml --single-item
+          dvc repro benchmark/zero_shot/dvc.yaml --single-item
 
-          # Zero-shot game: Run DVC repro
-          # dvc repro benchmark/zero_shot/dvc.yaml --single-item
-
-      - name: Generate metrics CSV files
-        run: |
-          # Generate metrics CSV
-          echo "game,model,dataset,spearman" > benchmark/metrics.csv
-
-          # Generate supervised metrics CSV
-          dataset_names=$(jq -r '.datasets[].name' benchmark/supervised/datasets.json)
-          model_names=$(jq -r '.models[].name' benchmark/supervised/models.json)
-
-          # Iterate through all combinations and check if metric file exists
-          for dataset in $dataset_names; do
-            for model in $model_names; do
-              metric_file="benchmark/supervised/metric/${dataset}_${model}.json"
-              if [ -f "$metric_file" ]; then
-                spearman=$(jq -r '.spearman' "$metric_file")
-                echo "supervised,$model,$dataset,$spearman" >> benchmark/metrics.csv
-              fi
-            done
-          done
-
-          # Generate zero-shot metrics CSV
-          dataset_names=$(jq -r '.datasets[].name' benchmark/zero_shot/datasets.json)
-          model_names=$(jq -r '.models[].name' benchmark/zero_shot/models.json)
-
-          # Iterate through all combinations and check if metric file exists
-          for dataset in $dataset_names; do
-            for model in $model_names; do
-              metric_file="benchmark/zero_shot/metric/${dataset}_${model}.json"
-              if [ -f "$metric_file" ]; then
-                spearman=$(jq -r '.spearman' "$metric_file")
-                echo "zero-shot,$model,$dataset,$spearman" >> benchmark/metrics.csv
-              fi
-            done
-          done
-      
       - name: Create PR report
+        if: steps.check_changes.outputs.build_images == 'true'
         env:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -116,24 +83,4 @@ jobs:
           echo "Send comment to PR"
           cml comment create report.md
 
-      - name: Commit and push DVC lock files
-        env:
-          repo_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        run: |
-          git remote set-url origin https://x-access-token:${repo_token}@github.com/${{ github.repository }}
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
 
-          # Add all files except report.md
-          git add .
-          git add .dvc/cache --force
-          git reset -- report.md || true
-
-          # Check if there are changes to commit
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Update DVC lock files with the results of metrics"
-            git pull origin ${{ github.head_ref }} --rebase || true
-            git push origin HEAD:${{ github.head_ref }}
-          fi
