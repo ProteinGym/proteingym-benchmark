@@ -108,7 +108,7 @@ def generate_metrics_csv(metric_dir: Path, output_path: Path, game: str):
 
     if output_path.exists():
         combined = pl.concat([pl.read_csv(output_path), new_df], how="diagonal")
-        combined.unique(subset=key_cols, keep="first").write_csv(output_path)
+        combined.unique(subset=key_cols, keep="last").write_csv(output_path)
     else:
         new_df.write_csv(output_path)
 

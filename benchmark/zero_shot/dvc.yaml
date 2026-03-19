@@ -87,6 +87,3 @@ stages:
     deps:
       - ../../scripts/utils.py
       - ${output.metric}
-    outs:
-      - ../metrics.csv:
-          cache: false
