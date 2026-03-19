@@ -1,0 +1,24 @@
+cmd:
+- METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml'));
+  print(' '.join(data['metrics']))"); python $(dvc root)/scripts/metric.py 
+  --prediction-path 
+  prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold3/predictions.json
+  --metric-path 
+  metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold3.json 
+  --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019 
+  --model-name pls --split random --target Activity --fold 3;
+deps:
+- path: ../../scripts/metric.py
+  hash: md5
+  md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+  size: 8735
+- path: 
+    prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold3/predictions.json
+  hash: md5
+  md5: a7af9372640051991261f596f0ef4d38
+  size: 42213
+outs:
+- path: metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold3.json
+  hash: md5
+  md5: fb66a68b4375c7ec2fbd32b31675ba9d
+  size: 194
