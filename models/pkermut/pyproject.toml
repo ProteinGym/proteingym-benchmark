@@ -1,5 +1,5 @@
 [project]
-name = "pkermut"
+name = "proteingym.models.pkermut"
 version = "0.1.0"
 description = "Kermut in preferential mode"
 readme = "README.md"
