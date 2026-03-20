@@ -4,6 +4,9 @@ name: pls
 
 tags: ["supervised"]
 
+# Multi-target support flag
+multi_y: false
+
 hyper_parameters:
     # Number of PLS components to extract (dimensionality of the reduced space)
     n_components: 2

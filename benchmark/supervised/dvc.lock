@@ -86,3 +86,901 @@ stages:
       hash: md5
       md5: 4368c66e33ad3420f5b6d1b071aad2a6
       size: 39
+  generate_targets:
+    cmd: python $(dvc root)/scripts/generate_targets.py datasets.json 
+      targets.json
+    deps:
+    - path: ../../scripts/generate_targets.py
+      hash: md5
+      md5: af5ee180fb4a86b0d47a5798d187c706
+      size: 1477
+    - path: datasets.json
+      hash: md5
+      md5: 7af4ac84686bcb062f972a0e7623cd7d
+      size: 199
+    outs:
+    - path: targets.json
+      hash: md5
+      md5: 1607ac203c6edea5adbb3a05e435f5d9
+      size: 93
+  create_training_job@dataset0-model0-0:
+    cmd: mkdir -p 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold0 && 
+      docker run --rm -v $(realpath 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+      $(realpath 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold0):/opt/program/output
+      pls:latest train --dataset-file /$(basename 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) 
+      --split modulo --test-fold 0 --target Activity
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 870a47c70f8164be95a7540efd7cf4d2
+      size: 1604923
+    - path: ../../models
+      hash: md5
+      md5: 0db524682ac4e51b04bf9db411ee8010.dir
+      size: 568242
+      nfiles: 37
+    outs:
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold0
+      hash: md5
+      md5: 55059b77bca606d9e844d508af82312a.dir
+      size: 42203
+      nfiles: 1
+  create_training_job@dataset0-model0-1:
+    cmd: mkdir -p 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold1 && 
+      docker run --rm -v $(realpath 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+      $(realpath 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold1):/opt/program/output
+      pls:latest train --dataset-file /$(basename 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) 
+      --split modulo --test-fold 1 --target Activity
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 870a47c70f8164be95a7540efd7cf4d2
+      size: 1604923
+    - path: ../../models
+      hash: md5
+      md5: 0db524682ac4e51b04bf9db411ee8010.dir
+      size: 568242
+      nfiles: 37
+    outs:
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold1
+      hash: md5
+      md5: 59a682583ff810a5dfb8a1275c227c3d.dir
+      size: 39944
+      nfiles: 1
+  create_training_job@dataset0-model0-2:
+    cmd: mkdir -p 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold2 && 
+      docker run --rm -v $(realpath 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+      $(realpath 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold2):/opt/program/output
+      pls:latest train --dataset-file /$(basename 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) 
+      --split modulo --test-fold 2 --target Activity
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 870a47c70f8164be95a7540efd7cf4d2
+      size: 1604923
+    - path: ../../models
+      hash: md5
+      md5: 0db524682ac4e51b04bf9db411ee8010.dir
+      size: 568242
+      nfiles: 37
+    outs:
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold2
+      hash: md5
+      md5: dd0fe6bd08fb1e46b79f60b514ec80d1.dir
+      size: 39299
+      nfiles: 1
+  create_training_job@dataset0-model0-3:
+    cmd: mkdir -p 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold3 && 
+      docker run --rm -v $(realpath 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+      $(realpath 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold3):/opt/program/output
+      pls:latest train --dataset-file /$(basename 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) 
+      --split modulo --test-fold 3 --target Activity
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 870a47c70f8164be95a7540efd7cf4d2
+      size: 1604923
+    - path: ../../models
+      hash: md5
+      md5: 0db524682ac4e51b04bf9db411ee8010.dir
+      size: 568242
+      nfiles: 37
+    outs:
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold3
+      hash: md5
+      md5: 5db02c00d0213fd7faff5e60928980b5.dir
+      size: 41578
+      nfiles: 1
+  create_training_job@dataset0-model0-4:
+    cmd: mkdir -p 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold4 && 
+      docker run --rm -v $(realpath 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+      $(realpath 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold4):/opt/program/output
+      pls:latest train --dataset-file /$(basename 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) 
+      --split modulo --test-fold 4 --target Activity
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 870a47c70f8164be95a7540efd7cf4d2
+      size: 1604923
+    - path: ../../models
+      hash: md5
+      md5: 0db524682ac4e51b04bf9db411ee8010.dir
+      size: 568242
+      nfiles: 37
+    outs:
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold4
+      hash: md5
+      md5: c42ddaca05e173f4169c62c49947297d.dir
+      size: 39700
+      nfiles: 1
+  calculate_metric@dataset0-model0-0:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))"); 
+      python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold0/predictions.json
+      --metric-path 
+      metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold0.json 
+      --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019
+      --model-name pls --split modulo --target Activity --fold 0;
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+      size: 8735
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold0/predictions.json
+      hash: md5
+      md5: df9062f00bac5535bb3453cd7aafbc8d
+      size: 42203
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold0.json
+      hash: md5
+      md5: 0f68b17cb8f7f1cc7bb5b2896ce6e8e3
+      size: 194
+  calculate_metric@dataset0-model0-1:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))"); 
+      python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold1/predictions.json
+      --metric-path 
+      metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold1.json 
+      --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019
+      --model-name pls --split modulo --target Activity --fold 1;
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+      size: 8735
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold1/predictions.json
+      hash: md5
+      md5: 0be0ea54af8214fb311b7b13d4943793
+      size: 39944
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold1.json
+      hash: md5
+      md5: 54cc39a9174ec586d940a74a4edd06fb
+      size: 193
+  calculate_metric@dataset0-model0-2:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))"); 
+      python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold2/predictions.json
+      --metric-path 
+      metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold2.json 
+      --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019
+      --model-name pls --split modulo --target Activity --fold 2;
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+      size: 8735
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold2/predictions.json
+      hash: md5
+      md5: 2347608e91d9f9f42b7042b6e4f6ba57
+      size: 39299
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold2.json
+      hash: md5
+      md5: 49a8935b5e6a51b589075fa56a622503
+      size: 193
+  calculate_metric@dataset0-model0-3:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))"); 
+      python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold3/predictions.json
+      --metric-path 
+      metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold3.json 
+      --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019
+      --model-name pls --split modulo --target Activity --fold 3;
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+      size: 8735
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold3/predictions.json
+      hash: md5
+      md5: 281b7b46bc56d264e5984035a4637583
+      size: 41578
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold3.json
+      hash: md5
+      md5: 16add734a0f8470b0fc30a5e75570c7c
+      size: 195
+  calculate_metric@dataset0-model0-4:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))"); 
+      python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold4/predictions.json
+      --metric-path 
+      metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold4.json 
+      --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019
+      --model-name pls --split modulo --target Activity --fold 4;
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+      size: 8735
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold4/predictions.json
+      hash: md5
+      md5: 65d66b82c802a134b31fe8759c911471
+      size: 39700
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/modulo/fold4.json
+      hash: md5
+      md5: d3d5ced0a13d1135c0548325e8b92a23
+      size: 195
+  aggregate_metrics@dataset0-model0:
+    cmd: "python $(dvc root)/scripts/utils.py aggregate --metric-dir metric --dataset-name
+      A0A1I9GEU1_NEIME_Kennouche_2019 --model-name pls --split modulo --target Activity
+      --output-path metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_modulo_Activity_aggregated.json
+      --prediction-dir prediction\n"
+    deps:
+    - path: ../../scripts/utils.py
+      hash: md5
+      md5: 23b7c7cbdfcdca9216a206ebc9374d2a
+      size: 6113
+    - path: metric
+      hash: md5
+      md5: 03b5b7e41a66de297a1c098cdfc24e0a.dir
+      size: 3276
+      nfiles: 16
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_modulo_Activity_aggregated.json
+      hash: md5
+      md5: 0677f910013ba6d7719e054c744a17f7
+      size: 349
+  create_training_job@dataset1-model0-0:
+    cmd: mkdir -p 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold0 
+      && docker run --rm -v $(realpath 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+      $(realpath 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold0):/opt/program/output
+      pls:latest train --dataset-file /$(basename 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) 
+      --split contiguous --test-fold 0 --target Activity
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 870a47c70f8164be95a7540efd7cf4d2
+      size: 1604923
+    - path: ../../models
+      hash: md5
+      md5: 0db524682ac4e51b04bf9db411ee8010.dir
+      size: 568242
+      nfiles: 37
+    outs:
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold0
+      hash: md5
+      md5: 4792a28be02b8dc037c73c3c868f281a.dir
+      size: 41525
+      nfiles: 1
+  create_training_job@dataset1-model0-1:
+    cmd: mkdir -p 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold1 
+      && docker run --rm -v $(realpath 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+      $(realpath 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold1):/opt/program/output
+      pls:latest train --dataset-file /$(basename 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) 
+      --split contiguous --test-fold 1 --target Activity
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 870a47c70f8164be95a7540efd7cf4d2
+      size: 1604923
+    - path: ../../models
+      hash: md5
+      md5: 0db524682ac4e51b04bf9db411ee8010.dir
+      size: 568242
+      nfiles: 37
+    outs:
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold1
+      hash: md5
+      md5: c478d1afe798c0918bcb3c2aaf369de4.dir
+      size: 40705
+      nfiles: 1
+  create_training_job@dataset1-model0-2:
+    cmd: mkdir -p 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold2 
+      && docker run --rm -v $(realpath 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+      $(realpath 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold2):/opt/program/output
+      pls:latest train --dataset-file /$(basename 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) 
+      --split contiguous --test-fold 2 --target Activity
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 870a47c70f8164be95a7540efd7cf4d2
+      size: 1604923
+    - path: ../../models
+      hash: md5
+      md5: 0db524682ac4e51b04bf9db411ee8010.dir
+      size: 568242
+      nfiles: 37
+    outs:
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold2
+      hash: md5
+      md5: 6e9821f3a745371e732ed5005b29c52a.dir
+      size: 41273
+      nfiles: 1
+  create_training_job@dataset1-model0-3:
+    cmd: mkdir -p 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold3 
+      && docker run --rm -v $(realpath 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+      $(realpath 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold3):/opt/program/output
+      pls:latest train --dataset-file /$(basename 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) 
+      --split contiguous --test-fold 3 --target Activity
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 870a47c70f8164be95a7540efd7cf4d2
+      size: 1604923
+    - path: ../../models
+      hash: md5
+      md5: 0db524682ac4e51b04bf9db411ee8010.dir
+      size: 568242
+      nfiles: 37
+    outs:
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold3
+      hash: md5
+      md5: ee35a7c7149586be4225d5c1ebefb53d.dir
+      size: 39201
+      nfiles: 1
+  create_training_job@dataset1-model0-4:
+    cmd: mkdir -p 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold4 
+      && docker run --rm -v $(realpath 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+      $(realpath 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold4):/opt/program/output
+      pls:latest train --dataset-file /$(basename 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) 
+      --split contiguous --test-fold 4 --target Activity
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 870a47c70f8164be95a7540efd7cf4d2
+      size: 1604923
+    - path: ../../models
+      hash: md5
+      md5: 0db524682ac4e51b04bf9db411ee8010.dir
+      size: 568242
+      nfiles: 37
+    outs:
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold4
+      hash: md5
+      md5: 479a54770b6dacc37c2f429cca6a4fcc.dir
+      size: 40409
+      nfiles: 1
+  create_training_job@dataset2-model0-0:
+    cmd: mkdir -p 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold0 && 
+      docker run --rm -v $(realpath 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+      $(realpath 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold0):/opt/program/output
+      pls:latest train --dataset-file /$(basename 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) 
+      --split random --test-fold 0 --target Activity
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 870a47c70f8164be95a7540efd7cf4d2
+      size: 1604923
+    - path: ../../models
+      hash: md5
+      md5: 0db524682ac4e51b04bf9db411ee8010.dir
+      size: 568242
+      nfiles: 37
+    outs:
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold0
+      hash: md5
+      md5: f82967dd0fae95e2b0c20c8daefff2bf.dir
+      size: 38194
+      nfiles: 1
+  create_training_job@dataset2-model0-1:
+    cmd: mkdir -p 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold1 && 
+      docker run --rm -v $(realpath 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+      $(realpath 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold1):/opt/program/output
+      pls:latest train --dataset-file /$(basename 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) 
+      --split random --test-fold 1 --target Activity
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 870a47c70f8164be95a7540efd7cf4d2
+      size: 1604923
+    - path: ../../models
+      hash: md5
+      md5: 0db524682ac4e51b04bf9db411ee8010.dir
+      size: 568242
+      nfiles: 37
+    outs:
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold1
+      hash: md5
+      md5: b1a71606b1269f33ed1f009ea1f98fee.dir
+      size: 44459
+      nfiles: 1
+  create_training_job@dataset2-model0-2:
+    cmd: mkdir -p 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold2 && 
+      docker run --rm -v $(realpath 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+      $(realpath 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold2):/opt/program/output
+      pls:latest train --dataset-file /$(basename 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) 
+      --split random --test-fold 2 --target Activity
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 870a47c70f8164be95a7540efd7cf4d2
+      size: 1604923
+    - path: ../../models
+      hash: md5
+      md5: 0db524682ac4e51b04bf9db411ee8010.dir
+      size: 568242
+      nfiles: 37
+    outs:
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold2
+      hash: md5
+      md5: 9daddab16de519eccd01e73242c60232.dir
+      size: 33878
+      nfiles: 1
+  create_training_job@dataset2-model0-3:
+    cmd: mkdir -p 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold3 && 
+      docker run --rm -v $(realpath 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+      $(realpath 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold3):/opt/program/output
+      pls:latest train --dataset-file /$(basename 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) 
+      --split random --test-fold 3 --target Activity
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 870a47c70f8164be95a7540efd7cf4d2
+      size: 1604923
+    - path: ../../models
+      hash: md5
+      md5: 0db524682ac4e51b04bf9db411ee8010.dir
+      size: 568242
+      nfiles: 37
+    outs:
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold3
+      hash: md5
+      md5: faf0eb8e642b0c0919b03647d1267dbb.dir
+      size: 42213
+      nfiles: 1
+  create_training_job@dataset2-model0-4:
+    cmd: mkdir -p 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold4 && 
+      docker run --rm -v $(realpath 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata):/$(basename
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) -v 
+      $(realpath 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold4):/opt/program/output
+      pls:latest train --dataset-file /$(basename 
+      ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata) 
+      --split random --test-fold 4 --target Activity
+    deps:
+    - path: ../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata
+      hash: md5
+      md5: 870a47c70f8164be95a7540efd7cf4d2
+      size: 1604923
+    - path: ../../models
+      hash: md5
+      md5: 0db524682ac4e51b04bf9db411ee8010.dir
+      size: 568242
+      nfiles: 37
+    outs:
+    - path: prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold4
+      hash: md5
+      md5: 6454c1e5d8d23f585237829c1ae42fbd.dir
+      size: 42835
+      nfiles: 1
+  calculate_metric@dataset1-model0-0:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))"); 
+      python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold0/predictions.json
+      --metric-path 
+      metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold0.json 
+      --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019
+      --model-name pls --split contiguous --target Activity --fold 0;
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+      size: 8735
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold0/predictions.json
+      hash: md5
+      md5: 587c6b95ca31e8770dfb5537e8f0d84d
+      size: 41525
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold0.json
+      hash: md5
+      md5: c56c70f134e4cb3c1a9574d97fee5e29
+      size: 198
+  calculate_metric@dataset1-model0-1:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))"); 
+      python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold1/predictions.json
+      --metric-path 
+      metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold1.json 
+      --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019
+      --model-name pls --split contiguous --target Activity --fold 1;
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+      size: 8735
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold1/predictions.json
+      hash: md5
+      md5: face3578b9022ce22cec4e9f9edb457a
+      size: 40705
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold1.json
+      hash: md5
+      md5: 7626fba4422c7aeabf9917b97afd1ce3
+      size: 197
+  calculate_metric@dataset1-model0-2:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))"); 
+      python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold2/predictions.json
+      --metric-path 
+      metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold2.json 
+      --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019
+      --model-name pls --split contiguous --target Activity --fold 2;
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+      size: 8735
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold2/predictions.json
+      hash: md5
+      md5: d21b1cb151a94caf53b17d29c75075c4
+      size: 41273
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold2.json
+      hash: md5
+      md5: d66a296328d2c81d16cb88ebd2d52ba9
+      size: 197
+  calculate_metric@dataset1-model0-3:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))"); 
+      python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold3/predictions.json
+      --metric-path 
+      metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold3.json 
+      --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019
+      --model-name pls --split contiguous --target Activity --fold 3;
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+      size: 8735
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold3/predictions.json
+      hash: md5
+      md5: be8cefb4f96b5749c3533590ad1252b0
+      size: 39201
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold3.json
+      hash: md5
+      md5: 9523e15559e8af83d79b726bb75f9fd7
+      size: 198
+  calculate_metric@dataset1-model0-4:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))"); 
+      python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold4/predictions.json
+      --metric-path 
+      metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold4.json 
+      --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019
+      --model-name pls --split contiguous --target Activity --fold 4;
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+      size: 8735
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold4/predictions.json
+      hash: md5
+      md5: 44bec1eb67ee38556b75eb10d3cc118d
+      size: 40409
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/contiguous/fold4.json
+      hash: md5
+      md5: a23cf6dc25bd82fbb6bf7823a1f12a02
+      size: 199
+  calculate_metric@dataset2-model0-0:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))"); 
+      python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold0/predictions.json
+      --metric-path 
+      metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold0.json 
+      --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019
+      --model-name pls --split random --target Activity --fold 0;
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+      size: 8735
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold0/predictions.json
+      hash: md5
+      md5: 2b048937d6fe1c04c5b4cdc799f5d685
+      size: 38194
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold0.json
+      hash: md5
+      md5: 3348819e461beeeeb1326d1744f55753
+      size: 193
+  calculate_metric@dataset2-model0-1:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))"); 
+      python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold1/predictions.json
+      --metric-path 
+      metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold1.json 
+      --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019
+      --model-name pls --split random --target Activity --fold 1;
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+      size: 8735
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold1/predictions.json
+      hash: md5
+      md5: 169b512b3996cad3387f2ed8aa9cd2db
+      size: 44459
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold1.json
+      hash: md5
+      md5: d614c8b0ca78930dec48559edf59cd7b
+      size: 194
+  calculate_metric@dataset2-model0-2:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))"); 
+      python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold2/predictions.json
+      --metric-path 
+      metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold2.json 
+      --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019
+      --model-name pls --split random --target Activity --fold 2;
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+      size: 8735
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold2/predictions.json
+      hash: md5
+      md5: 6dd9d79f56c51b3a64679ecb00e69e57
+      size: 33878
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold2.json
+      hash: md5
+      md5: 45b38d2242ff85a3d704d1491d67d084
+      size: 194
+  calculate_metric@dataset2-model0-3:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))"); 
+      python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold3/predictions.json
+      --metric-path 
+      metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold3.json 
+      --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019
+      --model-name pls --split random --target Activity --fold 3;
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+      size: 8735
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold3/predictions.json
+      hash: md5
+      md5: a7af9372640051991261f596f0ef4d38
+      size: 42213
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold3.json
+      hash: md5
+      md5: fb66a68b4375c7ec2fbd32b31675ba9d
+      size: 194
+  calculate_metric@dataset2-model0-4:
+    cmd:
+    - METRICS=$(python -c "import yaml; data = 
+      yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))"); 
+      python $(dvc root)/scripts/metric.py --prediction-path 
+      prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold4/predictions.json
+      --metric-path 
+      metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold4.json 
+      --selected-metrics $METRICS --dataset-name A0A1I9GEU1_NEIME_Kennouche_2019
+      --model-name pls --split random --target Activity --fold 4;
+    deps:
+    - path: ../../scripts/metric.py
+      hash: md5
+      md5: 4a7a12bc0e0e4a334d2121171cf5d57d
+      size: 8735
+    - path: 
+        prediction/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold4/predictions.json
+      hash: md5
+      md5: 4ba39dd0e342b2bd6bfc288c83cccbe3
+      size: 42835
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019/pls/Activity/random/fold4.json
+      hash: md5
+      md5: 3e3f7cece251e23728caf363c8135bb4
+      size: 193
+  aggregate_metrics@dataset1-model0:
+    cmd: "python $(dvc root)/scripts/utils.py aggregate --metric-dir metric --dataset-name
+      A0A1I9GEU1_NEIME_Kennouche_2019 --model-name pls --split contiguous --target
+      Activity --output-path metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_contiguous_Activity_aggregated.json
+      --prediction-dir prediction\n"
+    deps:
+    - path: ../../scripts/utils.py
+      hash: md5
+      md5: 23b7c7cbdfcdca9216a206ebc9374d2a
+      size: 6113
+    - path: metric
+      hash: md5
+      md5: 6d96485fb47a287714411def61e782f0.dir
+      size: 3627
+      nfiles: 17
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_contiguous_Activity_aggregated.json
+      hash: md5
+      md5: cf0eee0caf5e9f7bf0a8e9adfebcb823
+      size: 351
+  aggregate_metrics@dataset2-model0:
+    cmd: "python $(dvc root)/scripts/utils.py aggregate --metric-dir metric --dataset-name
+      A0A1I9GEU1_NEIME_Kennouche_2019 --model-name pls --split random --target Activity
+      --output-path metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_random_Activity_aggregated.json
+      --prediction-dir prediction\n"
+    deps:
+    - path: ../../scripts/utils.py
+      hash: md5
+      md5: 23b7c7cbdfcdca9216a206ebc9374d2a
+      size: 6113
+    - path: metric
+      hash: md5
+      md5: 8b20b54bc4b5ea2d73844d2bf5268d1c.dir
+      size: 3974
+      nfiles: 18
+    outs:
+    - path: 
+        metric/A0A1I9GEU1_NEIME_Kennouche_2019_pls_random_Activity_aggregated.json
+      hash: md5
+      md5: 5dc958089ee80acee7e47e965e1f29f7
+      size: 347
+  generate_metrics_csv:
+    cmd: "python $(dvc root)/scripts/utils.py generate-csv --metric-dir metric --output-path
+      $(dvc root)/benchmark/metrics.csv --game supervised\n"
+    deps:
+    - path: ../../scripts/utils.py
+      hash: md5
+      md5: 23b7c7cbdfcdca9216a206ebc9374d2a
+      size: 6113
+    - path: metric
+      hash: md5
+      md5: 8b20b54bc4b5ea2d73844d2bf5268d1c.dir
+      size: 3974
+      nfiles: 18
+    outs:
+    - path: ../metrics.csv
+      hash: md5
+      md5: da8e73643cd2dade293ba66e3d33143e
+      size: 370

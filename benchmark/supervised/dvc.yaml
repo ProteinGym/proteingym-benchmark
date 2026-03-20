@@ -9,36 +9,81 @@ stages:
     matrix:
       dataset: ${datasets}
       model: ${models}
+      fold: ${folds}
 
     cmd: >-
+      mkdir -p ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold} &&
       docker run --rm
       -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename})
-      -v $(realpath ${output.prediction}):/opt/program/output
+      -v $(realpath ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}):/opt/program/output
       ${item.model.image}
-      train --dataset-file /$(basename ${item.dataset.input_filename})
+      train
+      --dataset-file /$(basename ${item.dataset.input_filename})
+      --split ${item.dataset.split}
+      --test-fold ${item.fold}
+      --target ${item.dataset.target}
+
     deps:
       - ../../models
       - ${item.dataset.input_filename}
     outs:
-      - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv:
+      - ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}:
           cache: true
 
   calculate_metric:
     matrix:
       dataset: ${datasets}
       model: ${models}
+      fold: ${folds}
 
-    cmd:      
-      - >- 
-        METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))") &&
-        python $(dvc root)/scripts/metric.py
-        --prediction-path ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
-        --metric-path ${output.metric}/${item.dataset.name}_${item.model.name}.json
-        --selected-metrics $METRICS
+    cmd:
+    - >-
+      METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))");
+      python $(dvc root)/scripts/metric.py
+      --prediction-path ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/predictions.json
+      --metric-path ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}.json
+      --selected-metrics $METRICS
+      --dataset-name ${item.dataset.name}
+      --model-name ${item.model.name}
+      --split ${item.dataset.split}
+      --target ${item.dataset.target}
+      --fold ${item.fold};
 
     deps:
       - ../../scripts/metric.py
-      - ${output.prediction}/${item.dataset.name}_${item.model.name}.csv
+      - ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/predictions.json
     metrics:
-      - ${output.metric}/${item.dataset.name}_${item.model.name}.json:
+      - ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}.json:
           cache: false
+
+  aggregate_metrics:
+    matrix:
+      dataset: ${datasets}
+      model: ${models}
+
+    cmd: >
+      python $(dvc root)/scripts/utils.py aggregate
+      --metric-dir ${output.metric}
+      --dataset-name ${item.dataset.name}
+      --model-name ${item.model.name}
+      --split ${item.dataset.split}
+      --target ${item.dataset.target}
+      --output-path ${output.metric}/${item.dataset.name}_${item.model.name}_${item.dataset.split}_${item.dataset.target}_aggregated.json
+      --prediction-dir ${output.prediction}
+
+    deps:
+      - ../../scripts/utils.py
+      - ${output.metric}
+    metrics:
+      - ${output.metric}/${item.dataset.name}_${item.model.name}_${item.dataset.split}_${item.dataset.target}_aggregated.json:
+          cache: false
+
+  generate_metrics_csv:
+    cmd: >
+      python $(dvc root)/scripts/utils.py generate-csv
+      --metric-dir ${output.metric}
+      --output-path $(dvc root)/benchmark/metrics.csv
+      --game supervised
+    deps:
+      - ../../scripts/utils.py
+      - ${output.metric}

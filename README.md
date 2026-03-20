@@ -46,13 +46,15 @@ In order to benchmark a selected list of models and datasets, it depends on the 
 
 #### Step 1: Generate `datasets.json`
 
-To generate the `datasets.json` , you need to use the `proteingym-base` command:
+To generate the `datasets.json` , you need to use the `generate_datasets_list.py` script:
 
-* `proteingym-base list-datasets datasets` will list all datasets under the folder `datasets`.
-* `jq` is used to filter the datasets.
+* This will create the datasets.json in `benchmark/supervised` and in `benchmark/zero_shot`
+* This will also create the dataset-list.json and manifest.toml in `static` and `static/datasets`. We use these files to parse the datasets on the web-page.
+* `jq` can be used to filter the dataset for specific splits or targets:
 
 ```shell
-proteingym-base list-datasets datasets | jq ... > benchmark/supervised/local/datasets.json
+python scripts/generate_datasets_list.py
+jq '{datasets: [.datasets[] | select(.split == "random")]}' benchmark/supervised/datasets.json
 ```
 
 For more information, you can check out [CONTRIBUTING.md](CONTRIBUTING.md).

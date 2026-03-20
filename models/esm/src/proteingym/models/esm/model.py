@@ -1,28 +1,33 @@
 import logging
 
-import pandas as pd
+import polars as pl
 import torch
 from esm import pretrained
 from esm.data import Alphabet
-from proteingym.base import Dataset
+from proteingym.base import Subsets
 from proteingym.base.model import ModelCard
+from proteingym.base.sequence import SequenceType
 from tqdm import tqdm
 
-from .preprocess import encode
-from .utils import compute_pppl, label_row
+from .preprocess import encode, load_x_and_y
+from .utils import compute_pppl, score_sequence_difference
 
 logger = logging.getLogger(__name__)
+
 
 
 def load(model_card: ModelCard) -> tuple[torch.nn.Module, Alphabet]:
     """Load and configure an ESM model and its alphabet.
 
     Loads a pretrained ESM model from the location specified in the model card,
-    sets it to evaluation mode, and optionally transfers it to GPU if available
-    and not disabled.
+    sets it to evaluation mode, and optionally transfers it to an accelerator device
+    (MPS on macOS, CUDA on other platforms) if available and not disabled.
+
+    Device priority: MPS > CUDA > CPU
 
     Args:
         model_card: Configuration object containing model location and GPU settings
+                   (nogpu parameter applies to all accelerators including MPS)
 
     Returns:
         tuple: The loaded ESM model and its corresponding alphabet
@@ -40,11 +45,14 @@ def load(model_card: ModelCard) -> tuple[torch.nn.Module, Alphabet]:
 
 
 def infer(
-    dataset: Dataset,
+    split_dataset: Subsets,
+    split: str,
+    test_fold: int,
+    target: str,
     model_card: ModelCard,
     model: torch.nn.Module,
     alphabet: Alphabet,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     """Generate predictions for protein mutations using an ESM model.
 
     Computes fitness scores for protein mutations using one of three scoring
@@ -52,57 +60,58 @@ def infer(
     The scoring strategy is determined by the model card.
 
     Args:
-        dataset: Dataset containing assay data with mutations to score
+        split_dataset: Subsets object containing protein sequences and targets
+        split: Name of the split to use
+        test_fold: Which fold to use as test set
+        target: Target column name
         model_card: Configuration object specifying scoring strategy and parameters
         model: The loaded ESM model for computing predictions
         alphabet: ESM alphabet for token encoding/decoding
 
     Returns:
-        pd.DataFrame: DataFrame with predictions added in 'pred' column and
+        pl.DataFrame: Polars DataFrame with predictions added in 'pred' column and
                      target column renamed to 'test'
 
     Raises:
-        ValueError: If an unrecognized scoring strategy is specified
+        ValueError: If scoring strategy is incompatible with data type
     """
-    assays = dataset.assays[0]
+    dataset = split_dataset[split].dataset
+    reference_sequence = str(next(
+        seq.value for seq in dataset.sequences if seq.type == SequenceType.WILD_TYPE
+    ))
+    
+    scoring_strategy = model_card.hyper_parameters["scoring_strategy"]
 
-    df = pd.DataFrame(
-        {
-            "mutation_col": [str(seq.value) for seq, _ in assays.records],
-            "target": [target["target"] for _, target in assays.records],
-        }
+    _, _, test_X, test_Y = load_x_and_y(
+        subset=split_dataset,
+        split=split,
+        test_fold=test_fold,
+        target=target,
     )
 
-    # For ESM zero-shot model, the schema is defined as ["mutation_col", "target"]
-    # with a reference sequence.
-    # For example: ["A2C", "-0.03"] with a reference sequence "AABB" refers to:
-    # in position 2, "A" is mutated to "C", which ends as "ACBB".
-    # But this reference sequence cannot be represented in the current proteingym-base dataset.
-    # As a workaround, variables are used to store this constant reference sequence.
-    reference_sequence = assays.variables["R"]
+    model_device = next(model.parameters()).device
 
-    batch_tokens = encode(reference_sequence, alphabet)
-
-    match model_card.hyper_parameters["scoring_strategy"]:
+    match scoring_strategy:
         case "wt-marginals":
+            batch_tokens = encode(reference_sequence, alphabet).to(model_device)
             with torch.no_grad():
                 token_probs = torch.log_softmax(model(batch_tokens)["logits"], dim=-1)
 
-            df["pred"] = df.apply(
-                lambda row: label_row(
-                    row["mutation_col"],
+            predictions = [
+                score_sequence_difference(
+                    seq,
                     reference_sequence,
                     token_probs,
                     alphabet,
-                    model_card.hyper_parameters["offset_idx"],
-                ),
-                axis=1,
-            )
+                )
+                for seq in tqdm(test_X, desc="Scoring mutations")
+            ]
 
         case "masked-marginals":
+            batch_tokens = encode(reference_sequence, alphabet).to(model_device)
             all_token_probs = []
 
-            for i in tqdm(range(batch_tokens.size(1))):
+            for i in tqdm(range(batch_tokens.size(1)), desc="Computing marginals"):
                 batch_tokens_masked = batch_tokens.clone()
                 batch_tokens_masked[0, i] = alphabet.mask_idx
 
@@ -111,40 +120,41 @@ def infer(
                         model(batch_tokens_masked)["logits"], dim=-1
                     )
 
-                all_token_probs.append(token_probs[:, i])  # vocab size
+                all_token_probs.append(token_probs[:, i])
 
             token_probs = torch.cat(all_token_probs, dim=0).unsqueeze(0)
 
-            df["pred"] = df.apply(
-                lambda row: label_row(
-                    row["mutation_col"],
+            predictions = [
+                score_sequence_difference(
+                    seq,
                     reference_sequence,
                     token_probs,
                     alphabet,
-                    model_card.hyper_parameters["offset_idx"],
-                ),
-                axis=1,
-            )
+                )
+                for seq in tqdm(test_X, desc="Scoring mutations")
+            ]
 
         case "pseudo-ppl":
-            tqdm.pandas()
-
-            df["pred"] = df.progress_apply(
-                lambda row: compute_pppl(
-                    row["mutation_col"],
-                    reference_sequence,
+            predictions = [
+                compute_pppl(
+                    seq,
                     model,
                     alphabet,
-                    model_card.hyper_parameters["offset_idx"],
-                ),
-                axis=1,
-            )
+                )
+                for seq in tqdm(test_X, desc="Computing pseudo-perplexity")
+            ]
 
         case _:
             raise ValueError(
-                f"Unrecognized scoring strategy: {model_card.hyper_parameters['scoring_strategy']}"
+                f"Unrecognized scoring strategy: {scoring_strategy}"
             )
 
-    df.rename(columns={"target": "test"}, inplace=True)
+    df = pl.DataFrame(
+        {
+            "mutation_col": test_X,
+            "test": [float(v) for v in test_Y],
+            "pred": predictions,
+        }
+    )
 
     return df

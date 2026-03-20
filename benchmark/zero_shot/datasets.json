@@ -1,8 +1,22 @@
 {
   "datasets": [
     {
-      "name": "ranganathan",
-      "input_filename": "/home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/ranganathan.pgdata"
+      "name": "A0A1I9GEU1_NEIME_Kennouche_2019",
+      "input_filename": "../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata",
+      "split": "modulo",
+      "target": "Activity"
+    },
+    {
+      "name": "A0A1I9GEU1_NEIME_Kennouche_2019",
+      "input_filename": "../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata",
+      "split": "contiguous",
+      "target": "Activity"
+    },
+    {
+      "name": "A0A1I9GEU1_NEIME_Kennouche_2019",
+      "input_filename": "../../datasets/splits/A0A1I9GEU1_NEIME_Kennouche_2019.splits.pgdata",
+      "split": "random",
+      "target": "Activity"
     }
   ]
 }

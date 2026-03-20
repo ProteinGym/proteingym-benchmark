@@ -1,7 +1,7 @@
 import logging
 
 import polars as pl
-from proteingym.base import Dataset
+from proteingym.base import Dataset, Subsets
 from proteingym.base.model import ModelCard
 from sklearn.cross_decomposition import PLSRegression
 
@@ -11,7 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 def train(
-    dataset: Dataset,
+    split_dataset: Subsets,
+    split: str,
+    test_fold: int,
+    target: str,
     model_card: ModelCard,
 ) -> PLSRegression:
     """Train a PLS regression model on protein sequence data from the dataset.
@@ -21,23 +24,28 @@ def train(
     regression model, and returns the trained model.
 
     Args:
-        dataset: Dataset object containing protein sequences and targets
+        split_dataset: Dataset object containing protein sequences and targets
+        split: Name of the split to use
+        test_fold: Which fold to use as test set
+        target: Target column name
         model_card: Configuration object containing model hyperparameters
             including encoding parameters and n_components for PLS regression
 
     Returns:
         PLSRegression: Trained scikit-learn PLS regression model ready for prediction
     """
-    train_X, train_Y = load_x_and_y(
-        dataset=dataset,
-        split=1,  # TODO: Update split
+    train_X, train_Y, test_X, test_Y = load_x_and_y(
+        subset=split_dataset,
+        split=split,
+        test_fold=test_fold, 
+        target=target
     )
 
     logger.info(f"Loaded {len(train_Y)} training records and start the training...")
 
-    encodings = encode(spit_X=train_X, hyper_params=model_card.hyper_parameters)
-
-    model = PLSRegression(model_card.hyper_parameters["n_components"])
+    encodings = encode(split_X=train_X, hyper_params=model_card.hyper_parameters)
+    
+    model = PLSRegression(n_components=model_card.hyper_parameters["n_components"])
     model.fit(encodings, train_Y)
 
     logger.info("Finished the training.")
@@ -46,7 +54,10 @@ def train(
 
 
 def infer(
-    dataset: Dataset,
+    split_dataset: Subsets,
+    split: str,
+    test_fold: int,
+    target: str,
     model_card: ModelCard,
     model: PLSRegression,
 ) -> pl.DataFrame:
@@ -57,7 +68,10 @@ def infer(
     predictions using the provided trained PLS regression model.
 
     Args:
-        dataset: Dataset object containing protein sequences and targets
+        split_dataset: Dataset object containing protein sequences and targets
+        split: Name of the split to use
+        test_fold: Which fold to use as test set
+        target: Target column name
         model_card: Configuration object containing model hyperparameters
             used for consistent sequence encoding
         model: Trained scikit-learn PLS regression model
@@ -66,14 +80,16 @@ def infer(
         pl.DataFrame: DataFrame containing test sequences, actual targets, and predictions
             with columns 'sequence', 'test' (actual values), and 'pred' (predicted values)
     """
-    test_X, test_Y = load_x_and_y(
-        dataset=dataset,
-        split=2,  # TODO: Update split
+    train_X, train_Y, test_X, test_Y = load_x_and_y(
+        subset=split_dataset,
+        split=split,
+        test_fold=test_fold,
+        target=target
     )
 
     logger.info(f"Loaded {len(test_Y)} test records and start the scoring...")
 
-    encodings = encode(spit_X=test_X, hyper_params=model_card.hyper_parameters)
+    encodings = encode(split_X=test_X, hyper_params=model_card.hyper_parameters)
 
     preds = model.predict(encodings)
 

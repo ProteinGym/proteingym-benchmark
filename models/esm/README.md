@@ -4,12 +4,15 @@ name: esm
 
 tags: ["zero-shot"]
 
+# Multi-target support flag
+multi_y: false
+
 hyper_parameters:
     # HuggingFace model checkpoint identifier for the specific ESM-2 variant
     location: "esm2_t30_150M_UR50D"
-    # Scoring method: calculates marginal probabilities for wild-type amino acids
-    scoring_strategy: "wt-marginals"
-    # Whether to disable GPU usage (false = use GPU if available)
+    # Scoring method: pseudo-ppl computes sequence likelihood via masked position prediction
+    # Other options: "wt-marginals" (wildtype probabilities), "masked-marginals" (position-specific masking)
+    scoring_strategy: "pseudo-ppl"
     nogpu: false
     # Offset index for sequence position alignment in tokenization
     offset_idx: 24

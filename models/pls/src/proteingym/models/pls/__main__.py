@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
-from proteingym.base import Dataset
+from proteingym.base import Dataset, Subsets
 from proteingym.base.model import ModelCard
 from rich.console import Console
 
@@ -31,6 +31,24 @@ def train(
             help="Path to the dataset file",
         ),
     ],
+    split: Annotated[
+        str,
+        typer.Option(
+            help="Split name to use",
+        ),
+    ],
+    test_fold: Annotated[
+        int,
+        typer.Option(
+            help="Test fold index",
+        ),
+    ],
+    target: Annotated[
+        str,
+        typer.Option(
+            help="Target name to use",
+        ),
+    ],
     model_card_file: Annotated[
         Path,
         typer.Option(
@@ -38,29 +56,30 @@ def train(
         ),
     ] = ContainerTrainingJobPath.MODEL_CARD_PATH,
 ):
-    console.print(f"Loading {dataset_file} and {model_card_file}...")
-
-    dataset = Dataset.from_path(dataset_file)
+    subsets = Subsets.from_path(dataset_file)
+    dataset = subsets[split].dataset
     model_card = ModelCard.from_path(model_card_file)
 
     model = train_model(
-        dataset=dataset,
+        split_dataset=subsets,
+        split=split,
+        test_fold=test_fold,
+        target=target,
         model_card=model_card,
     )
 
     df = infer(
-        dataset=dataset,
+        split_dataset=subsets,
+        split=split,
+        test_fold=test_fold,
+        target=target,
         model_card=model_card,
         model=model,
     )
 
-    df.write_csv(
-        f"{ContainerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}.csv"
-    )
-
-    console.print(
-        f"Saved the metrics in CSV in {ContainerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}.csv"
-    )
+    output_file = f"{ContainerTrainingJobPath.OUTPUT_PATH}/predictions.json"
+    df.write_json(output_file)
+    console.print(f"Saved predictions to {output_file}")
 
 
 @app.command()
