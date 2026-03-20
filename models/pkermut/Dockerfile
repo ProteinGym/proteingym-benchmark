@@ -12,7 +12,7 @@ COPY dist/ dist/
 RUN mkdir -p software
 COPY software/ software/
 RUN python3 -m zipfile -e software/ProteinMPNN-main.zip software
-ENV PROTEINMPNN_DIR=/opt/software/ProteinMPNN-main
+ENV PROTEINMPNN_DIR=software/ProteinMPNN-main
 
 # Copy and install dependencies
 COPY README.md README.md

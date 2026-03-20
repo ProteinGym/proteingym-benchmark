@@ -89,10 +89,10 @@ def train(
             output_path=output_path,
             reference_sequence=reference_sequence,
             prepare_artifacts=True,
-            n_steps=model_card.hyper_parameters["n_steps"],
-            preferential=model_card.hyper_parameters["preferential"],
-            preference_sampling_strategy=model_card.hyper_parameters["preference_sampling_strategy"],
-            device=model_card.hyper_parameters["device"],
+            n_steps=model_card.hyper_parameters.get("n_steps"),
+            preferential=model_card.hyper_parameters.get("preferential"),
+            preference_sampling_strategy=model_card.hyper_parameters.get("preference_sampling_strategy"),
+            device=model_card.hyper_parameters.get("device"),
         )
 
         # TODO: pg-benchmark expects a dataframe with only test gt and predictions,
