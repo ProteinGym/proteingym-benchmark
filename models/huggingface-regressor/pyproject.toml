@@ -10,7 +10,7 @@ dependencies = [
     "proteingym-base",
     "scikit-learn>=1.7.2",
     "torch>=2.8.0",
-    "transformers>=4.57.0",
+    "transformers==4.46.0",
     "typer>=0.19.2",
 ]
 
