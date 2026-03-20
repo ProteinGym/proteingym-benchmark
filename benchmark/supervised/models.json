@@ -9,6 +9,10 @@
       "image": "huggingface-regressor:latest"
     },
     {
+      "name": "kermut",
+      "image": "kermut:latest"
+    },
+    {
       "name": "pkermut",
       "image": "pkermut:latest"
     }
