@@ -10,7 +10,7 @@ COPY dist/ dist/
 
 # Install ProteinMPNN
 RUN mkdir -p /opt/software
-COPY ProteinMPNN-main.zip /opt/software/ProteinMPNN-main.zip
+COPY software/ProteinMPNN-main.zip /opt/software/ProteinMPNN-main.zip
 RUN python3 -m zipfile -e /opt/software/ProteinMPNN-main.zip /opt/software
 ENV PROTEINMPNN_DIR=/opt/software/ProteinMPNN-main
 
