@@ -1,0 +1,19 @@
+cmd:
+- METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml'));
+  print(' '.join(data['metrics']))") && python $(dvc root)/scripts/metric.py 
+  --prediction-path prediction/NEIME_2019_ritaregressor.csv --metric-path 
+  metric/NEIME_2019_ritaregressor.json --selected-metrics $METRICS
+deps:
+- path: ../../scripts/metric.py
+  hash: md5
+  md5: 142f206b77cdc15f43c6144e4609c26e
+  size: 6746
+- path: prediction/NEIME_2019_ritaregressor.csv
+  hash: md5
+  md5: 1916b8c3e6fa77f87a012a70c2a4f2aa
+  size: 35024
+outs:
+- path: metric/NEIME_2019_ritaregressor.json
+  hash: md5
+  md5: 9924750c54fd638c7981a49253ba0289
+  size: 37

@@ -1,0 +1,19 @@
+cmd:
+- METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml'));
+  print(' '.join(data['metrics']))") && python $(dvc root)/scripts/metric.py 
+  --prediction-path prediction/NEIME_2019_pkermut.csv --metric-path 
+  metric/NEIME_2019_pkermut.json --selected-metrics $METRICS
+deps:
+- path: ../../scripts/metric.py
+  hash: md5
+  md5: 142f206b77cdc15f43c6144e4609c26e
+  size: 6746
+- path: prediction/NEIME_2019_pkermut.csv
+  hash: md5
+  md5: ae57a5fda379ac88b6686970c974e6cf
+  size: 37145
+outs:
+- path: metric/NEIME_2019_pkermut.json
+  hash: md5
+  md5: 239ff84000195422b5f37ca0f94df299
+  size: 38
