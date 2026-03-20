@@ -8,10 +8,10 @@ WORKDIR /opt/program
 # TODO: After proteingym-base and proteingym-benchmark are public repositories, below COPY can be removed
 COPY dist/ dist/
 
-# Install ProteinMPNN
-RUN mkdir -p /opt/software
-COPY software/ProteinMPNN-main.zip /opt/software/ProteinMPNN-main.zip
-RUN python3 -m zipfile -e /opt/software/ProteinMPNN-main.zip /opt/software
+# Install software
+RUN mkdir -p software
+COPY software/ software/
+RUN python3 -m zipfile -e software/ProteinMPNN-main.zip software
 ENV PROTEINMPNN_DIR=/opt/software/ProteinMPNN-main
 
 # Copy and install dependencies
