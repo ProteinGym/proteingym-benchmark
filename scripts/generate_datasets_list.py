@@ -21,36 +21,33 @@ for splits_file in splits_files:
     extract_dir = temp_dir / base_name
     extract_dir.mkdir(parents=True, exist_ok=True)
     
-    try:
-        subsets = Subsets.from_path(splits_file)
-        splits = list(subsets.slices.keys())
+    subsets = Subsets.from_path(splits_file)
+    splits = list(subsets.slices.keys())
+    
+    dataset = subsets[splits[0]].dataset
+    dataset_name = dataset.name
+    
+    subprocess.run(["unzip", "-q", "-o", str(splits_file), "dataset.pgdata", "-d", str(extract_dir)], check=True)
+    subprocess.run(["unzip", "-q", "-o", str(extract_dir / "dataset.pgdata"), "manifest.lock", "-d", str(extract_dir)], check=True)
+    
+    manifest_path = extract_dir / "manifest.lock"
+    if manifest_path.exists():
+        shutil.copy(manifest_path, static_dir / "datasets" / f"{dataset_name}.lock")
+        slugs.append(dataset_name)
+    
+    for split in splits:
+        dataset = subsets[split].dataset
+        targets = [target.name for target in dataset.assay_targets]
         
-        dataset = subsets[splits[0]].dataset
-        dataset_name = dataset.name
-        
-        subprocess.run(["unzip", "-q", "-o", str(splits_file), "dataset.pgdata", "-d", str(extract_dir)], check=True)
-        subprocess.run(["unzip", "-q", "-o", str(extract_dir / "dataset.pgdata"), "manifest.lock", "-d", str(extract_dir)], check=True)
-        
-        manifest_path = extract_dir / "manifest.lock"
-        if manifest_path.exists():
-            shutil.copy(manifest_path, static_dir / "datasets" / f"{dataset_name}.lock")
-            slugs.append(dataset_name)
-        
-        for split in splits:
-            dataset = subsets[split].dataset
-            targets = [target.name for target in dataset.assay_targets]
-            
-            for target in targets:
-                all_datasets.append({
-                    "name": base_name,
-                    "input_filename": str(splits_file.absolute()),
-                    "split": split,
-                    "target": target
-                })
-        
-        print(f"Processed {base_name}: {len(splits)} splits, {len(targets)} targets")
-    except Exception as e:
-        print(f"Failed to process {base_name}: {e}")
+        for target in targets:
+            all_datasets.append({
+                "name": base_name,
+                "input_filename": str(splits_file.absolute()),
+                "split": split,
+                "target": target
+            })
+    
+    print(f"Processed {base_name}: {len(splits)} splits, {len(targets)} targets")
 
 shutil.rmtree(temp_dir, ignore_errors=True)
 
