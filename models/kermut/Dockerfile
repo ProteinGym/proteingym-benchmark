@@ -5,9 +5,6 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /opt/program
 
-# TODO: After proteingym-base and proteingym-benchmark are public repositories, below COPY can be removed
-COPY dist/ dist/
-
 # Install software
 RUN mkdir -p software
 COPY software/ software/
