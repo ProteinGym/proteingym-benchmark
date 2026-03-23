@@ -23,7 +23,7 @@ build-backend = "hatchling.build"
 packages = ["src/proteingym"]
 
 [tool.uv.sources]
-proteingym-base = { path = "dist/proteingym_base-0.1.0b1-py3-none-any.whl" }
+proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base.git" }
 kermut = { path = "software/kermut-package-kermut-package.zip" }
 
 [dependency-groups]

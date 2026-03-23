@@ -12,9 +12,6 @@ hyper_parameters:
     # Whether to train in preferential mode or not
     preferential: False
 ---
-> [!WARNING]
-> Splitting?
-> Extra features?
 
 # Model Card for pkermut
 

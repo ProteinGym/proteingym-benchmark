@@ -1,6 +1,6 @@
 import pytest
 
-from proteingym.models.pkermut.__main__ import train
+from proteingym.models.kermut.__main__ import train
 
 
 def test_train(dummy_data_path, model_card_path):

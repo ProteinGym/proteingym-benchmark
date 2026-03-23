@@ -8,7 +8,7 @@ import polars as pl
 
 import torch
 
-from proteingym.base import Dataset
+from proteingym.base import Dataset, Subsets
 from proteingym.base.model import ModelCard
 from proteingym.base.sequence import SequenceType
 
@@ -18,6 +18,7 @@ from .utils import (
     is_container,
     prepare_dataframe,
     dump_pg_structure,
+    add_pseudo_if_variant_matches_reference,
 )
 
 
@@ -46,6 +47,24 @@ def train(
             help="Path to the dataset file",
         ),
     ],
+    split: Annotated[
+        str,
+        typer.Option(
+            help="Split name to use",
+        ),
+    ],
+    test_fold: Annotated[
+        int,
+        typer.Option(
+            help="Test fold index",
+        ),
+    ],
+    target: Annotated[
+        str,
+        typer.Option(
+            help="Target name to use",
+        ),
+    ],
     model_card_file: Annotated[
         Path,
         typer.Option(
@@ -54,8 +73,8 @@ def train(
     ] = ContainerTrainingJobPath.MODEL_CARD_PATH,
 ):
     console.print(f"Loading {dataset_file} and {model_card_file}...")
-
-    dataset = Dataset.from_path(dataset_file)
+    subsets = Subsets.from_path(dataset_file)
+    dataset = subsets[split].dataset
     model_card = ModelCard.from_path(model_card_file)
     reference_sequence = str(
         next(
@@ -63,16 +82,14 @@ def train(
         )
     )
 
-
     with tempfile.TemporaryDirectory() as temp_dir:
-        # TODO: Read splits from dataset object
         data_path = str(Path(temp_dir) / f"{dataset.name}.csv")
         if is_container():
             output_path = str(ContainerTrainingJobPath.OUTPUT_PATH)
         else:
             output_path = str(Path(temp_dir) / "output")
-        df = prepare_dataframe(dataset, test_size=0.2)
-
+        df = prepare_dataframe(subsets, target, split, test_fold)
+        df = add_pseudo_if_variant_matches_reference(df, reference_sequence)
         df.write_csv(data_path)
 
         # TODO: Parse structure form dataset object
@@ -82,7 +99,6 @@ def train(
 
         kermut_run(
             dataset_name=dataset.name,
-            # TODO: Parse target from Dataset object
             target="target",
             data_dir=temp_dir,
             pdb_file=pdb_path,
@@ -91,7 +107,9 @@ def train(
             prepare_artifacts=True,
             n_steps=model_card.hyper_parameters.get("n_steps"),
             preferential=model_card.hyper_parameters.get("preferential"),
-            preference_sampling_strategy=model_card.hyper_parameters.get("preference_sampling_strategy"),
+            preference_sampling_strategy=model_card.hyper_parameters.get(
+                "preference_sampling_strategy"
+            ),
             device=model_card.hyper_parameters.get("device"),
         )
 
@@ -111,9 +129,7 @@ def train(
             }
         )
 
-        df.write_csv(
-            f"{output_path}/{dataset.name}_{model_card.name}.csv"
-        )
+        df.write_csv(f"{output_path}/{dataset.name}_{model_card.name}.csv")
 
         console.print(
             f"Saved the metrics in CSV in {output_path}/{dataset.name}_{model_card.name}.csv"
