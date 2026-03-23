@@ -1,5 +1,5 @@
 [project]
-name = "proteingym-models-hfregressor"
+name = "proteingym.models.hfregressor"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -21,14 +21,14 @@ hfregressor = "proteingym.models.hfregressor.__main__:app"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.uv.sources]
-proteingym-base = { path = "dist/proteingym_base-0.1.0b1-py3-none-any.whl" }
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/proteingym"]
 
 [tool.ruff]
 line-length = 88
+
+[tool.uv.sources]
+proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base.git" }
 
 [dependency-groups]
 dev = [

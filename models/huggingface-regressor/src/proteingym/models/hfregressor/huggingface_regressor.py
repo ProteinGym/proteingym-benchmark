@@ -15,10 +15,12 @@ class HuggingFaceRegressor(BaseEstimator):
         self,
         model_card: ModelCard,
         data: pl.DataFrame,
+        target: str,
         cache_dir: str,
     ):
         self.model_card = model_card
         self.data = data
+        self.target = target
         self.cache_dir = cache_dir
         self.pipeline = self.build_pipeline()
 
@@ -33,15 +35,6 @@ class HuggingFaceRegressor(BaseEstimator):
                     embedder,
                     ["sequence", "embedding_index"],
                 ),
-                # WIP
-                # (
-                #     "extra_features",
-                #     ExtraFeatures(
-                #         self.numerical_extra_features,
-                #         self.categorical_extra_features,
-                #     ),
-                #     self.numerical_extra_features + self.categorical_extra_features,
-                # ),
             ]
         )
         regressor = Ridge(alpha=self.model_card.hyper_parameters["alpha"])
@@ -54,7 +47,7 @@ class HuggingFaceRegressor(BaseEstimator):
         return pipeline
 
     def fit(self, data: pl.DataFrame):
-        self.pipeline.fit(data, data["target"])
+        self.pipeline.fit(data, data[self.target])
 
     def predict(self, data: pl.DataFrame):
         return self.pipeline.predict(data)

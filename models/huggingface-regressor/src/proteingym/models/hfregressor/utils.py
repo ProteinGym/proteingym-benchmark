@@ -1,49 +1,36 @@
-from pathlib import Path
-from typing import List, Union
-from loguru import logger
+import os
 
 import polars as pl
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.compose import ColumnTransformer
-from sklearn.exceptions import NotFittedError
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+import numpy as np
+
+from proteingym.base import Dataset, Subsets
 
 
-class ExtraFeatures(TransformerMixin, BaseEstimator):
-    def __init__(
-        self,
-        numerical_extra_features: List[str],
-        categorical_extra_features: List[str],
-        categories: Union[str, List[List[str]]] = "auto",
-    ):
-        self.numerical_extra_features = numerical_extra_features
-        self.categorical_extra_features = categorical_extra_features
-        self.categories = categories
-        self._n_features_after_transformation = None
+def prepare_dataframe(
+    subset: Subsets, split: str, test_fold: int
+) -> pl.DataFrame:
+    """Load train/test splits for k-fold cross-validation.
 
-        self._pipeline = ColumnTransformer(
-            [
-                ("numerical", StandardScaler(), numerical_extra_features),
-                (
-                    "categorical",
-                    OneHotEncoder(categories=self.categories, sparse=False),
-                    categorical_extra_features,
-                ),
-            ]
-        )
+    Args:
+        subset: a split dataset in the Subsets format
+        split: name of the split
+        test_fold: Which kfold split to take as test set
+    """
 
-    # noinspection PyUnusedLocal
-    def fit(self, x: pl.DataFrame, y=None):
-        x_transformed = self._pipeline.fit_transform(x)
-        self._n_features_after_transformation = x_transformed.shape[1]
-        return self
+    test_dataset = subset[split].slices[test_fold]
+    test_df = subset[split].dataset[test_dataset].to_df()
 
-    def transform(self, x: pl.DataFrame):
-        return self._pipeline.transform(x)
+    train_dfs = []
+    for i in range(len(subset[split].slices)):
+        if i != test_fold:
+            train_slice = subset[split].slices[i]
+            train_dfs.append(subset[split].dataset[train_slice].to_df())
 
-    @property
-    def n_output_features(self):
-        try:
-            return self._n_features_after_transformation
-        except AttributeError as e:
-            raise NotFittedError("ExtraFeatures") from e
+    train_df = pl.concat(train_dfs)
+    train_df = train_df.with_columns(pl.lit("train").alias("split"))
+    test_df = test_df.with_columns(pl.lit("test").alias("split"))
+    df = pl.concat([train_df, test_df]).sample(fraction=1)
+    return df
+
+def is_container() -> bool:
+    return os.path.exists("/opt/program")
