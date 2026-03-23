@@ -3,6 +3,18 @@
     {
       "name": "pls",
       "image": "pls:latest"
+    },
+    {
+      "name": "ritaregressor",
+      "image": "huggingface-regressor:latest"
+    },
+    {
+      "name": "kermut",
+      "image": "kermut:latest"
+    },
+    {
+      "name": "pls",
+      "image": "pkermut:latest"
     }
   ]
 }
