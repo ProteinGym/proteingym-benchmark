@@ -17,3 +17,5 @@ hyper_parameters:
 
 The Kermut Gaussian process model as reported in 
 [Kermut: Composite kernel regression for protein variant effects](https://doi.org/10.48550/arXiv.2407.00002).
+
+Implementation: https://github.com/florisvdf/kermut-package

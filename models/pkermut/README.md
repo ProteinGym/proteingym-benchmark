@@ -22,3 +22,5 @@ PKermut is a preferential version of the Kermut Gaussian process model as report
 This repository is a fork of the [original repository](https://github.com/petergroth/kermut) 
 and contains some modifications that allows users to train and run inference with PKermut: 
 Kermut trained with a [preferential objective](https://botorch.readthedocs.io/en/latest/models.html#module-botorch.models.pairwise_gp).
+
+Implementation: https://github.com/florisvdf/kermut-package
