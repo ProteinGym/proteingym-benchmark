@@ -118,13 +118,9 @@ def train(
             }
         )
 
-        df.write_csv(
-            f"{output_path}/{dataset.name}_{model_card.name}.csv"
-        )
-
-        console.print(
-            f"Saved the metrics in CSV in {output_path}/predictions.csv"
-        )
+        output_file = f"{output_path}/predictions.json"
+        df.write_json(output_file)
+        console.print(f"Saved predictions to {output_file}")
 
 
 @app.command()
