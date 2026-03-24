@@ -89,7 +89,6 @@ def train(
         else:
             output_path = str(Path(temp_dir) / "output")
         df = prepare_dataframe(subsets, target, split, test_fold)
-        df = add_pseudo_if_variant_matches_reference(df, reference_sequence)
         df.write_csv(data_path)
 
         # TODO: Parse structure form dataset object

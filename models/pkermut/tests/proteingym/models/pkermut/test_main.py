@@ -8,6 +8,6 @@ def test_train(dummy_data_path, model_card_path):
         dataset_file=dummy_data_path,
         split="random",
         target="charge",
-        test_fold=0,
+        test_fold=1,
         model_card_file=model_card_path
     )
