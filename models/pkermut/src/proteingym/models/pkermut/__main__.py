@@ -128,10 +128,10 @@ def train(
             }
         )
 
-        df.write_csv(f"{output_path}/{dataset.name}_{model_card.name}.csv")
+        df.write_csv(f"{output_path}/predictions.csv")
 
         console.print(
-            f"Saved the metrics in CSV in {output_path}/{dataset.name}_{model_card.name}.csv"
+            f"Saved the metrics in CSV in {output_path}/predictions.csv"
         )
 
 

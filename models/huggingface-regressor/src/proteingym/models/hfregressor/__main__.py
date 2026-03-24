@@ -123,7 +123,7 @@ def train(
         )
 
         console.print(
-            f"Saved the metrics in CSV in {output_path}/{dataset.name}_{model_card.name}.csv"
+            f"Saved the metrics in CSV in {output_path}/predictions.csv"
         )
 
 
