@@ -93,7 +93,7 @@ def train(
             output_path = Path(temp_dir) / "output"
             output_path.mkdir(parents=True, exist_ok=True)
 
-        data = prepare_dataframe(subsets, split, test_fold)
+        data = prepare_dataframe(subsets, target, split, test_fold)
         embedding_indices = np.arange(len(data))
         data = data.with_columns(pl.Series("embedding_index", embedding_indices))
 
