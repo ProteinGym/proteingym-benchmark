@@ -10,11 +10,11 @@ import numpy as np
 
 import torch
 
-from proteingym.base import Dataset, Subsets
+from proteingym.base import Subsets
 from proteingym.base.model import ModelCard
 
 from proteingym.models.hfregressor.huggingface_regressor import HuggingFaceRegressor
-from .utils import prepare_dataframe, is_container
+from .utils import prepare_dataframe
 
 
 CUDA_AVAILABLE = torch.cuda.is_available()
@@ -70,12 +70,11 @@ def train(
     console.print(f"Loading {dataset_file} and {model_card_file}...")
 
     subsets = Subsets.from_path(dataset_file)
-    dataset = subsets[split].dataset
     model_card = ModelCard.from_path(model_card_file)
 
     if model_card.hyper_parameters["device"] == "cuda":
         if not CUDA_AVAILABLE:
-            console.print(f"No cuda enabled GPUs available, falling back to CPU")
+            console.print("No cuda enabled GPUs available, falling back to CPU")
             torch.set_default_device("cpu")
         else:
             torch.set_default_device("cuda")
@@ -87,11 +86,7 @@ def train(
             cache_dir = model_card.hyper_parameters["cache_dir"]
         console.print(f"Caching embeddings to {cache_dir}")
 
-        if is_container():
-            output_path = str(ContainerTrainingJobPath.OUTPUT_PATH)
-        else:
-            output_path = Path(temp_dir) / "output"
-            output_path.mkdir(parents=True, exist_ok=True)
+        output_path = str(ContainerTrainingJobPath.OUTPUT_PATH)
 
         data = prepare_dataframe(subsets, target, split, test_fold)
         embedding_indices = np.arange(len(data))

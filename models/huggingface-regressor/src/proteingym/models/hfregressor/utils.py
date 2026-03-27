@@ -1,5 +1,3 @@
-import os
-
 import polars as pl
 
 from proteingym.base import Subsets
@@ -30,6 +28,3 @@ def prepare_dataframe(
     test_df = test_df.with_columns(pl.lit("test").alias("split"))
     df = pl.concat([train_df, test_df]).sample(fraction=1).drop_nans(subset=target)
     return df
-
-def is_container() -> bool:
-    return os.path.exists("/opt/program")
