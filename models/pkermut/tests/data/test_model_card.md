@@ -14,12 +14,7 @@ hyper_parameters:
     # Average degree to which to uniformly subsample the preference graph when training in preferential mode. In this case 2.5
     preference_sampling_strategy: uniform_2.5
 ---
-> [!WARNING]
-> Splitting?
-> Extra features?
 
-> [!NOTE]
-> Note? 
 # Model Card for pkermut
 
 PKermut is a preferential version of the Kermut Gaussian process model as reported in 

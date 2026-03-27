@@ -3,9 +3,13 @@ from pathlib import Path
 
 
 @pytest.fixture(scope="session")
-def dummy_data_path():
-    datasets_path = Path(__file__).parent / "data"
-    dummy_path = datasets_path / "Dummy_test_P0DX94.splits.pgdata"
+def datasets_path():
+    return Path(__file__).parent.parent.parent.parent / "datasets"
+
+
+@pytest.fixture(scope="session")
+def dummy_data_path(datasets_path):
+    dummy_path = datasets_path / "splits/Dummy_test_P0DX94.splits.pgdata"
     return dummy_path
 
 

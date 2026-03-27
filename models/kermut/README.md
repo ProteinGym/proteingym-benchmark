@@ -9,11 +9,9 @@ hyper_parameters:
     n_steps: 150
     # Device to use 
     device: gpu
-    # Whether to train in preferential mode or not
-    preferential: False
 ---
 
-# Model Card for pkermut
+# Model Card for kermut
 
 The Kermut Gaussian process model as reported in 
 [Kermut: Composite kernel regression for protein variant effects](https://doi.org/10.48550/arXiv.2407.00002).

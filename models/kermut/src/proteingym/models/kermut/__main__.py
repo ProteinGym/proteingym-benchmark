@@ -8,14 +8,13 @@ import polars as pl
 
 import torch
 
-from proteingym.base import Dataset, Subsets
+from proteingym.base import Subsets
 from proteingym.base.model import ModelCard
 from proteingym.base.sequence import SequenceType
 
 from kermut.pg_model.kermut_run import main as kermut_run
 
 from .utils import (
-    is_container,
     prepare_dataframe,
     dump_pg_structure,
 )
@@ -83,10 +82,7 @@ def train(
 
     with tempfile.TemporaryDirectory() as temp_dir:
         data_path = str(Path(temp_dir) / f"{dataset.name}.csv")
-        if is_container():
-            output_path = str(ContainerTrainingJobPath.OUTPUT_PATH)
-        else:
-            output_path = str(Path(temp_dir) / "output")
+        output_path = str(ContainerTrainingJobPath.OUTPUT_PATH)
         df = prepare_dataframe(subsets, target, split, test_fold)
         df.write_csv(data_path)
 
@@ -111,8 +107,7 @@ def train(
             device=model_card.hyper_parameters.get("device"),
         )
 
-        # TODO: pg-benchmark expects a dataframe with only test gt and predictions,
-        # This should be removed later
+        # TODO: Also store predictions of other splits
         results = pl.read_csv(Path(output_path) / f"{dataset.name}.csv")
         results = results.rename({"y_var": "y_pred_var"})
         results.select(["sequence", "split", "y", "y_pred", "y_pred_var"]).write_csv(
