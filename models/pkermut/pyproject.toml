@@ -1,21 +1,19 @@
 [project]
-name = "proteingym.models.hfregressor"
+name = "proteingym.models.pkermut"
 version = "0.1.0"
-description = "Add your description here"
+description = "Kermut in preferential mode"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "biopython>=1.86",
+    "kermut",
     "loguru>=0.7.3",
-    "polars>=1.34.0",
+    "numpy>=2.4.2",
     "proteingym-base",
-    "scikit-learn>=1.7.2",
-    "torch>=2.8.0",
-    "transformers==4.46.0",
-    "typer>=0.19.2",
 ]
 
 [project.scripts]
-hfregressor = "proteingym.models.hfregressor.__main__:app"
+pkermut = "proteingym.models.pkermut.__main__:app"
 
 [build-system]
 requires = ["hatchling"]
@@ -24,13 +22,12 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/proteingym"]
 
-[tool.ruff]
-line-length = 88
-
 [tool.uv.sources]
 proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base.git" }
+kermut = { path = "software/kermut-package-kermut-package.zip" }
 
 [dependency-groups]
 dev = [
-    "pytest>=8.4.2",
+    "pytest>=9.0.2",
+    "ruff>=0.15.6",
 ]
