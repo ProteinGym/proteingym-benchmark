@@ -218,10 +218,10 @@ wheels = [
 
 [[package]]
 name = "cuda-pathfinder"
-version = "1.4.4"
+version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c0/66/7b2c3d23dac4bb9629b4d9702f1f796bd41c01142c2b47be6fcfdeaf4ee4/cuda_pathfinder-1.4.4-py3-none-any.whl", hash = "sha256:1a9e7feccae0d969ad88545d0462f2ed2750df8e6732309798dc1e1ca603a28b", size = 48834, upload-time = "2026-03-23T20:50:00.706Z" },
+    { url = "https://files.pythonhosted.org/packages/93/66/0c02bd330e7d976f83fa68583d6198d76f23581bcbb5c0e98a6148f326e5/cuda_pathfinder-1.5.0-py3-none-any.whl", hash = "sha256:498f90a9e9de36044a7924742aecce11c50c49f735f1bc53e05aa46de9ea4110", size = 49739, upload-time = "2026-03-24T21:14:30.869Z" },
 ]
 
 [[package]]
@@ -424,7 +424,7 @@ dependencies = [
     { name = "tqdm" },
     { name = "typer" },
 ]
-sdist = { hash = "sha256:c7b1295a8a1d251b7999a15437c91f611b66b42df792ed52538236619dda6e79" }
+sdist = { hash = "sha256:eed1e4d25fea5a3b6235b43da40037b14063e8425f7328680358ef25a5b60ba6" }
 
 [package.metadata]
 requires-dist = [
