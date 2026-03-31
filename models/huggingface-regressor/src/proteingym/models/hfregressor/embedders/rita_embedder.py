@@ -52,7 +52,8 @@ class RITAEmbedder(TransformerMixin, BaseEstimator):
                 with torch.no_grad():
                     for j, p in enumerate([sequence, sequence[::-1]]):
                         tokenized_sequence = torch.tensor(
-                            [self.tokenizer.encode(p)], device=torch.get_default_device()
+                            [self.tokenizer.encode(p)],
+                            device=torch.get_default_device(),
                         )
                         outputs = self.embed_tokenized_sequence(tokenized_sequence)
                         embeddings[i, self.embed_dim * j : self.embed_dim * (j + 1)] = (

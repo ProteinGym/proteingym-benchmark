@@ -1,0 +1,2 @@
+software/ProteinMPNN-main.zip filter=lfs diff=lfs merge=lfs -text
+software/kermut-package-kermut-package.zip filter=lfs diff=lfs merge=lfs -text

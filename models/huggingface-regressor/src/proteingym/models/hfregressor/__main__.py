@@ -6,14 +6,15 @@ import typer
 from rich.console import Console
 
 import polars as pl
+import numpy as np
 
 import torch
 
-from proteingym.base import Dataset
+from proteingym.base import Subsets
 from proteingym.base.model import ModelCard
 
 from proteingym.models.hfregressor.huggingface_regressor import HuggingFaceRegressor
-from .preprocess import prepare_dataframe
+from .utils import prepare_dataframe
 
 
 CUDA_AVAILABLE = torch.cuda.is_available()
@@ -41,6 +42,24 @@ def train(
             help="Path to the dataset file",
         ),
     ],
+    split: Annotated[
+        str,
+        typer.Option(
+            help="Split name to use",
+        ),
+    ],
+    test_fold: Annotated[
+        int,
+        typer.Option(
+            help="Test fold index",
+        ),
+    ],
+    target: Annotated[
+        str,
+        typer.Option(
+            help="Target name to use",
+        ),
+    ],
     model_card_file: Annotated[
         Path,
         typer.Option(
@@ -50,12 +69,12 @@ def train(
 ):
     console.print(f"Loading {dataset_file} and {model_card_file}...")
 
-    dataset = Dataset.from_path(dataset_file)
+    subsets = Subsets.from_path(dataset_file)
     model_card = ModelCard.from_path(model_card_file)
 
     if model_card.hyper_parameters["device"] == "cuda":
         if not CUDA_AVAILABLE:
-            console.print(f"No cuda enabled GPUs available, falling back to CPU")
+            console.print("No cuda enabled GPUs available, falling back to CPU")
             torch.set_default_device("cpu")
         else:
             torch.set_default_device("cuda")
@@ -67,14 +86,16 @@ def train(
             cache_dir = model_card.hyper_parameters["cache_dir"]
         console.print(f"Caching embeddings to {cache_dir}")
 
-        # WIP Load embeddings by downloading embeddings to cache_dir
+        output_path = str(ContainerTrainingJobPath.OUTPUT_PATH)
 
-        # WARNING: Not reading splits from dataset file yet
-        data = prepare_dataframe(dataset, test_size=0.2)
+        data = prepare_dataframe(subsets, target, split, test_fold)
+        embedding_indices = np.arange(len(data))
+        data = data.with_columns(pl.Series("embedding_index", embedding_indices))
 
         model = HuggingFaceRegressor(
             model_card=model_card,
             data=data,
+            target=target,
             cache_dir=cache_dir,
         )
         model.fit(data.filter(pl.col("split") == "train"))
@@ -84,21 +105,17 @@ def train(
             data=test_data,
         )
 
-    df = pl.DataFrame(
-        {
-            "sequence": test_data["sequence"],
-            "test": test_data["target"],
-            "pred": test_preds.tolist(),
-        }
-    )
+        df = pl.DataFrame(
+            {
+                "sequence": test_data["sequence"],
+                "test": test_data[target],
+                "pred": test_preds.tolist(),
+            }
+        )
 
-    df.write_csv(
-        f"{ContainerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}.csv"
-    )
-
-    console.print(
-        f"Saved the metrics in CSV in {ContainerTrainingJobPath.OUTPUT_PATH}/{dataset.name}_{model_card.name}.csv"
-    )
+        output_file = f"{output_path}/predictions.json"
+        df.write_json(output_file)
+        console.print(f"Saved predictions to {output_file}")
 
 
 @app.command()

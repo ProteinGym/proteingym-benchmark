@@ -1,6 +1,8 @@
 import polars as pl
+from Bio.PDB.PDBIO import PDBIO
 
 from proteingym.base import Subsets
+from proteingym.base.structure import Structure
 
 
 def prepare_dataframe(
@@ -12,6 +14,7 @@ def prepare_dataframe(
         subset: a split dataset in the Subsets format
         split: name of the split
         test_fold: Which kfold split to take as test set
+        target: name of the target we are classifying
     """
 
     test_dataset = subsets[split].slices[test_fold]
@@ -26,5 +29,12 @@ def prepare_dataframe(
     train_df = pl.concat(train_dfs)
     train_df = train_df.with_columns(pl.lit("train").alias("split"))
     test_df = test_df.with_columns(pl.lit("test").alias("split"))
-    df = pl.concat([train_df, test_df]).sample(fraction=1).drop_nans(subset=target)
+    df = pl.concat([train_df, test_df])
+    df = df.sample(fraction=1).drop_nans(subset=target).rename({target: "target"})
     return df
+
+
+def dump_pg_structure(path: str, structure: Structure) -> None:
+    io = PDBIO()
+    io.set_structure(structure.value)
+    io.save(path)
