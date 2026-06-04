@@ -1,0 +1,27 @@
+Bootstrap: docker
+From: python:3.12-slim-bookworm
+
+%setup
+    mkdir -p ${SINGULARITY_ROOTFS}/opt/program
+    cp -r src/ pyproject.toml README.md ${SINGULARITY_ROOTFS}/opt/program/
+
+%post
+    # install git, curl, certificates
+    apt-get update && apt-get install -y git curl ca-certificates && rm -rf /var/lib/apt/lists/*
+
+    # install uv (defaults to /root/.local/bin)
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    # move binaries to a globally accessible system path
+    mv /root/.local/bin/uv /root/.local/bin/uvx /usr/local/bin/
+
+    # sync dependencies
+    cd /opt/program
+    uv sync --no-cache
+
+%environment
+    export PATH="/opt/program/.venv/bin:$PATH"
+
+%runscript
+    cd /opt/program
+    exec uv run esm "$@"

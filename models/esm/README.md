@@ -9,7 +9,7 @@ multi_y: false
 
 hyper_parameters:
     # HuggingFace model checkpoint identifier for the specific ESM-2 variant
-    location: "esm2_t30_150M_UR50D"
+    location: "esm2_t12_35M_UR50D"
     # Scoring method: pseudo-ppl computes sequence likelihood via masked position prediction
     # Other options: "wt-marginals" (wildtype probabilities), "masked-marginals" (position-specific masking)
     scoring_strategy: "pseudo-ppl"
