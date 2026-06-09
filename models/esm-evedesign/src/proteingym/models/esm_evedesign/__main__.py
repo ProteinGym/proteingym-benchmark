@@ -1,5 +1,6 @@
+import importlib
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import polars as pl
 import typer
@@ -8,10 +9,8 @@ from proteingym.base import Subsets
 from proteingym.base.model import ModelCard
 from rich.console import Console
 
-from .model import build, load, score
-
 app = typer.Typer(
-    help="ProteinGym2 - ESM2 (evedesign wrapped)",
+    help="ProteinGym2 - generic evedesign model runner",
     add_completion=True,
 )
 
@@ -24,8 +23,44 @@ class ContainerTrainingJobPath:
     OUTPUT_PATH = PREFIX / "output"
 
 
+def import_class(import_string: str) -> Any:
+    """Resolve an import string to the class it points at.
+
+    Accepts either entry-point style ("evedesign.models.esm2:ESM2") or fully
+    dotted style ("evedesign.models.esm2.ESM2"). The resolved class is expected
+    to be an evedesign-style model exposing build and score methods and
+    a constructor that accepts the model card's hyper_parameters as kwargs.
+
+    Args:
+        import_string: Import path to the model class.
+
+    Returns:
+        The model class object.
+    """
+    module_path, _, attr = import_string.partition(":")
+    if not attr:
+        module_path, _, attr = import_string.rpartition(".")
+    if not module_path or not attr:
+        raise ValueError(
+            f"Could not parse import string {import_string!r}; expected "
+            "'package.module:ClassName' or 'package.module.ClassName'."
+        )
+    module = importlib.import_module(module_path)
+    return getattr(module, attr)
+
+
 @app.command()
 def train(
+    model_class: Annotated[
+        str,
+        typer.Option(
+            help=(
+                "Import string for the evedesign model class to run, e.g. "
+                "'evedesign.models.esm2:ESM2'. The class is instantiated with "
+                "the model card hyper_parameters, then built and scored."
+            ),
+        ),
+    ],
     dataset_file: Annotated[
         Path,
         typer.Option(
@@ -60,23 +95,32 @@ def train(
     subsets = Subsets.from_path(dataset_file)
     model_card = ModelCard.from_path(model_card_file)
 
-    # ESM2 is zero-shot, so only the System and the test
-    # instances are used--the training split is ignored
-    # probably eventually need some way to score whole csv?
-    system, data = dataset_to_evedesign(
+    # Zero-shot models use only the System and the test instances--the training
+    # split is ignored. probably eventually need some way to score whole csv?
+    system, dataset = dataset_to_evedesign(
         subsets,
         split=split,
         target=target,
         test_fold=test_fold,
     )
+    
+    if "supervised" in model_card.tags:
+        data = dataset
+    else:
+        data = None
 
-    model = load(model_card)
-    model = build(model, system, data=None)
+    ModelClass = import_class(model_class)
 
-    test_instances, test_values = data.test_set.select(
+    # load -> build -> score, using the imported model's own API
+    model = ModelClass(**model_card.hyper_parameters)
+
+    # if supervised, we build with training data
+    model = model.build(system, data=data)
+
+    test_instances, test_values = dataset.test_set.select(
         name=target, drop_missing=False
     )
-    preds = score(model, test_instances)
+    preds = model.score(test_instances)
 
     test_sequences = ["".join(instance[0].rep) for instance in test_instances]
 
