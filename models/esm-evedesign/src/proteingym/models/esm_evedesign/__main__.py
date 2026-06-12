@@ -67,24 +67,24 @@ def train(
             help="Path to the dataset file",
         ),
     ],
-    split: Annotated[
-        str,
-        typer.Option(
-            help="Split name to use",
-        ),
-    ],
-    test_fold: Annotated[
-        int,
-        typer.Option(
-            help="Test fold index",
-        ),
-    ],
     target: Annotated[
         str,
         typer.Option(
             help="Target name to use",
         ),
     ],
+    split: Annotated[
+        str | None,
+        typer.Option(
+            help="Split name to use. Omit for zero-shot / whole-dataset scoring.",
+        ),
+    ] = None,
+    test_fold: Annotated[
+        int | None,
+        typer.Option(
+            help="Test fold index. Omit for zero-shot / whole-dataset scoring.",
+        ),
+    ] = None,
     model_card_file: Annotated[
         Path,
         typer.Option(
@@ -95,39 +95,42 @@ def train(
     subsets = Subsets.from_path(dataset_file)
     model_card = ModelCard.from_path(model_card_file)
 
-    # Zero-shot models use only the System and the test instances--the training
-    # split is ignored. probably eventually need some way to score whole csv?
+    zero_shot = "zero-shot" in model_card.tags
+
+    if not zero_shot and (split is None or test_fold is None):
+        raise typer.BadParameter(
+            "--split and --test-fold are required for non-zero-shot models"
+            "they may only be omitted when the model card is tagged zero-shot."
+        )
+
     system, dataset = dataset_to_evedesign(
         subsets,
-        split=split,
+        split=None if zero_shot else split,
         target=target,
-        test_fold=test_fold,
+        test_fold=None if zero_shot else test_fold,
     )
-    
-    if "supervised" in model_card.tags:
-        data = dataset
-    else:
-        data = None
+
+    # Supervised models build against the training data
+    # but everything else builds from the System alone.
+    data = dataset if "supervised" in model_card.tags else None
 
     ModelClass = import_class(model_class)
 
     # load -> build -> score, using the imported model's own API
     model = ModelClass(**model_card.hyper_parameters)
-
-    # if supervised, we build with training data
     model = model.build(system, data=data)
 
-    test_instances, test_values = dataset.test_set.select(
-        name=target, drop_missing=False
-    )
-    preds = model.score(test_instances)
+    # zero-shot scores the whole dataset
+    eval_set = dataset.training_set if zero_shot else dataset.test_set
+    instances, values = eval_set.select(name=target, drop_missing=False)
+    preds = model.score(instances)
 
-    test_sequences = ["".join(instance[0].rep) for instance in test_instances]
+    sequences = ["".join(instance[0].rep) for instance in instances]
 
     df = pl.DataFrame(
         {
-            "sequence": test_sequences,
-            "test": test_values,
+            "sequence": sequences,
+            "test": values,
             "pred": [float(p) for p in preds],
         }
     )
