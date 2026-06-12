@@ -2,6 +2,11 @@
 # Model identifier used for referencing this model in the benchmark system
 name: esm-evedesign
 
+# Import string for the evedesign model class to run. Accepts entry-point style
+# ("package.module:ClassName") or fully dotted style ("package.module.ClassName").
+# The class is instantiated with hyper_parameters, then built and scored.
+model_class: "evedesign.models.esm2:ESM2"
+
 tags: ["zero-shot"]
 
 # Multi-target support flag

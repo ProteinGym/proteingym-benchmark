@@ -51,16 +51,6 @@ def import_class(import_string: str) -> Any:
 
 @app.command()
 def train(
-    model_class: Annotated[
-        str,
-        typer.Option(
-            help=(
-                "Import string for the evedesign model class to run, e.g. "
-                "'evedesign.models.esm2:ESM2'. The class is instantiated with "
-                "the model card hyper_parameters, then built and scored."
-            ),
-        ),
-    ],
     dataset_file: Annotated[
         Path,
         typer.Option(
@@ -94,6 +84,15 @@ def train(
 ):
     subsets = Subsets.from_path(dataset_file)
     model_card = ModelCard.from_path(model_card_file)
+
+    # Import string for the model class is carried on the model card itself.
+    model_class = getattr(model_card, "model_class", None)
+    if not model_class:
+        raise typer.BadParameter(
+            "Model card is missing the required 'model_class' field (import "
+            "string for the evedesign model class, e.g. "
+            "'evedesign.models.esm2:ESM2')."
+        )
 
     zero_shot = "zero-shot" in model_card.tags
 
