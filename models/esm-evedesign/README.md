@@ -7,7 +7,7 @@ name: esm-evedesign
 # The class is instantiated with hyper_parameters, then built and scored.
 model_class: "evedesign.models.esm2:ESM2"
 
-tags: ["zero-shot"]
+tags: ["zero-shot", "embeddable"]
 
 # Multi-target support flag
 multi_y: false
