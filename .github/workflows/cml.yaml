@@ -17,6 +17,11 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true
+          
+      - name: Install system dependencies for CML
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
 
       - uses: iterative/setup-cml@v2
 
