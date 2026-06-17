@@ -9,6 +9,7 @@ dependencies = [
     "proteingym-base",
     "evedesign[esm2,proteingym]",
     "polars[pyarrow]~=1.31.0",
+    "dill~=0.3.8",
 ]
 
 [project.scripts]

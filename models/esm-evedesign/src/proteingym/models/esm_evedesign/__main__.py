@@ -3,6 +3,7 @@ import pickle
 from pathlib import Path
 from typing import Annotated, Any
 
+import dill
 import polars as pl
 import typer
 from evedesign.model import Scorer, Transformer
@@ -73,6 +74,48 @@ def resolve_model_class(model_card: ModelCard) -> str:
     return model_class
 
 
+def load_or_build_model(
+    ModelClass: Any,
+    model_card: ModelCard,
+    system: Any,
+    data: Any,
+    model_file: Path | None,
+) -> Any:
+    """Load a dill-pickled model, or build one and optionally persist it.
+
+    Behaviour is driven entirely by model_file arg:
+
+    - None: build the model from system/data and do not save it
+    - path that exists: deserialize the model with dill and skip building
+      (system/data build inputs are ignored).
+    - path that does not exist: build the model, then dump it to that path
+
+    Args:
+        ModelClass: The resolved evedesign model class.
+        model_card: Loaded model card (supplies constructor hyper_parameters).
+        system: The evedesign system
+        data: Build data
+        model_file: Optional path to load from / dump to
+
+    Returns:
+        The loaded or freshly built model.
+    """
+    if model_file is not None and model_file.exists():
+        console.print(f"Loading prebuilt model from {model_file}; skipping build.")
+        with open(model_file, "rb") as f:
+            return dill.load(f)
+
+    model = ModelClass(**model_card.hyper_parameters)
+    model = model.build(system, data=data)
+
+    if model_file is not None:
+        with open(model_file, "wb") as f:
+            dill.dump(model, f)
+        console.print(f"Saved built model to {model_file}")
+
+    return model
+
+
 @app.command()
 def train(
     dataset_file: Annotated[
@@ -111,6 +154,15 @@ def train(
             help="Path to a precomputed embeddings file (as written by the "
             "'embed' command). When supplied, the enhanced instances are "
             "substituted into the train/test datasets before building.",
+        ),
+    ] = None,
+    model_file: Annotated[
+        Path | None,
+        typer.Option(
+            help="Path to a dill-pickled model. If it exists, the model is "
+            "loaded and building is skipped. If path is given but does not "
+            "exist, the built model is dumped there for reuse. Omit to build "
+            "without saving model.",
         ),
     ] = None,
 ):
@@ -164,12 +216,27 @@ def train(
 
     ModelClass = import_class(model_class)
 
-    # load -> build -> score, using the imported model's own API.
-    model = ModelClass(**model_card.hyper_parameters)
+    # When a prebuilt model is loaded, build is skipped. Warn about any
+    # build-time inputs that were supplied but won't be used.
+    if model_file is not None and model_file.exists():
+        if training_dataset is not None:
+            console.print(
+                "Warning: a prebuilt model will be loaded from "
+                f"{model_file}, the provided training data will not be used to "
+                "build it."
+            )
+        if embeddings_file is not None:
+            console.print(
+                "Warning: a prebuilt model will be loaded, "
+                "--embeddings-file was not used to build it (test-set "
+                "embeddings are still applied for scoring)."
+            )
 
-    # training_dataset is None in the zero-shot/unsupervised case, consistent
-    # with the method signature of unsupervised models.
-    model = model.build(system, data=training_dataset)
+    # load -> build -> score, using the imported model API. training data
+    # is None in the zero-shot/unsupervised case
+    model = load_or_build_model(
+        ModelClass, model_card, system, training_dataset, model_file
+    )
 
     # Score the test dataset (the whole dataset in the zero-shot case).
     instances, values, _, _ = test_dataset.select(name=target, drop_missing=False)
@@ -210,6 +277,15 @@ def embed(
             help="Path to the model card markdown file",
         ),
     ] = ContainerTrainingJobPath.MODEL_CARD_PATH,
+    model_file: Annotated[
+        Path | None,
+        typer.Option(
+            help="Path to a dill-pickled model. If it exists, the model is "
+            "loaded and building is skipped. If path is given but does not "
+            "exist, the built model is dumped there for reuse. Omit to build "
+            "without saving model.",
+        ),
+    ] = None,
 ):
     """Precompute embeddings/scores for the whole dataset and serialize them.
 
@@ -241,9 +317,8 @@ def embed(
 
     ModelClass = import_class(model_class)
 
-    # load -> build, using the imported model wrapper
-    model = ModelClass(**model_card.hyper_parameters)
-    model = model.build(system, data=None)
+    # load -> build, using the imported model wrapper (data=None for embedding)
+    model = load_or_build_model(ModelClass, model_card, system, None, model_file)
 
     # only the instances are needed here (the full dataset in this case)
     instances, _, _, _ = test_dataset.select(name=target, drop_missing=False)
