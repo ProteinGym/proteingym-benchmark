@@ -6,8 +6,10 @@ from typing import Annotated, Any
 import dill
 import polars as pl
 import typer
+from evedesign.dataset import LabeledInstanceDataset
 from evedesign.model import Scorer, Transformer
 from evedesign.proteingym import dataset_to_evedesign
+from evedesign.system import System
 from proteingym.base import Subsets
 from proteingym.base.model import ModelCard
 from rich.console import Console
@@ -75,10 +77,10 @@ def resolve_model_class(model_card: ModelCard) -> str:
 
 
 def load_or_build_model(
-    ModelClass: Any,
+    model_class: str,
     model_card: ModelCard,
-    system: Any,
-    data: Any,
+    system: System,
+    data: LabeledInstanceDataset | None,
     model_file: Path | None,
 ) -> Any:
     """Load a dill-pickled model, or build one and optionally persist it.
@@ -91,7 +93,7 @@ def load_or_build_model(
     - path that does not exist: build the model, then dump it to that path
 
     Args:
-        ModelClass: The resolved evedesign model class.
+        model_class: Import string for the evedesign model class
         model_card: Loaded model card (supplies constructor hyper_parameters).
         system: The evedesign system
         data: Build data
@@ -105,6 +107,7 @@ def load_or_build_model(
         with open(model_file, "rb") as f:
             return dill.load(f)
 
+    ModelClass = import_class(model_class)
     model = ModelClass(**model_card.hyper_parameters)
     model = model.build(system, data=data)
 
@@ -214,8 +217,6 @@ def train(
                 for instance in test_dataset.instances
             ]
 
-    ModelClass = import_class(model_class)
-
     # When a prebuilt model is loaded, build is skipped. Warn about any
     # build-time inputs that were supplied but won't be used.
     if model_file is not None and model_file.exists():
@@ -235,7 +236,7 @@ def train(
     # load -> build -> score, using the imported model API. training data
     # is None in the zero-shot/unsupervised case
     model = load_or_build_model(
-        ModelClass, model_card, system, training_dataset, model_file
+        model_class, model_card, system, training_dataset, model_file
     )
 
     # Score the test dataset (the whole dataset in the zero-shot case).
@@ -315,10 +316,8 @@ def embed(
         test_fold=None,
     )
 
-    ModelClass = import_class(model_class)
-
     # load -> build, using the imported model wrapper (data=None for embedding)
-    model = load_or_build_model(ModelClass, model_card, system, None, model_file)
+    model = load_or_build_model(model_class, model_card, system, None, model_file)
 
     # only the instances are needed here (the full dataset in this case)
     instances, _, _, _ = test_dataset.select(name=target, drop_missing=False)
