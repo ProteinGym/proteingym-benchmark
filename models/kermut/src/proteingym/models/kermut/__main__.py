@@ -16,7 +16,6 @@ from kermut.pg_model.kermut_run import main as kermut_run
 
 from .utils import (
     prepare_dataframe,
-    dump_pg_structure,
 )
 
 
@@ -87,9 +86,9 @@ def train(
         df.write_csv(data_path)
 
         # TODO: Parse structure form dataset object
-        pdb_path = str(Path(temp_dir) / "structure.pdb")
         structure = dataset.structures[0]
-        dump_pg_structure(pdb_path, structure)
+        structure.dump(path=Path(temp_dir))
+        pdb_path = Path(temp_dir) / f"{structure.name}.pdb"
 
         kermut_run(
             dataset_name=dataset.name,
