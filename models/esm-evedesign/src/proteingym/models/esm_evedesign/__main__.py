@@ -151,7 +151,7 @@ def train(
             help="Path to the model card markdown file",
         ),
     ] = ContainerTrainingJobPath.MODEL_CARD_PATH,
-    embeddings_file: Annotated[
+    precomputed_instances_file: Annotated[
         Path | None,
         typer.Option(
             help="Path to a precomputed embeddings file (as written by the "
@@ -193,9 +193,9 @@ def train(
     # Optionally swap in instances enhanced with precomputed embeddings/scores
     # (step 1 of an evedesign pipeline). The embeddings are produced upstream by
     # an embeddable model, so this is independent of the current card's tags.
-    if embeddings_file is not None:
-        console.print(f"Loading precomputed embeddings from {embeddings_file}")
-        with open(embeddings_file, "rb") as f:
+    if precomputed_instances_file is not None:
+        console.print(f"Loading precomputed embeddings from {precomputed_instances_file}")
+        with open(precomputed_instances_file, "rb") as f:
             embedded_instances = pickle.load(f)
 
         # Map each enhanced instance back to its sequence so it can be
@@ -226,7 +226,7 @@ def train(
                 f"{model_file}, the provided training data will not be used to "
                 "build it."
             )
-        if embeddings_file is not None:
+        if precomputed_instances_file is not None:
             console.print(
                 "Warning: a prebuilt model will be loaded, "
                 "--embeddings-file was not used to build it (test-set "
