@@ -241,15 +241,18 @@ def train(
 
     # Score the test dataset (the whole dataset in the zero-shot case).
     instances, values, _, _ = test_dataset.select(name=target, drop_missing=False)
-    preds = model.score(instances)
 
-    sequences = ["".join(instance[0].rep) for instance in instances]
+    # score() returns scored instance copies (order preserved)
+    scored_instances = model.score(instances)
 
+    sequences = ["".join(instance[0].rep) for instance in scored_instances]
+
+    # will have to come back later and add something to pull uncertainties if present
     df = pl.DataFrame(
         {
             "sequence": sequences,
             "test": values,
-            "pred": [float(p) for p in preds],
+            "pred": [float(instance.score) for instance in scored_instances],
         }
     )
 
@@ -322,15 +325,12 @@ def embed(
     # only the instances are needed here (the full dataset in this case)
     instances, _, _, _ = test_dataset.select(name=target, drop_missing=False)
 
-    # Prefer the Transformer interface, which computes embeddings (and scores
-    # when the model can produce both). Transformer.transform returns copies
-    # the Scorer fallback updates instances in place
+    # Prefer the Transformer interface, which computes embeddings Both transform() 
+    # and score() return scored/transformed instance copies, so swap them in directly.
     if isinstance(model, Transformer):
         instances = model.transform(instances)
     elif isinstance(model, Scorer):
-        scores = model.score(instances)
-        for instance, score in zip(instances, scores):
-            instance.score = score
+        instances = model.score(instances)
     else:
         raise typer.BadParameter(
             "Model must implement the Transformer or Scorer interface to embed."
