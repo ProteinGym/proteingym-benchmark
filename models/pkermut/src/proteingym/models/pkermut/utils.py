@@ -1,8 +1,6 @@
 import polars as pl
-from Bio.PDB.PDBIO import PDBIO
 
 from proteingym.base import Subsets
-from proteingym.base.structure import Structure
 
 
 def prepare_dataframe(
@@ -32,9 +30,3 @@ def prepare_dataframe(
     df = pl.concat([train_df, test_df])
     df = df.sample(fraction=1).drop_nans(subset=target).rename({target: "target"})
     return df
-
-
-def dump_pg_structure(path: str, structure: Structure) -> None:
-    io = PDBIO()
-    io.set_structure(structure.value)
-    io.save(path)
