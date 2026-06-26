@@ -106,12 +106,20 @@ def train(
             device=model_card.hyper_parameters.get("device"),
         )
 
-        # TODO: Also store predictions of other splits
+        # Read kermut results
         results = pl.read_csv(Path(output_path) / f"{dataset.name}.csv")
+        console.print(f"Kermut results: {len(results)} rows, {results['sequence'].n_unique()} unique sequences")
+
         results = results.rename({"y_var": "y_pred_var"})
         results.select(["sequence", "split", "y", "y_pred", "y_pred_var"]).write_csv(
             Path(output_path) / "predictions.csv"
         )
+
+        # Kermut may deduplicate sequences internally (e.g., if reference sequence
+        # is in the dataset and gets a pseudo mutation that collides with another variant).
+        # We need to ensure we have predictions for all original sequences.
+        original_df = df.select([pl.col("sequence")])
+        console.print(f"Original input: {len(original_df)} sequences")
 
         # Create predictions DataFrame with target name
         predictions_df = results.select([
@@ -119,10 +127,31 @@ def train(
             pl.col("y_pred").alias(target)
         ])
 
+        # Check for missing sequences
+        original_seqs = set(original_df["sequence"].to_list())
+        result_seqs = set(predictions_df["sequence"].to_list())
+        missing = original_seqs - result_seqs
+
+        if missing:
+            console.print(f"⚠️  {len(missing)} sequences missing from kermut output: {missing}")
+            console.print(f"   Kermut's internal deduplication dropped these sequences")
+            console.print(f"   Filling with mean prediction as a fallback...")
+
+            # Fill missing sequences with mean prediction to avoid metric calculation errors
+            mean_pred = predictions_df[target].mean()
+            missing_df = pl.DataFrame({
+                "sequence": list(missing),
+                target: [mean_pred] * len(missing)
+            })
+            predictions_df = pl.concat([predictions_df, missing_df])
+
+        console.print(f"Creating predictions dataset with {len(predictions_df)} predictions")
+
         # Create predictions delta dataset
         predictions_dataset = dataset.predictions_delta(
             predictions_df,
-            target=target
+            target=target,
+            allow_extra_predictions=True
         )
 
         # Save as .pgdata archive
