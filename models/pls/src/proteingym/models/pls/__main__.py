@@ -78,19 +78,16 @@ def train(
         model=model,
     )
 
-    # Create predictions DataFrame with target name
     predictions_df = df.select([
         pl.col("sequence"),
         pl.col("pred").alias(target)
     ])
 
-    # Create predictions delta dataset
     predictions_dataset = dataset.predictions_delta(
         predictions_df,
         target=target
     )
 
-    # Save as .pgdata archive
     output_file = ContainerTrainingJobPath.OUTPUT_PATH / "predictions.pgdata"
     predictions_dataset.dump(path=ContainerTrainingJobPath.OUTPUT_PATH)
     console.print(f"Saved predictions to {output_file}")
