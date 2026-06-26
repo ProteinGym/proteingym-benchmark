@@ -149,8 +149,6 @@ class TestMetricRecovery:
             for i in range(10)
         ]
 
-        # Ground truth values: 0.1, 0.2, 0.3, ..., 1.0
-        # Top 3 are: seq9 (1.0), seq8 (0.9), seq7 (0.8)
         assay = Assay(
             name="assay1",
             records=[(sequences[i], (i + 1) / 10.0) for i in range(10)],
@@ -178,7 +176,6 @@ class TestMetricRecovery:
 
         Creates a slice that includes all records (full boolean mask).
         """
-        # Boolean mask including all 10 records
         all_records_mask = [True] * 10
 
         return Subsets(
@@ -190,7 +187,6 @@ class TestMetricRecovery:
 
     def test_perfect_recovery(self, recovery_subsets):
         """Test recovery with perfect predictions (100% recovery)."""
-        # Create perfect predictions
         predictions_df = pl.DataFrame(
             {
                 "sequence": [f"SEQ{i:03d}" for i in range(10)],
@@ -214,12 +210,10 @@ class TestMetricRecovery:
 
     def test_zero_recovery(self, recovery_subsets):
         """Test recovery with worst predictions (0% recovery)."""
-        # Create predictions that rank bottom 3 as top 3
-        # Reverse the order: lowest values get highest predictions
         predictions_df = pl.DataFrame(
             {
                 "sequence": [f"SEQ{i:03d}" for i in range(10)],
-                "fitness": [(10 - i) / 10.0 for i in range(10)],  # Reversed
+                "fitness": [(10 - i) / 10.0 for i in range(10)],
             }
         )
 
@@ -239,7 +233,6 @@ class TestMetricRecovery:
 
     def test_partial_recovery(self, recovery_subsets):
         """Test recovery with partial overlap."""
-        # Predictions: top 3 should be seq9, seq8, seq6 (2/3 correct)
         predictions_df = pl.DataFrame(
             {
                 "sequence": [f"SEQ{i:03d}" for i in range(10)],
@@ -254,10 +247,6 @@ class TestMetricRecovery:
                     0.75,
                     0.9,
                     1.0,
-                    # indices: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
-                    # top 3 by prediction: seq9 (1.0), seq6 (0.95), seq8 (0.9)
-                    # top 3 by ground truth: seq9 (1.0), seq8 (0.9), seq7 (0.8)
-                    # overlap: seq9, seq8 = 2/3
                 ],
             }
         )
@@ -348,7 +337,6 @@ class TestMetricRecovery:
             predictions_df, target="fitness"
         )
 
-        # Should raise a warning about top_k being larger than dataset
         with pytest.warns(
             UserWarning,
             match=r"top_k \(100\) is larger than the number of samples \(10\)",
@@ -361,7 +349,6 @@ class TestMetricRecovery:
                 fold=0,
             )
 
-        # Should clamp to dataset size and get perfect recovery
         assert recovery == pytest.approx(1.0)
 
     def test_recovery_in_calculate_selected_metrics(self, recovery_subsets):
