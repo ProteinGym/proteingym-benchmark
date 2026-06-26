@@ -40,7 +40,7 @@ stages:
     - >-
       METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))");
       python $(dvc root)/scripts/metric.py
-      --prediction-path ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/predictions.pgdata
+      --prediction-path ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/${item.dataset.name}_predictions.pgdata
       --dataset-path ${item.dataset.input_filename}
       --metric-path ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}.json
       --selected-metrics $METRICS
@@ -53,7 +53,7 @@ stages:
     deps:
       - ../../scripts/metric.py
       - ${item.dataset.input_filename}
-      - ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/predictions.pgdata
+      - ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/${item.dataset.name}_predictions.pgdata
     metrics:
       - ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}.json:
           cache: false
