@@ -169,7 +169,9 @@ def prepare_and_validate_scoring_df(
         pred_dfs = []
         for fold_idx in fold_indices:
             dataset_slice = ground_truth.slices[split][fold_idx]
-            gt_dfs.append(ground_truth.dataset[dataset_slice].to_df(target_names=target))
+            gt_dfs.append(
+                ground_truth.dataset[dataset_slice].to_df(target_names=target)
+            )
             pred_dfs.append(predicted[dataset_slice].to_df(target_names=target))
 
         gt_df = pl.concat(gt_dfs, how="vertical_relaxed")
@@ -185,7 +187,8 @@ def prepare_and_validate_scoring_df(
         declared_variable_names = [v.name for v in ground_truth.assay_variables]
 
     variable_names = [
-        var for var in declared_variable_names
+        var
+        for var in declared_variable_names
         if var in gt_df.columns
         and var in pred_df.columns
         and not gt_df[var].is_null().all()
@@ -306,7 +309,7 @@ def metric_recovery(
             f"top_k ({top_k}) is larger than the number of samples ({n_samples}). "
             f"Using effective_k={n_samples} instead.",
             UserWarning,
-            stacklevel=2
+            stacklevel=2,
         )
     effective_k = min(top_k, n_samples)
 
@@ -646,7 +649,7 @@ def evaluate(
         metric_path.write_text(json.dumps(error_result, indent=2))
         return metric_path
 
-    if dataset_path.name.endswith('.splits.pgdata'):
+    if dataset_path.name.endswith(".splits.pgdata"):
         ground_truth = Subsets.from_path(dataset_path)
         is_subsets = True
     else:
@@ -665,7 +668,13 @@ def evaluate(
         test_fold = int(fold)
 
         metrics_result = calculate_metrics_by_mode(
-            selected_metrics, ground_truth, predicted, target, split, test_fold, score_modes
+            selected_metrics,
+            ground_truth,
+            predicted,
+            target,
+            split,
+            test_fold,
+            score_modes,
         )
     else:
         if target is None:

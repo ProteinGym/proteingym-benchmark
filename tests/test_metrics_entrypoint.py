@@ -31,14 +31,15 @@ class TestPrepareAndValidateScoringDf:
 
     def test_missing_predictions_raises_error(self, dataset_with_assay):
         """Test that missing predictions raise ValueError."""
-        incomplete_predictions_df = pl.DataFrame({
-            "sequence": ["ACDEFG"],
-            "DMS Score": [1.1],
-        })
+        incomplete_predictions_df = pl.DataFrame(
+            {
+                "sequence": ["ACDEFG"],
+                "DMS Score": [1.1],
+            }
+        )
 
         incomplete_preds = dataset_with_assay.predictions_delta(
-            incomplete_predictions_df,
-            target="DMS Score"
+            incomplete_predictions_df, target="DMS Score"
         )
 
         with pytest.raises(ValueError, match="Missing 1 prediction"):
@@ -59,7 +60,9 @@ class TestPrepareAndValidateScoringDf:
 
     def test_subsets_without_split_raises_error(self, dummy_subsets, predicted_dataset):
         """Test that Subsets without split/fold parameters raises ValueError."""
-        with pytest.raises(ValueError, match="Both 'split' and 'fold' must be provided"):
+        with pytest.raises(
+            ValueError, match="Both 'split' and 'fold' must be provided"
+        ):
             prepare_and_validate_scoring_df(
                 ground_truth=dummy_subsets,
                 predicted=predicted_dataset,
@@ -94,7 +97,9 @@ class TestCalculateSelectedMetrics:
 
         assert len(results) >= 1
 
-    def test_unknown_metric_warning(self, dataset_with_assay, predicted_dataset, capsys):
+    def test_unknown_metric_warning(
+        self, dataset_with_assay, predicted_dataset, capsys
+    ):
         """Test that unknown metrics generate a warning."""
         results = calculate_selected_metrics(
             selected_metrics=["unknown_metric"],
@@ -163,7 +168,12 @@ class TestMetricsIntegration:
             score_modes=["test", "train_available", "per_fold"],
         )
 
-        assert set(results.keys()) == {"test", "train_available", "per_fold", "metadata"}
+        assert set(results.keys()) == {
+            "test",
+            "train_available",
+            "per_fold",
+            "metadata",
+        }
 
         assert results["test"]["spearman"] == pytest.approx(1.0)
         assert results["train_available"]["spearman"] == pytest.approx(1.0)
@@ -187,7 +197,9 @@ class TestEvaluateValidation:
         target_name = dummy_subsets.dataset.assay_targets[0].name
         split_name = list(dummy_subsets.slices.keys())[0]
 
-        with pytest.raises(ValueError, match="--split, --fold, and --target are required"):
+        with pytest.raises(
+            ValueError, match="--split, --fold, and --target are required"
+        ):
             evaluate(
                 prediction_path=pred_path,
                 metric_path=metric_path,
@@ -197,7 +209,9 @@ class TestEvaluateValidation:
                 target=None,
             )
 
-        with pytest.raises(ValueError, match="--split, --fold, and --target are required"):
+        with pytest.raises(
+            ValueError, match="--split, --fold, and --target are required"
+        ):
             evaluate(
                 prediction_path=pred_path,
                 metric_path=metric_path,
@@ -207,7 +221,9 @@ class TestEvaluateValidation:
                 target=target_name,
             )
 
-        with pytest.raises(ValueError, match="--split, --fold, and --target are required"):
+        with pytest.raises(
+            ValueError, match="--split, --fold, and --target are required"
+        ):
             evaluate(
                 prediction_path=pred_path,
                 metric_path=metric_path,

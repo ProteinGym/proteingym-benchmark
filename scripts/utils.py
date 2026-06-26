@@ -55,7 +55,8 @@ def aggregate_metrics(
             # Extract metadata from the first file
             if metadata is None and "metadata" in data:
                 metadata = {
-                    k: v for k, v in data["metadata"].items()
+                    k: v
+                    for k, v in data["metadata"].items()
                     if k not in ["test_fold", "test_folds", "train_available_folds"]
                 }
 
@@ -77,7 +78,8 @@ def aggregate_metrics(
 
     # Build result with means
     result = {
-        "metadata": metadata or {
+        "metadata": metadata
+        or {
             "dataset": dataset_name,
             "model": model_name,
             "split": split,

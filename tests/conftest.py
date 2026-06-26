@@ -63,15 +63,15 @@ def dataset_with_assay() -> Dataset:
     )
     return dataset
 
+
 @pytest.fixture
 def predicted_dataset(dataset_with_assay: Dataset) -> Dataset:
     """Create a predictions dataset using predictions_delta on dataset_with_assay."""
-    predictions_df = pl.DataFrame({
-        "sequence": ["ACDEFG", "GFEDCA"],
-        "DMS Score": [1.1, 2.1],
-    })
-
-    return dataset_with_assay.predictions_delta(
-        predictions_df,
-        target="DMS Score"
+    predictions_df = pl.DataFrame(
+        {
+            "sequence": ["ACDEFG", "GFEDCA"],
+            "DMS Score": [1.1, 2.1],
+        }
     )
+
+    return dataset_with_assay.predictions_delta(predictions_df, target="DMS Score")

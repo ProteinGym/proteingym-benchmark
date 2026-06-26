@@ -11,14 +11,15 @@ class TestMetricSpearman:
 
     def test_perfect_correlation(self, dataset_with_assay):
         """Test Spearman correlation with perfectly correlated predictions."""
-        perfect_predictions_df = pl.DataFrame({
-            "sequence": ["ACDEFG", "GFEDCA"],
-            "DMS Score": [10.0, 20.0],
-        })
+        perfect_predictions_df = pl.DataFrame(
+            {
+                "sequence": ["ACDEFG", "GFEDCA"],
+                "DMS Score": [10.0, 20.0],
+            }
+        )
 
         perfect_preds = dataset_with_assay.predictions_delta(
-            perfect_predictions_df,
-            target="DMS Score"
+            perfect_predictions_df, target="DMS Score"
         )
 
         corr = metric_spearman(
