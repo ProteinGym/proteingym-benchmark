@@ -40,18 +40,20 @@ stages:
     - >-
       METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))");
       python $(dvc root)/scripts/metric.py
-      --prediction-path ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/predictions.json
+      --prediction-path ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/predictions.pgdata
+      --dataset-path ${item.dataset.input_filename}
       --metric-path ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}.json
       --selected-metrics $METRICS
-      --dataset-name ${item.dataset.name}
       --model-name ${item.model.name}
       --split ${item.dataset.split}
       --target ${item.dataset.target}
-      --fold ${item.fold};
+      --fold ${item.fold}
+      --score-modes test train_available per_fold;
 
     deps:
       - ../../scripts/metric.py
-      - ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/predictions.json
+      - ${item.dataset.input_filename}
+      - ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/predictions.pgdata
     metrics:
       - ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}.json:
           cache: false

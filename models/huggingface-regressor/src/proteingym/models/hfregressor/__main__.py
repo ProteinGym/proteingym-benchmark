@@ -105,16 +105,26 @@ def train(
             data=test_data,
         )
 
-        df = pl.DataFrame(
+        # Create predictions DataFrame with target name
+        predictions_df = pl.DataFrame(
             {
                 "sequence": test_data["sequence"],
-                "test": test_data[target],
-                "pred": test_preds.tolist(),
+                target: test_preds.tolist(),
             }
         )
 
-        output_file = f"{output_path}/predictions.json"
-        df.write_json(output_file)
+        # Get the dataset for predictions_delta
+        dataset = subsets[split].dataset
+
+        # Create predictions delta dataset
+        predictions_dataset = dataset.predictions_delta(
+            predictions_df,
+            target=target
+        )
+
+        # Save as .pgdata archive
+        output_file = Path(output_path) / "predictions.pgdata"
+        predictions_dataset.dump(path=Path(output_path))
         console.print(f"Saved predictions to {output_file}")
 
 

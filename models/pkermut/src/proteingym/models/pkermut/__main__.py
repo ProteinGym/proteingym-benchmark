@@ -112,17 +112,22 @@ def train(
         results.select(["sequence", "split", "y", "y_pred", "y_pred_var"]).write_csv(
             Path(output_path) / "predictions.csv"
         )
-        test_data = results.filter(pl.col("split") == "test")
-        df = pl.DataFrame(
-            {
-                "sequence": test_data["sequence"],
-                "test": test_data["y"],
-                "pred": test_data["y_pred"],
-            }
+
+        # Create predictions DataFrame with target name
+        predictions_df = results.select([
+            pl.col("sequence"),
+            pl.col("y_pred").alias(target)
+        ])
+
+        # Create predictions delta dataset
+        predictions_dataset = dataset.predictions_delta(
+            predictions_df,
+            target=target
         )
 
-        output_file = f"{output_path}/predictions.json"
-        df.write_json(output_file)
+        # Save as .pgdata archive
+        output_file = Path(output_path) / "predictions.pgdata"
+        predictions_dataset.dump(path=Path(output_path))
         console.print(f"Saved predictions to {output_file}")
 
 

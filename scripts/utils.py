@@ -1,5 +1,4 @@
 import json
-import math
 from pathlib import Path
 from typing import Annotated
 import numpy as np
@@ -7,11 +6,34 @@ import polars as pl
 import typer
 
 
-def aggregate_metrics(metric_dir: Path, dataset_name: str, model_name: str, split: str, target: str, output_path: Path, prediction_dir: Path = None):
+def aggregate_metrics(
+    metric_dir: Path,
+    dataset_name: str,
+    model_name: str,
+    split: str,
+    target: str,
+    output_path: Path,
+    prediction_dir: Path = None,
+):
     """Aggregate metrics from all folds into a single JSON file.
 
-    Reads all fold metric files from the directory structure and aggregates them.
-    All metrics are handled generically using the same aggregation logic.
+    Reads all fold metric files and computes the mean of "test" and "train_available"
+    scores across all folds.
+
+    Input structure per fold file:
+        {
+            "test": {"spearman": 0.85},
+            "train_available": {"spearman": 0.92},
+            "per_fold": {...},
+            "metadata": {...}
+        }
+
+    Output structure (aggregated across all folds):
+        {
+            "test": {"spearman": 0.86},
+            "train_available": {"spearman": 0.93},
+            "metadata": {...}
+        }
     """
 
     pattern = f"{dataset_name}/{model_name}/{target}/{split}/fold*.json"
@@ -21,41 +43,60 @@ def aggregate_metrics(metric_dir: Path, dataset_name: str, model_name: str, spli
         print(f"No fold files found for {dataset_name}/{model_name}/{target}/{split}")
         return
 
-    metrics_data = {}
+    # Structure: {scoring_mode: {metric_name: [values]}}
+    test_metrics = {}
+    train_available_metrics = {}
     metadata = None
 
     for fold_file in fold_files:
         with open(fold_file) as f:
             data = json.load(f)
 
-            # Extract metadata from the first file (should be consistent across folds)
-            # Exclude "fold" since aggregated file represents all folds, not a specific one
+            # Extract metadata from the first file
             if metadata is None and "metadata" in data:
-                metadata = {k: v for k, v in data["metadata"].items() if k != "fold"}
+                metadata = {
+                    k: v for k, v in data["metadata"].items()
+                    if k not in ["test_fold", "test_folds", "train_available_folds"]
+                }
 
-            fold_id = data.get("metadata", {}).get("fold", fold_file.stem.replace('fold', ''))
+            # Aggregate test scores
+            if "test" in data:
+                for metric_name, value in data["test"].items():
+                    if value is not None:
+                        if metric_name not in test_metrics:
+                            test_metrics[metric_name] = []
+                        test_metrics[metric_name].append(value)
 
-            for metric_name, value in data.items():
-                if metric_name == "metadata":
-                    continue
-                if metric_name not in metrics_data:
-                    metrics_data[metric_name] = {}
-                metrics_data[metric_name][fold_id] = value
+            # Aggregate train_available scores
+            if "train_available" in data:
+                for metric_name, value in data["train_available"].items():
+                    if value is not None:
+                        if metric_name not in train_available_metrics:
+                            train_available_metrics[metric_name] = []
+                        train_available_metrics[metric_name].append(value)
 
+    # Build result with means
     result = {
         "metadata": metadata or {
             "dataset": dataset_name,
             "model": model_name,
             "split": split,
-            "target": target
+            "target": target,
         }
     }
 
-    for metric_name, folds in metrics_data.items():
-        fold_values = [v for v in folds.values() if v is not None]
-        result[metric_name] = {
-            **folds,
-            "all": np.mean(fold_values) if fold_values else None
+    # Add mean of test metrics
+    if test_metrics:
+        result["test"] = {
+            metric_name: np.mean(values) if values else None
+            for metric_name, values in test_metrics.items()
+        }
+
+    # Add mean of train_available metrics
+    if train_available_metrics:
+        result["train_available"] = {
+            metric_name: np.mean(values) if values else None
+            for metric_name, values in train_available_metrics.items()
         }
 
     output_path.write_text(json.dumps(result, indent=2))
@@ -72,12 +113,26 @@ def aggregate_metrics(metric_dir: Path, dataset_name: str, model_name: str, spli
                     dfs.append(pl.read_json(json_file))
             if dfs:
                 combined = pl.concat(dfs)
-                combined_path = prediction_dir / f"{dataset_name}_{model_name}_{target}_{split}_combined.json"
+                combined_path = (
+                    prediction_dir
+                    / f"{dataset_name}_{model_name}_{target}_{split}_combined.json"
+                )
                 combined.write_json(combined_path)
 
 
 def generate_metrics_csv(metric_dir: Path, output_path: Path, game: str):
-    """Generate metrics CSV from aggregated JSON files."""
+    """Generate metrics CSV from aggregated JSON files.
+
+    Reads aggregated JSON files with structure:
+        {
+            "test": {"spearman": 0.86, ...},
+            "train_available": {"spearman": 0.93, ...},
+            "metadata": {...}
+        }
+
+    And creates CSV with columns:
+        game, model, dataset, split, target, test_spearman, train_available_spearman, ...
+    """
     rows = []
     for metric_file in sorted(metric_dir.glob("*_aggregated.json")):
         with open(metric_file) as f:
@@ -93,14 +148,17 @@ def generate_metrics_csv(metric_dir: Path, output_path: Path, game: str):
             "split": metadata.get("split", "unknown"),
             "target": metadata.get("target", "unknown"),
         }
-        for metric_name, metric_data in data.items():
-            if metric_name == "metadata":
-                continue
-            fold_values = [v for k, v in metric_data.items() if k != "all" and v is not None]
-            mean = metric_data.get("all") or (sum(fold_values) / len(fold_values) if fold_values else None)
-            stdev = math.sqrt(sum((x - mean) ** 2 for x in fold_values) / len(fold_values)) if len(fold_values) > 1 and mean is not None else 0.0
-            row[metric_name] = mean
-            row[f"{metric_name}_stdev"] = stdev
+
+        # Extract test metrics
+        if "test" in data:
+            for metric_name, value in data["test"].items():
+                row[f"test_{metric_name}"] = value
+
+        # Extract train_available metrics
+        if "train_available" in data:
+            for metric_name, value in data["train_available"].items():
+                row[f"train_available_{metric_name}"] = value
+
         rows.append(row)
 
     key_cols = ["game", "model", "dataset", "split", "target"]
@@ -124,17 +182,19 @@ def aggregate(
     split: Annotated[str, typer.Option()],
     target: Annotated[str, typer.Option()],
     output_path: Annotated[Path, typer.Option()],
-    prediction_dir: Annotated[Path, typer.Option()] = None
+    prediction_dir: Annotated[Path, typer.Option()] = None,
 ):
     """Aggregate metrics from folds."""
-    aggregate_metrics(metric_dir, dataset_name, model_name, split, target, output_path, prediction_dir)
+    aggregate_metrics(
+        metric_dir, dataset_name, model_name, split, target, output_path, prediction_dir
+    )
 
 
 @app.command()
 def generate_csv(
     metric_dir: Annotated[Path, typer.Option()],
     output_path: Annotated[Path, typer.Option()],
-    game: Annotated[str, typer.Option()]
+    game: Annotated[str, typer.Option()],
 ):
     """Generate metrics CSV."""
     generate_metrics_csv(metric_dir, output_path, game)
