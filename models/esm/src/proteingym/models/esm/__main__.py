@@ -62,26 +62,35 @@ def train(
 
     model, alphabet = load(model_card)
 
+    # ESM is a zero-shot model, so we predict on all sequences
+    # Get all sequences from the dataset
+    all_sequences_df = dataset.to_df(target_names=target)
+    all_sequences = all_sequences_df["sequence"].to_list()
+
+    console.print(f"Predicting on {len(all_sequences)} sequences...")
+
     df = infer(
-        split_dataset=subsets,
-        split=split,
-        test_fold=test_fold,
+        sequences=all_sequences,
+        dataset=dataset,
         target=target,
         model_card=model_card,
         model=model,
         alphabet=alphabet,
     )
 
+    console.print(f"Got {len(df)} predictions")
+
     # Create predictions DataFrame with target name
     predictions_df = df.select([
-        pl.col("mutation_col").alias("sequence"),
+        pl.col("sequence"),
         pl.col("pred").alias(target)
     ])
 
     # Create predictions delta dataset
     predictions_dataset = dataset.predictions_delta(
         predictions_df,
-        target=target
+        target=target,
+        allow_extra_predictions=True
     )
 
     # Save as .pgdata archive

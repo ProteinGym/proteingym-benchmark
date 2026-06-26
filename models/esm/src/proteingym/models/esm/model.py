@@ -45,9 +45,8 @@ def load(model_card: ModelCard) -> tuple[torch.nn.Module, Alphabet]:
 
 
 def infer(
-    split_dataset: Subsets,
-    split: str,
-    test_fold: int,
+    sequences: list[str],
+    dataset,
     target: str,
     model_card: ModelCard,
     model: torch.nn.Module,
@@ -60,34 +59,24 @@ def infer(
     The scoring strategy is determined by the model card.
 
     Args:
-        split_dataset: Subsets object containing protein sequences and targets
-        split: Name of the split to use
-        test_fold: Which fold to use as test set
-        target: Target column name
+        sequences: List of protein sequences to score
+        dataset: Dataset object containing reference sequence
+        target: Target column name (unused, kept for compatibility)
         model_card: Configuration object specifying scoring strategy and parameters
         model: The loaded ESM model for computing predictions
         alphabet: ESM alphabet for token encoding/decoding
 
     Returns:
-        pl.DataFrame: Polars DataFrame with predictions added in 'pred' column and
-                     target column renamed to 'test'
+        pl.DataFrame: Polars DataFrame with sequences and predictions in 'pred' column
 
     Raises:
         ValueError: If scoring strategy is incompatible with data type
     """
-    dataset = split_dataset[split].dataset
     reference_sequence = str(next(
         seq.value for seq in dataset.sequences if seq.type == SequenceType.WILD_TYPE
     ))
-    
-    scoring_strategy = model_card.hyper_parameters["scoring_strategy"]
 
-    _, _, test_X, test_Y = load_x_and_y(
-        subset=split_dataset,
-        split=split,
-        test_fold=test_fold,
-        target=target,
-    )
+    scoring_strategy = model_card.hyper_parameters["scoring_strategy"]
 
     model_device = next(model.parameters()).device
 
@@ -104,7 +93,7 @@ def infer(
                     token_probs,
                     alphabet,
                 )
-                for seq in tqdm(test_X, desc="Scoring mutations")
+                for seq in tqdm(sequences, desc="Scoring mutations")
             ]
 
         case "masked-marginals":
@@ -131,7 +120,7 @@ def infer(
                     token_probs,
                     alphabet,
                 )
-                for seq in tqdm(test_X, desc="Scoring mutations")
+                for seq in tqdm(sequences, desc="Scoring mutations")
             ]
 
         case "pseudo-ppl":
@@ -141,7 +130,7 @@ def infer(
                     model,
                     alphabet,
                 )
-                for seq in tqdm(test_X, desc="Computing pseudo-perplexity")
+                for seq in tqdm(sequences, desc="Computing pseudo-perplexity")
             ]
 
         case _:
@@ -151,8 +140,7 @@ def infer(
 
     df = pl.DataFrame(
         {
-            "mutation_col": test_X,
-            "test": [float(v) for v in test_Y],
+            "sequence": sequences,
             "pred": predictions,
         }
     )
