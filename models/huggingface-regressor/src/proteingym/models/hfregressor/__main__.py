@@ -100,10 +100,14 @@ def train(
         )
         model.fit(data.filter(pl.col("split") == "train"))
 
-        # Predict on all data (all folds) for metric calculation
+        console.print(f"Predicting on {len(data)} sequences...")
         all_preds = model.predict(data=data)
 
-        # Create predictions DataFrame with target name
+        if len(all_preds.shape) > 1:
+            all_preds = all_preds.flatten()
+
+        console.print(f"Got {len(all_preds)} predictions")
+
         predictions_df = pl.DataFrame(
             {
                 "sequence": data["sequence"],
@@ -117,10 +121,10 @@ def train(
         # Create predictions delta dataset
         predictions_dataset = dataset.predictions_delta(
             predictions_df,
-            target=target
+            target=target,
+            allow_extra_predictions=True
         )
 
-        # Save as .pgdata archive
         output_file = Path(output_path) / "predictions.pgdata"
         predictions_dataset.dump(path=Path(output_path))
         console.print(f"Saved predictions to {output_file}")
