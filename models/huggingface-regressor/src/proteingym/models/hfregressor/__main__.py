@@ -100,16 +100,14 @@ def train(
         )
         model.fit(data.filter(pl.col("split") == "train"))
 
-        test_data = data.filter(pl.col("split") == "test")
-        test_preds = model.predict(
-            data=test_data,
-        )
+        # Predict on all data (all folds) for metric calculation
+        all_preds = model.predict(data=data)
 
         # Create predictions DataFrame with target name
         predictions_df = pl.DataFrame(
             {
-                "sequence": test_data["sequence"],
-                target: test_preds.tolist(),
+                "sequence": data["sequence"],
+                target: all_preds.tolist(),
             }
         )
 

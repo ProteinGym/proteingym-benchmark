@@ -69,19 +69,20 @@ def train(
         model_card=model_card,
     )
 
-    df = infer(
-        split_dataset=subsets,
-        split=split,
-        test_fold=test_fold,
-        target=target,
-        model_card=model_card,
-        model=model,
-    )
+    # Get all sequences from the dataset to predict on
+    all_sequences_df = dataset.to_df(target_names=target)
+    all_sequences = all_sequences_df["sequence"].to_list()
 
-    predictions_df = df.select([
-        pl.col("sequence"),
-        pl.col("pred").alias(target)
-    ])
+    # Encode and predict on all sequences
+    from .preprocess import encode
+    encodings = encode(split_X=all_sequences, hyper_params=model_card.hyper_parameters)
+    predictions = model.predict(encodings)
+
+    # Create predictions dataframe for all sequences
+    predictions_df = pl.DataFrame({
+        "sequence": all_sequences,
+        target: predictions.tolist(),
+    })
 
     predictions_dataset = dataset.predictions_delta(
         predictions_df,
