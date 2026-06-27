@@ -63,7 +63,6 @@ def train(
     model, alphabet = load(model_card)
 
     # ESM is a zero-shot model, so we predict on all sequences
-    # Get all sequences from the dataset
     all_sequences_df = dataset.to_df(target_names=target)
     all_sequences = all_sequences_df["sequence"].to_list()
 
@@ -80,20 +79,17 @@ def train(
 
     console.print(f"Got {len(df)} predictions")
 
-    # Create predictions DataFrame with target name
     predictions_df = df.select([
         pl.col("sequence"),
         pl.col("pred").alias(target)
     ])
 
-    # Create predictions delta dataset
     predictions_dataset = dataset.predictions_delta(
         predictions_df,
         target=target,
         allow_extra_predictions=True
     )
 
-    # Save as .pgdata archive
     output_file = ContainerTrainingJobPath.OUTPUT_PATH / "predictions.pgdata"
     predictions_dataset.dump(path=ContainerTrainingJobPath.OUTPUT_PATH)
     console.print(f"Saved predictions to {output_file}")

@@ -106,29 +106,19 @@ def train(
             device=model_card.hyper_parameters.get("device"),
         )
 
-        # Read kermut results from predictions.csv (not {dataset.name}.csv)
-        # The kermut_run.py script writes two CSVs:
-        #   1. {dataset.name}.csv - deduplicated intermediate results (48 rows)
-        #   2. predictions.csv - final results with all sequences restored (49 rows)
         results = pl.read_csv(Path(output_path) / "predictions.csv")
-        console.print(f"Kermut results: {len(results)} rows, {results['sequence'].n_unique()} unique sequences")
 
-        # Create predictions DataFrame with target name
         predictions_df = results.select([
             pl.col("sequence"),
             pl.col("y_pred").alias(target)
         ])
 
-        console.print(f"Creating predictions dataset with {len(predictions_df)} predictions")
-
-        # Create predictions delta dataset
         predictions_dataset = dataset.predictions_delta(
             predictions_df,
             target=target,
             allow_extra_predictions=True
         )
 
-        # Save as .pgdata archive
         output_file = Path(output_path) / "predictions.pgdata"
         predictions_dataset.dump(path=Path(output_path))
         console.print(f"Saved predictions to {output_file}")

@@ -4,12 +4,12 @@ import polars as pl
 import torch
 from esm import pretrained
 from esm.data import Alphabet
-from proteingym.base import Subsets
+from proteingym.base import Dataset
 from proteingym.base.model import ModelCard
 from proteingym.base.sequence import SequenceType
 from tqdm import tqdm
 
-from .preprocess import encode, load_x_and_y
+from .preprocess import encode
 from .utils import compute_pppl, score_sequence_difference
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ def load(model_card: ModelCard) -> tuple[torch.nn.Module, Alphabet]:
 
 def infer(
     sequences: list[str],
-    dataset,
+    dataset: Dataset,
     target: str,
     model_card: ModelCard,
     model: torch.nn.Module,

@@ -43,7 +43,6 @@ def aggregate_metrics(
         print(f"No fold files found for {dataset_name}/{model_name}/{target}/{split}")
         return
 
-    # Structure: {scoring_mode: {metric_name: [values]}}
     test_metrics = {}
     train_available_metrics = {}
     metadata = None
@@ -52,7 +51,6 @@ def aggregate_metrics(
         with open(fold_file) as f:
             data = json.load(f)
 
-            # Extract metadata from the first file
             if metadata is None and "metadata" in data:
                 metadata = {
                     k: v
@@ -60,7 +58,6 @@ def aggregate_metrics(
                     if k not in ["test_fold", "test_folds", "train_available_folds"]
                 }
 
-            # Aggregate test scores
             if "test" in data:
                 for metric_name, value in data["test"].items():
                     if value is not None:
@@ -68,7 +65,6 @@ def aggregate_metrics(
                             test_metrics[metric_name] = []
                         test_metrics[metric_name].append(value)
 
-            # Aggregate train_available scores
             if "train_available" in data:
                 for metric_name, value in data["train_available"].items():
                     if value is not None:
@@ -76,7 +72,6 @@ def aggregate_metrics(
                             train_available_metrics[metric_name] = []
                         train_available_metrics[metric_name].append(value)
 
-    # Build result with means and standard deviations
     result = {
         "metadata": metadata
         or {
@@ -87,7 +82,6 @@ def aggregate_metrics(
         }
     }
 
-    # Add mean and std of test metrics
     if test_metrics:
         result["test"] = {}
         for metric_name, values in test_metrics.items():
@@ -95,7 +89,6 @@ def aggregate_metrics(
                 result["test"][metric_name] = np.mean(values)
                 result["test"][f"{metric_name}_std"] = np.std(values, ddof=1) if len(values) > 1 else 0.0
 
-    # Add mean and std of train_available metrics
     if train_available_metrics:
         result["train_available"] = {}
         for metric_name, values in train_available_metrics.items():
@@ -154,12 +147,10 @@ def generate_metrics_csv(metric_dir: Path, output_path: Path, game: str):
             "target": metadata.get("target", "unknown"),
         }
 
-        # Extract test metrics
         if "test" in data:
             for metric_name, value in data["test"].items():
                 row[f"test_{metric_name}"] = value
 
-        # Extract train_available metrics
         if "train_available" in data:
             for metric_name, value in data["train_available"].items():
                 row[f"train_available_{metric_name}"] = value

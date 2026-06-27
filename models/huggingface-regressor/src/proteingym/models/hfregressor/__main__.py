@@ -100,13 +100,10 @@ def train(
         )
         model.fit(data.filter(pl.col("split") == "train"))
 
-        console.print(f"Predicting on {len(data)} sequences...")
         all_preds = model.predict(data=data)
 
         if len(all_preds.shape) > 1:
             all_preds = all_preds.flatten()
-
-        console.print(f"Got {len(all_preds)} predictions")
 
         predictions_df = pl.DataFrame(
             {
@@ -115,10 +112,8 @@ def train(
             }
         )
 
-        # Get the dataset for predictions_delta
         dataset = subsets[split].dataset
 
-        # Create predictions delta dataset
         predictions_dataset = dataset.predictions_delta(
             predictions_df,
             target=target,

@@ -70,19 +70,14 @@ def train(
         model_card=model_card,
     )
 
-    # Get all sequences from dataset and predict on them
     all_sequences_df = dataset.to_df(target_names=target)
     all_sequences = all_sequences_df["sequence"].to_list()
-
-    console.print(f"Predicting on {len(all_sequences)} sequences...")
 
     encodings = encode(split_X=all_sequences, hyper_params=model_card.hyper_parameters)
     predictions = model.predict(encodings)
 
     if len(predictions.shape) > 1:
         predictions = predictions.flatten()
-
-    console.print(f"Got {len(predictions)} predictions")
 
     predictions_df = pl.DataFrame({
         "sequence": all_sequences,
