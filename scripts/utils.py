@@ -17,8 +17,8 @@ def aggregate_metrics(
 ):
     """Aggregate metrics from all folds into a single JSON file.
 
-    Reads all fold metric files and computes the mean of "test" and "train_available"
-    scores across all folds.
+    Reads all fold metric files and computes the mean and standard deviation of "test"
+    and "train_available" scores across all folds.
 
     Input structure per fold file:
         {
@@ -30,8 +30,8 @@ def aggregate_metrics(
 
     Output structure (aggregated across all folds):
         {
-            "test": {"spearman": 0.86},
-            "train_available": {"spearman": 0.93},
+            "test": {"spearman": 0.86, "spearman_std": 0.02},
+            "train_available": {"spearman": 0.93, "spearman_std": 0.01},
             "metadata": {...}
         }
     """
@@ -76,7 +76,7 @@ def aggregate_metrics(
                             train_available_metrics[metric_name] = []
                         train_available_metrics[metric_name].append(value)
 
-    # Build result with means
+    # Build result with means and standard deviations
     result = {
         "metadata": metadata
         or {
@@ -87,19 +87,21 @@ def aggregate_metrics(
         }
     }
 
-    # Add mean of test metrics
+    # Add mean and std of test metrics
     if test_metrics:
-        result["test"] = {
-            metric_name: np.mean(values) if values else None
-            for metric_name, values in test_metrics.items()
-        }
+        result["test"] = {}
+        for metric_name, values in test_metrics.items():
+            if values:
+                result["test"][metric_name] = np.mean(values)
+                result["test"][f"{metric_name}_std"] = np.std(values, ddof=1) if len(values) > 1 else 0.0
 
-    # Add mean of train_available metrics
+    # Add mean and std of train_available metrics
     if train_available_metrics:
-        result["train_available"] = {
-            metric_name: np.mean(values) if values else None
-            for metric_name, values in train_available_metrics.items()
-        }
+        result["train_available"] = {}
+        for metric_name, values in train_available_metrics.items():
+            if values:
+                result["train_available"][metric_name] = np.mean(values)
+                result["train_available"][f"{metric_name}_std"] = np.std(values, ddof=1) if len(values) > 1 else 0.0
 
     output_path.write_text(json.dumps(result, indent=2))
 
@@ -127,13 +129,14 @@ def generate_metrics_csv(metric_dir: Path, output_path: Path, game: str):
 
     Reads aggregated JSON files with structure:
         {
-            "test": {"spearman": 0.86, ...},
-            "train_available": {"spearman": 0.93, ...},
+            "test": {"spearman": 0.86, "spearman_std": 0.02, ...},
+            "train_available": {"spearman": 0.93, "spearman_std": 0.01, ...},
             "metadata": {...}
         }
 
     And creates CSV with columns:
-        game, model, dataset, split, target, test_spearman, train_available_spearman, ...
+        game, model, dataset, split, target, test_spearman, test_spearman_std,
+        train_available_spearman, train_available_spearman_std, ...
     """
     rows = []
     for metric_file in sorted(metric_dir.glob("*_aggregated.json")):
