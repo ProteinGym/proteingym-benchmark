@@ -76,7 +76,7 @@ def infer(
         model: Trained scikit-learn PLS regression model
 
     Returns:
-        Dataset: Dataset with predictions added for all sequences
+        Dataset: Predictions dataset
     """
     dataset = split_dataset[split].dataset
 

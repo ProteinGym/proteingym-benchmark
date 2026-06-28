@@ -373,7 +373,6 @@ class TestMetricRecovery:
             fold=0,
         )
 
-        assert "recovery" in results
-        assert "spearman" in results
+        assert "recovery" in results and "spearman" in results
         assert results["recovery"] == pytest.approx(1.0)
         assert results["spearman"] == pytest.approx(1.0)
