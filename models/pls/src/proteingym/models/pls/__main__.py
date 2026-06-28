@@ -7,8 +7,7 @@ from proteingym.base import Subsets
 from proteingym.base.model import ModelCard
 from rich.console import Console
 
-from .preprocess import encode
-from .model import train as train_model
+from .model import train as train_model, infer
 
 
 app = typer.Typer(
@@ -70,27 +69,15 @@ def train(
         model_card=model_card,
     )
 
-    all_sequences_df = dataset.to_df(target_names=target)
-    all_sequences = all_sequences_df["sequence"].to_list()
-
-    encodings = encode(split_X=all_sequences, hyper_params=model_card.hyper_parameters)
-    predictions = model.predict(encodings)
-
-    if len(predictions.shape) > 1:
-        predictions = predictions.flatten()
-
-    predictions_df = pl.DataFrame({
-        "sequence": all_sequences,
-        target: predictions.tolist(),
-    })
-
-    predictions_dataset = dataset.predictions_delta(
-        predictions_df,
+    predictions_dataset = infer(
+        split_dataset=subsets,
+        split=split,
         target=target,
-        allow_extra_predictions=True
+        model_card=model_card,
+        model=model,
     )
 
-    output_file = ContainerTrainingJobPath.OUTPUT_PATH / "predictions.pgdata"
+    output_file = Path(ContainerTrainingJobPath.OUTPUT_PATH) / "predictions.pgdata"
     predictions_dataset.dump(path=ContainerTrainingJobPath.OUTPUT_PATH)
     console.print(f"Saved predictions to {output_file}")
 
