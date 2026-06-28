@@ -79,15 +79,10 @@ def train(
 
     console.print(f"Got {len(df)} predictions")
 
-    predictions_df = df.select([
-        pl.col("sequence"),
-        pl.col("pred").alias(target)
-    ])
+    predictions_df = df.select([pl.col("sequence"), pl.col("pred").alias(target)])
 
     predictions_dataset = dataset.predictions_delta(
-        predictions_df,
-        target=target,
-        allow_extra_predictions=True
+        predictions_df, target=target, allow_extra_predictions=True
     )
 
     output_file = ContainerTrainingJobPath.OUTPUT_PATH / "predictions.pgdata"

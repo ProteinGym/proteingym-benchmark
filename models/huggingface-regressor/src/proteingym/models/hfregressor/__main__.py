@@ -115,9 +115,7 @@ def train(
         dataset = subsets[split].dataset
 
         predictions_dataset = dataset.predictions_delta(
-            predictions_df,
-            target=target,
-            allow_extra_predictions=True
+            predictions_df, target=target, allow_extra_predictions=True
         )
 
         output_file = Path(output_path) / "predictions.pgdata"

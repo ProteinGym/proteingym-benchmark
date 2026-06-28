@@ -73,6 +73,7 @@ import sys
 import argparse
 import json
 import warnings
+import logging
 from pathlib import Path
 
 import numpy as np
@@ -81,7 +82,23 @@ from scipy.stats import spearmanr
 
 from proteingym.base.dataset import Subsets, Dataset, SEQUENCE
 
-metric_functions = {}
+logger = logging.getLogger(__name__)
+
+# Cache discovered metric functions at module level
+_metric_functions_cache = None
+
+
+def _discover_metric_functions() -> dict[str, callable]:
+    """Discover all metric functions in the current module (cached)."""
+    global _metric_functions_cache
+    if _metric_functions_cache is None:
+        _metric_functions_cache = {}
+        current_module = sys.modules[__name__]
+        for name, obj in inspect.getmembers(current_module, inspect.isfunction):
+            if name.startswith("metric_"):
+                metric_name = name.replace("metric_", "", 1)
+                _metric_functions_cache[metric_name] = obj
+    return _metric_functions_cache
 
 
 def get_fold_indices(subsets: Subsets, split: str) -> list[int]:
@@ -471,14 +488,7 @@ def calculate_selected_metrics(
         ...     fold=0
         ... )
     """
-    current_module = sys.modules[__name__]
-    global metric_functions
-
-    for name, obj in inspect.getmembers(current_module, inspect.isfunction):
-        if name.startswith("metric_"):
-            metric_name = name.replace("metric_", "", 1)
-            metric_functions[metric_name] = obj
-
+    metric_functions = _discover_metric_functions()
     results = {}
 
     for metric_name in selected_metrics:
@@ -488,7 +498,7 @@ def calculate_selected_metrics(
             )
             results[metric_name] = metric_value
         else:
-            print(f"Warning: Metric '{metric_name}' not found in available metrics")
+            logger.warning(f"Metric '{metric_name}' not found in available metrics")
 
     return results
 
@@ -656,10 +666,10 @@ def evaluate(
             }
     """
 
-    print("Start to calculate metrics.")
+    logger.info("Start to calculate metrics.")
 
     if not prediction_path.exists():
-        print(f"Error: Prediction file not found: {prediction_path}", file=sys.stderr)
+        logger.error(f"Prediction file not found: {prediction_path}")
         error_result = {
             "error": f"Prediction file not found: {prediction_path}",
             "status": "failed",
@@ -672,14 +682,22 @@ def evaluate(
         metric_path.write_text(json.dumps(error_result, indent=2))
         return metric_path
 
-    if dataset_path.name.endswith(".splits.pgdata"):
-        ground_truth = Subsets.from_path(dataset_path)
-        is_subsets = True
-    else:
-        ground_truth = Dataset.from_path(dataset_path)
-        is_subsets = False
+    try:
+        if dataset_path.name.endswith(".splits.pgdata"):
+            ground_truth = Subsets.from_path(dataset_path)
+            is_subsets = True
+        else:
+            ground_truth = Dataset.from_path(dataset_path)
+            is_subsets = False
+    except (FileNotFoundError, ValueError) as e:
+        logger.error(f"Failed to load dataset from {dataset_path}: {e}")
+        raise
 
-    predicted = Dataset.from_path(prediction_path)
+    try:
+        predicted = Dataset.from_path(prediction_path)
+    except (FileNotFoundError, ValueError) as e:
+        logger.error(f"Failed to load predictions from {prediction_path}: {e}")
+        raise
 
     if is_subsets:
         if split is None or fold is None or target is None:
@@ -812,4 +830,8 @@ def main():
 
 
 if __name__ == "__main__":
-    print(f"Metrics have been saved to {main()}.")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+    )
+    logger.info(f"Metrics have been saved to {main()}.")

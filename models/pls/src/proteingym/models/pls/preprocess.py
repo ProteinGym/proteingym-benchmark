@@ -7,33 +7,37 @@ from proteingym.base import Subsets
 
 logger = logging.getLogger(__name__)
 
-def load_x_and_y(subset: Subsets, split: str, test_fold: int, target: str) -> tuple[list[Any], list[Any], list[Any], list[Any]]:
-        """Load train/test splits for k-fold cross-validation.
-        
-        Args:
-            subset: a split dataset in the Subsets format
-            split: name of the split
-            test_fold: Which kfold split to take as test set
-            target: name of the target we are classifying
-        """
-        
-        test_dataset = subset[split].slices[test_fold]
-        test_df = subset[split].dataset[test_dataset].to_df()
-        
-        train_dfs = []
-        for i in range(len(subset[split].slices)):
-            if i != test_fold:
-                train_slice = subset[split].slices[i]
-                train_dfs.append(subset[split].dataset[train_slice].to_df())
-        
-        train_df = pl.concat(train_dfs)
-        
-        train_X = train_df['sequence'].to_list()
-        train_Y = train_df[target].to_list()
-        test_X = test_df['sequence'].to_list()
-        test_Y = test_df[target].to_list()
-        
-        return train_X, train_Y, test_X, test_Y
+
+def load_x_and_y(
+    subset: Subsets, split: str, test_fold: int, target: str
+) -> tuple[list[Any], list[Any], list[Any], list[Any]]:
+    """Load train/test splits for k-fold cross-validation.
+
+    Args:
+        subset: a split dataset in the Subsets format
+        split: name of the split
+        test_fold: Which kfold split to take as test set
+        target: name of the target we are classifying
+    """
+
+    test_dataset = subset[split].slices[test_fold]
+    test_df = subset[split].dataset[test_dataset].to_df()
+
+    train_dfs = []
+    for i in range(len(subset[split].slices)):
+        if i != test_fold:
+            train_slice = subset[split].slices[i]
+            train_dfs.append(subset[split].dataset[train_slice].to_df())
+
+    train_df = pl.concat(train_dfs)
+
+    train_X = train_df["sequence"].to_list()
+    train_Y = train_df[target].to_list()
+    test_X = test_df["sequence"].to_list()
+    test_Y = test_df[target].to_list()
+
+    return train_X, train_Y, test_X, test_Y
+
 
 def encode(split_X: list[Any], hyper_params: dict[str, Any]) -> np.ndarray:
     """Encode protein sequences into one-hot encoded numerical arrays.
@@ -90,6 +94,6 @@ def encode(split_X: list[Any], hyper_params: dict[str, Any]) -> np.ndarray:
             ]
         )
 
-        encodings[idx, :len(encoding)] = encoding
+        encodings[idx, : len(encoding)] = encoding
 
     return encodings

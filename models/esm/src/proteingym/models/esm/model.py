@@ -15,7 +15,6 @@ from .utils import compute_pppl, score_sequence_difference
 logger = logging.getLogger(__name__)
 
 
-
 def load(model_card: ModelCard) -> tuple[torch.nn.Module, Alphabet]:
     """Load and configure an ESM model and its alphabet.
 
@@ -72,9 +71,11 @@ def infer(
     Raises:
         ValueError: If scoring strategy is incompatible with data type
     """
-    reference_sequence = str(next(
-        seq.value for seq in dataset.sequences if seq.type == SequenceType.WILD_TYPE
-    ))
+    reference_sequence = str(
+        next(
+            seq.value for seq in dataset.sequences if seq.type == SequenceType.WILD_TYPE
+        )
+    )
 
     scoring_strategy = model_card.hyper_parameters["scoring_strategy"]
 
@@ -134,9 +135,7 @@ def infer(
             ]
 
         case _:
-            raise ValueError(
-                f"Unrecognized scoring strategy: {scoring_strategy}"
-            )
+            raise ValueError(f"Unrecognized scoring strategy: {scoring_strategy}")
 
     df = pl.DataFrame(
         {

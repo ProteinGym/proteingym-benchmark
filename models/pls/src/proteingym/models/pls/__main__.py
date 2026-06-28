@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Annotated
 
-import polars as pl
 import typer
 from proteingym.base import Subsets
 from proteingym.base.model import ModelCard

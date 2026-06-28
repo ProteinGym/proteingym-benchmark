@@ -87,14 +87,18 @@ def aggregate_metrics(
         for metric_name, values in test_metrics.items():
             if values:
                 result["test"][metric_name] = np.mean(values)
-                result["test"][f"{metric_name}_std"] = np.std(values, ddof=1) if len(values) > 1 else 0.0
+                result["test"][f"{metric_name}_std"] = (
+                    np.std(values, ddof=1) if len(values) > 1 else 0.0
+                )
 
     if train_available_metrics:
         result["train_available"] = {}
         for metric_name, values in train_available_metrics.items():
             if values:
                 result["train_available"][metric_name] = np.mean(values)
-                result["train_available"][f"{metric_name}_std"] = np.std(values, ddof=1) if len(values) > 1 else 0.0
+                result["train_available"][f"{metric_name}_std"] = (
+                    np.std(values, ddof=1) if len(values) > 1 else 0.0
+                )
 
     output_path.write_text(json.dumps(result, indent=2))
 

@@ -106,7 +106,7 @@ class TestCalculateSelectedMetrics:
         assert len(results) >= 1
 
     def test_unknown_metric_warning(
-        self, dataset_with_assay, predicted_dataset, capsys
+        self, dataset_with_assay, predicted_dataset, caplog
     ):
         """Test that unknown metrics generate a warning."""
         results = calculate_selected_metrics(
@@ -116,8 +116,7 @@ class TestCalculateSelectedMetrics:
             target="DMS Score",
         )
 
-        captured = capsys.readouterr()
-        assert "Warning: Metric 'unknown_metric' not found" in captured.out
+        assert "Metric 'unknown_metric' not found" in caplog.text
         assert "unknown_metric" not in results
 
 

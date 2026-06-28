@@ -35,16 +35,13 @@ def train(
         PLSRegression: Trained scikit-learn PLS regression model ready for prediction
     """
     train_X, train_Y, test_X, test_Y = load_x_and_y(
-        subset=split_dataset,
-        split=split,
-        test_fold=test_fold, 
-        target=target
+        subset=split_dataset, split=split, test_fold=test_fold, target=target
     )
 
     logger.info(f"Loaded {len(train_Y)} training records and start the training...")
 
     encodings = encode(split_X=train_X, hyper_params=model_card.hyper_parameters)
-    
+
     model = PLSRegression(n_components=model_card.hyper_parameters["n_components"])
     model.fit(encodings, train_Y)
 
@@ -91,15 +88,15 @@ def infer(
     if len(predictions.shape) > 1:
         predictions = predictions.flatten()
 
-    predictions_df = pl.DataFrame({
-        "sequence": all_sequences,
-        target: predictions.tolist(),
-    })
+    predictions_df = pl.DataFrame(
+        {
+            "sequence": all_sequences,
+            target: predictions.tolist(),
+        }
+    )
 
     predictions_dataset = dataset.predictions_delta(
-        predictions_df,
-        target=target,
-        allow_extra_predictions=True
+        predictions_df, target=target, allow_extra_predictions=True
     )
 
     logger.info("Finished the scoring.")

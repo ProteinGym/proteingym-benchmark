@@ -108,15 +108,12 @@ def train(
 
         results = pl.read_csv(Path(output_path) / "predictions.csv")
 
-        predictions_df = results.select([
-            pl.col("sequence"),
-            pl.col("y_pred").alias(target)
-        ])
+        predictions_df = results.select(
+            [pl.col("sequence"), pl.col("y_pred").alias(target)]
+        )
 
         predictions_dataset = dataset.predictions_delta(
-            predictions_df,
-            target=target,
-            allow_extra_predictions=True
+            predictions_df, target=target, allow_extra_predictions=True
         )
 
         output_file = Path(output_path) / "predictions.pgdata"
