@@ -1,3 +1,4 @@
+import json
 import pytest
 import polars as pl
 
@@ -9,6 +10,7 @@ from scripts.metric import (
     metric_recovery,
     _get_top_k_from_slice,
     calculate_selected_metrics,
+    calculate_metrics_by_mode,
 )
 
 
@@ -376,3 +378,141 @@ class TestMetricRecovery:
         assert "recovery" in results and "spearman" in results
         assert results["recovery"] == pytest.approx(1.0)
         assert results["spearman"] == pytest.approx(1.0)
+
+    def test_recovery_none_for_training_folds(self, recovery_dataset):
+        """Test that recovery returns None for training folds (no top_k metadata) and value for test fold."""
+        all_records_mask = [True] * 10
+        half_records_mask = [i < 5 for i in range(10)]
+
+        subsets_with_mixed_metadata = Subsets(
+            dataset=recovery_dataset,
+            slices={
+                "test": [
+                    DatasetSlice(assays=[half_records_mask], metadata={"top_k": 2}),
+                    DatasetSlice(assays=[half_records_mask], metadata=None),
+                ]
+            },
+        )
+
+        predictions_df = pl.DataFrame(
+            {
+                "sequence": [f"SEQ{i:03d}" for i in range(10)],
+                "fitness": [(i + 1) / 10.0 for i in range(10)],
+            }
+        )
+
+        predictions = recovery_dataset.predictions_delta(
+            predictions_df, target="fitness"
+        )
+
+        test_recovery = metric_recovery(
+            ground_truth=subsets_with_mixed_metadata,
+            predicted=predictions,
+            target="fitness",
+            split="test",
+            fold=0,
+        )
+        assert test_recovery == pytest.approx(1.0)
+
+        train_recovery = metric_recovery(
+            ground_truth=subsets_with_mixed_metadata,
+            predicted=predictions,
+            target="fitness",
+            split="test",
+            fold=1,
+        )
+        assert train_recovery is None
+
+    def test_recovery_in_calculate_metrics_by_mode(self, recovery_dataset):
+        """Test that recovery correctly returns None for train_available and values for test in multi-mode calculation."""
+        all_records_mask = [True] * 10
+
+        subsets = Subsets(
+            dataset=recovery_dataset,
+            slices={
+                "cv": [
+                    DatasetSlice(assays=[all_records_mask], metadata=None),
+                    DatasetSlice(assays=[all_records_mask], metadata=None),
+                    DatasetSlice(assays=[all_records_mask], metadata={"top_k": 3}),
+                ]
+            },
+        )
+
+        predictions_df = pl.DataFrame(
+            {
+                "sequence": [f"SEQ{i:03d}" for i in range(10)],
+                "fitness": [(i + 1) / 10.0 for i in range(10)],
+            }
+        )
+
+        predictions = recovery_dataset.predictions_delta(
+            predictions_df, target="fitness"
+        )
+
+        results = calculate_metrics_by_mode(
+            selected_metrics=["recovery", "spearman"],
+            ground_truth=subsets,
+            predicted=predictions,
+            target="fitness",
+            split="cv",
+            test_fold=2,
+        )
+
+        expected_structure = {
+            "test_has_recovery": results["test"]["recovery"] == pytest.approx(1.0),
+            "test_has_spearman": results["test"]["spearman"] == pytest.approx(1.0),
+            "train_recovery_is_none": results["train_available"]["recovery"] is None,
+            "train_has_spearman": results["train_available"]["spearman"] == pytest.approx(1.0),
+            "fold_0_recovery_is_none": results["per_fold"]["fold_0"]["recovery"] is None,
+            "fold_1_recovery_is_none": results["per_fold"]["fold_1"]["recovery"] is None,
+            "fold_2_has_recovery": results["per_fold"]["fold_2"]["recovery"] == pytest.approx(1.0),
+        }
+
+        assert all(expected_structure.values()), f"Failed checks: {[k for k, v in expected_structure.items() if not v]}"
+
+    def test_recovery_none_serializes_to_json_null(self, recovery_dataset):
+        """Test that None values in recovery metric serialize correctly to JSON null."""
+        all_records_mask = [True] * 10
+
+        subsets = Subsets(
+            dataset=recovery_dataset,
+            slices={
+                "cv": [
+                    DatasetSlice(assays=[all_records_mask], metadata=None),
+                    DatasetSlice(assays=[all_records_mask], metadata={"top_k": 3}),
+                ]
+            },
+        )
+
+        predictions_df = pl.DataFrame(
+            {
+                "sequence": [f"SEQ{i:03d}" for i in range(10)],
+                "fitness": [(i + 1) / 10.0 for i in range(10)],
+            }
+        )
+
+        predictions = recovery_dataset.predictions_delta(
+            predictions_df, target="fitness"
+        )
+
+        results = calculate_metrics_by_mode(
+            selected_metrics=["recovery", "spearman"],
+            ground_truth=subsets,
+            predicted=predictions,
+            target="fitness",
+            split="cv",
+            test_fold=1,
+        )
+
+        json_str = json.dumps(results)
+        parsed = json.loads(json_str)
+
+        expected_json_structure = {
+            "test_recovery_is_float": isinstance(parsed["test"]["recovery"], float),
+            "train_recovery_is_null": parsed["train_available"]["recovery"] is None,
+            "fold_0_recovery_is_null": parsed["per_fold"]["fold_0"]["recovery"] is None,
+            "fold_1_recovery_is_float": isinstance(parsed["per_fold"]["fold_1"]["recovery"], float),
+            "json_contains_null_string": '"recovery": null' in json_str,
+        }
+
+        assert all(expected_json_structure.values()), f"Failed checks: {[k for k, v in expected_json_structure.items() if not v]}"

@@ -259,6 +259,15 @@ def metric_recovery(
     does not contain a "top_k" value, or if ground_truth is a plain Dataset (not
     Subsets), the metric returns None.
 
+    **Note on None/NaN values**: It is expected and correct for this metric to return
+    None in certain scenarios, particularly when evaluating training data. In the
+    standard workflow, top-k variants are typically only present in test folds (where
+    metadata includes "top_k"), while training folds do not have this metadata. When
+    calculating metrics across multiple modes (test, train_available, per_fold), the
+    recovery metric will return a valid value for test data and None for training data.
+    This is the intended behavior and None values should be preserved in metric outputs
+    (typically serialized as null in JSON).
+
     Args:
         ground_truth: The ground truth data, either as a complete Dataset or
             a Subsets object containing dataset slices.
@@ -281,7 +290,7 @@ def metric_recovery(
         ValueError: If any ground truth records lack corresponding predictions.
 
     Examples:
-        >>> # Score predictions on a cross-validation fold with top_k metadata
+        >>> # Score predictions on a test fold with top_k metadata (returns value)
         >>> recovery = metric_recovery(
         ...     ground_truth=cv_subsets,
         ...     predicted=predictions_dataset,
@@ -291,6 +300,17 @@ def metric_recovery(
         ... )
         >>> print(f"Recovery: {recovery:.2%}")
         Recovery: 85.00%
+
+        >>> # Score predictions on a training fold without top_k metadata (returns None)
+        >>> recovery = metric_recovery(
+        ...     ground_truth=cv_subsets,
+        ...     predicted=predictions_dataset,
+        ...     target='fitness',
+        ...     split='train',
+        ...     fold=1
+        ... )
+        >>> print(f"Recovery: {recovery}")
+        Recovery: None
     """
     top_k = _get_top_k_from_slice(ground_truth, split, fold)
     if top_k is None:
@@ -429,6 +449,9 @@ def calculate_selected_metrics(
     Returns:
         Dictionary mapping metric names to their computed values. For example:
             {"spearman": 0.85, "pearson": 0.82}
+        Note: Some metrics (like recovery) may return None when they cannot be
+        calculated for a given dataset slice (e.g., missing metadata). None values
+        are preserved in the output and will serialize as null in JSON.
 
     Examples:
         >>> # Calculate metrics on a complete dataset
