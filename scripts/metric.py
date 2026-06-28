@@ -84,7 +84,6 @@ from proteingym.base.dataset import Subsets, Dataset, SEQUENCE
 
 logger = logging.getLogger(__name__)
 
-# Cache discovered metric functions at module level
 _metric_functions_cache = None
 
 
