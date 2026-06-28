@@ -58,7 +58,6 @@ def train(
     ] = ContainerTrainingJobPath.MODEL_CARD_PATH,
 ):
     subsets = Subsets.from_path(dataset_file)
-    dataset = subsets[split].dataset
     model_card = ModelCard.from_path(model_card_file)
 
     model = train_model(
