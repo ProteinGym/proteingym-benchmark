@@ -51,14 +51,12 @@ Adding Custom Metrics:
         split: str | None = None,
         fold: int | None = None
     ) -> float:
-        # Use prepare_and_validate_scoring_df to get aligned data
         scoring_df = prepare_and_validate_scoring_df(
             ground_truth, predicted, target, split, fold
         )
         gt_values = scoring_df[target].to_numpy()
         pred_values = scoring_df[f"{target}_pred"].to_numpy()
 
-        # Your metric calculation logic here
         result = custom_calculation(gt_values, pred_values)
         return result
     ```
