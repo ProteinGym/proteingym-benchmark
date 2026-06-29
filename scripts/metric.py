@@ -79,7 +79,7 @@ from scipy.stats import spearmanr
 
 from proteingym.base.dataset import Subsets, Dataset
 
-from .utils import (
+from scripts.utils import (
     get_fold_indices,
     prepare_and_validate_scoring_df,
     _get_top_k_from_slice,
