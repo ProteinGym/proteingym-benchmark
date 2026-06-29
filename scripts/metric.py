@@ -358,7 +358,7 @@ def calculate_metrics_by_mode(
     test_fold: int,
     score_modes: list[str] | None = None,
 ) -> dict[str, dict[str, float]]:
-    """Calculate metrics in different scoring modes (test, train_available, per_fold).
+    """Calculate metrics in different scoring modes.
 
     Args:
         selected_metrics: List of metric names to calculate (e.g., ["spearman"]).
@@ -371,6 +371,7 @@ def calculate_metrics_by_mode(
             - "test": Score only the test fold
             - "train_available": Score all non-test folds in aggregate
             - "per_fold": Score each fold individually
+            - "full_dataset": Score against the full underlying dataset (ignoring splits)
             If None, defaults to ["test", "train_available", "per_fold"].
 
     Returns:
@@ -383,6 +384,7 @@ def calculate_metrics_by_mode(
                     "fold_1": {"spearman": 0.93, ...},
                     ...
                 },
+                "full_dataset": {"spearman": 0.83, ...},
                 "metadata": {
                     "test_folds": [4],
                     "train_available_folds": [0, 1, 2, 3],
@@ -415,6 +417,11 @@ def calculate_metrics_by_mode(
                 selected_metrics, ground_truth, predicted, target, split, fold_idx
             )
             results["per_fold"][f"fold_{fold_idx}"] = fold_metrics
+
+    if "full_dataset" in score_modes:
+        results["full_dataset"] = calculate_selected_metrics(
+            selected_metrics, ground_truth.dataset, predicted, target, None, None
+        )
 
     results["metadata"] = {
         "test_folds": [test_fold],

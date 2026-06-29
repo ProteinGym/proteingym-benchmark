@@ -39,6 +39,7 @@ stages:
     cmd:
     - >-
       METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))");
+      SCORE_MODES=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['score_modes']))");
       PYTHONPATH=$(dvc root) python -m scripts.metric
       --prediction-path ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/${item.dataset.name}_predictions.pgdata
       --dataset-path ${item.dataset.input_filename}
@@ -48,7 +49,7 @@ stages:
       --split ${item.dataset.split}
       --target ${item.dataset.target}
       --fold ${item.fold}
-      --score-modes test train_available per_fold;
+      --score-modes $SCORE_MODES;
 
     deps:
       - ../../scripts/metric.py

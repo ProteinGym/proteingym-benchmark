@@ -204,6 +204,7 @@ def aggregate_metrics(
 
     test_metrics = {}
     train_available_metrics = {}
+    full_dataset_metrics = None
     metadata = None
 
     for fold_file in fold_files:
@@ -230,6 +231,9 @@ def aggregate_metrics(
                         if metric_name not in train_available_metrics:
                             train_available_metrics[metric_name] = []
                         train_available_metrics[metric_name].append(value)
+
+            if "full_dataset" in data and full_dataset_metrics is None:
+                full_dataset_metrics = data["full_dataset"]
 
     result = {
         "metadata": metadata
@@ -258,6 +262,9 @@ def aggregate_metrics(
                 result["train_available"][f"{metric_name}_std"] = (
                     np.std(values, ddof=1) if len(values) > 1 else 0.0
                 )
+
+    if full_dataset_metrics is not None:
+        result["full_dataset"] = full_dataset_metrics
 
     output_path.write_text(json.dumps(result, indent=2))
 
