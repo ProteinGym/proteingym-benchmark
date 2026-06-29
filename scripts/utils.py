@@ -103,13 +103,26 @@ def prepare_and_validate_scoring_df(
     else:
         raise TypeError("'ground_truth' must be a Dataset or a Subsets object.")
 
-    # Join on (sequence, variables) to align predictions with ground truth
-    # Only use variables that are actually present and non-null in both DataFrames
+    # Validate that ground_truth and predicted have the same assay_variables structure
     if isinstance(ground_truth, Subsets):
-        declared_variable_names = [v.name for v in ground_truth.dataset.assay_variables]
+        gt_variables = ground_truth.dataset.assay_variables
+        pred_variables = predicted.assay_variables
     else:
-        declared_variable_names = [v.name for v in ground_truth.assay_variables]
+        gt_variables = ground_truth.assay_variables
+        pred_variables = predicted.assay_variables
 
+    if gt_variables != pred_variables:
+        gt_var_names = [v.name for v in gt_variables]
+        pred_var_names = [v.name for v in pred_variables]
+        raise ValueError(
+            f"Ground truth and predicted datasets must have identical assay_variables. "
+            f"Ground truth has: {gt_var_names}, predicted has: {pred_var_names}"
+        )
+
+    # Join on (sequence, variables) to align predictions with ground truth
+    # Only use variables that are present and not all-null in both dataframes
+    # (Polars doesn't match null values in joins: NULL != NULL)
+    declared_variable_names = [v.name for v in gt_variables]
     variable_names = [
         var
         for var in declared_variable_names
