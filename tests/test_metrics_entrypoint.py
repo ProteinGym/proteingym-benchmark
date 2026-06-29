@@ -5,11 +5,11 @@ from proteingym.base.dataset import Dataset
 from proteingym.base.assay import SEQUENCE
 
 from scripts.metric import (
-    prepare_and_validate_scoring_df,
-    calculate_selected_metrics,
     calculate_metrics_by_mode,
+    calculate_selected_metrics,
     evaluate,
 )
+from scripts.utils import prepare_and_validate_scoring_df
 
 
 class TestPrepareAndValidateScoringDf:
