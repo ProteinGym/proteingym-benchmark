@@ -39,7 +39,7 @@ stages:
     cmd:
     - >-
       METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))");
-      cd $(dvc root) && python -m scripts.metric
+      PYTHONPATH=$(dvc root) python -m scripts.metric
       --prediction-path ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/${item.dataset.name}_predictions.pgdata
       --dataset-path ${item.dataset.input_filename}
       --metric-path ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}.json
@@ -64,7 +64,7 @@ stages:
       model: ${models}
 
     cmd: >
-      cd $(dvc root) && python -m scripts.utils aggregate
+      PYTHONPATH=$(dvc root) python -m scripts.utils aggregate
       --metric-dir ${output.metric}
       --dataset-name ${item.dataset.name}
       --model-name ${item.model.name}
@@ -82,7 +82,7 @@ stages:
 
   generate_metrics_csv:
     cmd: >
-      cd $(dvc root) && python -m scripts.utils generate-csv
+      PYTHONPATH=$(dvc root) python -m scripts.utils generate-csv
       --metric-dir ${output.metric}
       --output-path $(dvc root)/benchmark/metrics.csv
       --game zero_shot
