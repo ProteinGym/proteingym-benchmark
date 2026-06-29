@@ -129,7 +129,7 @@ def metric_recovery(
     calculating metrics across multiple modes (test, train_available, per_fold), the
     recovery metric will return a valid value for test data and None for training data.
     This is the intended behavior and None values should be preserved in metric outputs
-    (typically serialized as null in JSON).
+    (serialized as `null` in JSON).
 
     Args:
         ground_truth: The ground truth data, either as a complete Dataset or
