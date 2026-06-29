@@ -28,10 +28,12 @@ class TestPrepareAndValidateScoringDf:
             "has_sequence": SEQUENCE in df.columns,
             "has_target": "DMS Score" in df.columns,
             "has_predictions": "DMS Score_pred" in df.columns,
-            "correct_length": len(df) == 2,
+            "correct_length": len(df) == 10,
         }
 
-        assert all(expected_properties.values()), f"Failed checks: {[k for k, v in expected_properties.items() if not v]}"
+        assert all(expected_properties.values()), (
+            f"Failed checks: {[k for k, v in expected_properties.items() if not v]}"
+        )
 
     def test_missing_predictions_raises_error(self, dataset_with_assay):
         """Test that missing predictions raise ValueError."""
@@ -46,7 +48,7 @@ class TestPrepareAndValidateScoringDf:
             incomplete_predictions_df, target="DMS Score"
         )
 
-        with pytest.raises(ValueError, match="Missing 1 prediction"):
+        with pytest.raises(ValueError, match="Missing 9 prediction"):
             prepare_and_validate_scoring_df(
                 ground_truth=dataset_with_assay,
                 predicted=incomplete_preds,
@@ -62,15 +64,17 @@ class TestPrepareAndValidateScoringDf:
                 target="fitness",
             )
 
-    def test_subsets_without_split_raises_error(self, dummy_subsets, predicted_dataset):
+    def test_subsets_without_split_raises_error(
+        self, subsets_with_assays, predicted_dataset
+    ):
         """Test that Subsets without split/fold parameters raises ValueError."""
         with pytest.raises(
             ValueError, match="Both 'split' and 'fold' must be provided"
         ):
             prepare_and_validate_scoring_df(
-                ground_truth=dummy_subsets,
+                ground_truth=subsets_with_assays,
                 predicted=predicted_dataset,
-                target="DMS_score",
+                target="DMS Score",
             )
 
 
@@ -92,7 +96,9 @@ class TestCalculateSelectedMetrics:
             "spearman_is_float": isinstance(results.get("spearman"), float),
         }
 
-        assert all(expected_result.values()), f"Failed checks: {[k for k, v in expected_result.items() if not v]}"
+        assert all(expected_result.values()), (
+            f"Failed checks: {[k for k, v in expected_result.items() if not v]}"
+        )
 
     def test_calculate_multiple_metrics(self, dataset_with_assay, predicted_dataset):
         """Test calculating multiple metrics (when more are available)."""
@@ -123,9 +129,9 @@ class TestCalculateSelectedMetrics:
 class TestMetricsIntegration:
     """Integration tests using real dataset fixtures."""
 
-    def test_with_dummy_subsets(self, dummy_subsets):
-        """Test metrics calculation with dummy subsets fixture."""
-        dataset = dummy_subsets.dataset
+    def test_with_subsets(self, subsets_with_assays):
+        """Test metrics calculation with subsets fixture."""
+        dataset = subsets_with_assays.dataset
         target_name = dataset.assay_targets[0].name
 
         predictions = Dataset(
@@ -135,12 +141,12 @@ class TestMetricsIntegration:
             assays=dataset.assays,
         )
 
-        split_name = list(dummy_subsets.slices.keys())[0]
+        split_name = list(subsets_with_assays.slices.keys())[0]
         fold_idx = 0
 
         results = calculate_selected_metrics(
             selected_metrics=["spearman"],
-            ground_truth=dummy_subsets,
+            ground_truth=subsets_with_assays,
             predicted=predictions,
             target=target_name,
             split=split_name,
@@ -150,9 +156,9 @@ class TestMetricsIntegration:
         assert "spearman" in results
         assert results["spearman"] == pytest.approx(1.0)
 
-    def test_multi_mode_scoring(self, dummy_subsets):
+    def test_multi_mode_scoring(self, subsets_with_assays):
         """Test metrics calculation with multiple scoring modes."""
-        dataset = dummy_subsets.dataset
+        dataset = subsets_with_assays.dataset
         target_name = dataset.assay_targets[0].name
 
         predictions = Dataset(
@@ -162,12 +168,12 @@ class TestMetricsIntegration:
             assays=dataset.assays,
         )
 
-        split_name = list(dummy_subsets.slices.keys())[0]
+        split_name = list(subsets_with_assays.slices.keys())[0]
         test_fold = 0
 
         results = calculate_metrics_by_mode(
             selected_metrics=["spearman"],
-            ground_truth=dummy_subsets,
+            ground_truth=subsets_with_assays,
             predicted=predictions,
             target=target_name,
             split=split_name,
@@ -176,19 +182,26 @@ class TestMetricsIntegration:
         )
 
         expected_results = {
-            "has_correct_keys": set(results.keys()) == {"test", "train_available", "per_fold", "metadata"},
+            "has_correct_keys": set(results.keys())
+            == {"test", "train_available", "per_fold", "metadata"},
             "test_spearman_correct": results["test"]["spearman"] == pytest.approx(1.0),
-            "train_available_spearman_correct": results["train_available"]["spearman"] == pytest.approx(1.0),
+            "train_available_spearman_correct": results["train_available"]["spearman"]
+            == pytest.approx(1.0),
             "per_fold_spearman_correct": all(
                 fold_metrics["spearman"] == pytest.approx(1.0)
                 for fold_metrics in results["per_fold"].values()
             ),
-            "metadata_test_folds_correct": results["metadata"]["test_folds"] == [test_fold],
-            "metadata_train_folds_correct": test_fold not in results["metadata"]["train_available_folds"],
-            "metadata_total_folds_correct": results["metadata"]["total_folds"] == len(results["per_fold"]),
+            "metadata_test_folds_correct": results["metadata"]["test_folds"]
+            == [test_fold],
+            "metadata_train_folds_correct": test_fold
+            not in results["metadata"]["train_available_folds"],
+            "metadata_total_folds_correct": results["metadata"]["total_folds"]
+            == len(results["per_fold"]),
         }
 
-        assert all(expected_results.values()), f"Failed checks: {[k for k, v in expected_results.items() if not v]}"
+        assert all(expected_results.values()), (
+            f"Failed checks: {[k for k, v in expected_results.items() if not v]}"
+        )
 
 
 class TestEvaluateValidation:
@@ -203,15 +216,15 @@ class TestEvaluateValidation:
         ],
     )
     def test_evaluate_requires_parameters_for_subsets(
-        self, tmp_path, dummy_subsets, split, fold, target
+        self, tmp_path, subsets_with_assays, split, fold, target
     ):
         """Test that evaluate raises error when required parameters are missing for Subsets."""
         metric_path = tmp_path / "metrics.json"
 
-        dataset_path = dummy_subsets.dump(path=tmp_path)
-        pred_path = dummy_subsets.dataset.dump(path=tmp_path)
-        target_name = dummy_subsets.dataset.assay_targets[0].name
-        split_name = list(dummy_subsets.slices.keys())[0]
+        dataset_path = subsets_with_assays.dump(path=tmp_path)
+        pred_path = subsets_with_assays.dataset.dump(path=tmp_path)
+        target_name = subsets_with_assays.dataset.assay_targets[0].name
+        split_name = list(subsets_with_assays.slices.keys())[0]
 
         split_value = split_name if split == "split_name" else split
         target_value = target_name if target == "target_name" else target

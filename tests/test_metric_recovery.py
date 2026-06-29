@@ -462,13 +462,19 @@ class TestMetricRecovery:
             "test_has_recovery": results["test"]["recovery"] == pytest.approx(1.0),
             "test_has_spearman": results["test"]["spearman"] == pytest.approx(1.0),
             "train_recovery_is_none": results["train_available"]["recovery"] is None,
-            "train_has_spearman": results["train_available"]["spearman"] == pytest.approx(1.0),
-            "fold_0_recovery_is_none": results["per_fold"]["fold_0"]["recovery"] is None,
-            "fold_1_recovery_is_none": results["per_fold"]["fold_1"]["recovery"] is None,
-            "fold_2_has_recovery": results["per_fold"]["fold_2"]["recovery"] == pytest.approx(1.0),
+            "train_has_spearman": results["train_available"]["spearman"]
+            == pytest.approx(1.0),
+            "fold_0_recovery_is_none": results["per_fold"]["fold_0"]["recovery"]
+            is None,
+            "fold_1_recovery_is_none": results["per_fold"]["fold_1"]["recovery"]
+            is None,
+            "fold_2_has_recovery": results["per_fold"]["fold_2"]["recovery"]
+            == pytest.approx(1.0),
         }
 
-        assert all(expected_structure.values()), f"Failed checks: {[k for k, v in expected_structure.items() if not v]}"
+        assert all(expected_structure.values()), (
+            f"Failed checks: {[k for k, v in expected_structure.items() if not v]}"
+        )
 
     def test_recovery_none_serializes_to_json_null(self, recovery_dataset):
         """Test that None values in recovery metric serialize correctly to JSON null."""
@@ -511,8 +517,12 @@ class TestMetricRecovery:
             "test_recovery_is_float": isinstance(parsed["test"]["recovery"], float),
             "train_recovery_is_null": parsed["train_available"]["recovery"] is None,
             "fold_0_recovery_is_null": parsed["per_fold"]["fold_0"]["recovery"] is None,
-            "fold_1_recovery_is_float": isinstance(parsed["per_fold"]["fold_1"]["recovery"], float),
+            "fold_1_recovery_is_float": isinstance(
+                parsed["per_fold"]["fold_1"]["recovery"], float
+            ),
             "json_contains_null_string": '"recovery": null' in json_str,
         }
 
-        assert all(expected_json_structure.values()), f"Failed checks: {[k for k, v in expected_json_structure.items() if not v]}"
+        assert all(expected_json_structure.values()), (
+            f"Failed checks: {[k for k, v in expected_json_structure.items() if not v]}"
+        )
