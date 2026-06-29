@@ -65,7 +65,7 @@ def prepare_and_validate_scoring_df(
     Examples:
         >>> # Score a complete dataset
         >>> df = prepare_and_validate_scoring_df(
-        ...     ground_truth=test_dataset,
+        ...     ground_truth=dataset,
         ...     predicted=predictions_dataset,
         ...     target='fitness'
         ... )

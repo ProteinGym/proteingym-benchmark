@@ -320,7 +320,7 @@ def calculate_selected_metrics(
         >>> # Calculate metrics on a complete dataset
         >>> metrics = calculate_selected_metrics(
         ...     selected_metrics=["spearman"],
-        ...     ground_truth=test_dataset,
+        ...     ground_truth=dataset,
         ...     predicted=predictions_dataset,
         ...     target='fitness'
         ... )
