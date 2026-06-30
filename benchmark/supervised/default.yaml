@@ -4,3 +4,7 @@ output:
 metrics:
   - spearman
 folds: [0, 1, 2, 3, 4]
+score_modes:
+  - test
+  - train_available
+  - per_fold

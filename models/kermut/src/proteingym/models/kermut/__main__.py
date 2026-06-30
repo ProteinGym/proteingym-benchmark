@@ -106,23 +106,18 @@ def train(
             device=model_card.hyper_parameters.get("device"),
         )
 
-        # TODO: Also store predictions of other splits
-        results = pl.read_csv(Path(output_path) / f"{dataset.name}.csv")
-        results = results.rename({"y_var": "y_pred_var"})
-        results.select(["sequence", "split", "y", "y_pred", "y_pred_var"]).write_csv(
-            Path(output_path) / "predictions.csv"
-        )
-        test_data = results.filter(pl.col("split") == "test")
-        df = pl.DataFrame(
-            {
-                "sequence": test_data["sequence"],
-                "test": test_data["y"],
-                "pred": test_data["y_pred"],
-            }
+        results = pl.read_csv(Path(output_path) / "predictions.csv")
+
+        predictions_df = results.select(
+            [pl.col("sequence"), pl.col("y_pred").alias(target)]
         )
 
-        output_file = f"{output_path}/predictions.json"
-        df.write_json(output_file)
+        predictions_dataset = dataset.predictions_delta(
+            predictions_df, target=target, allow_extra_predictions=True
+        )
+
+        output_file = Path(output_path) / "predictions.pgdata"
+        predictions_dataset.dump(path=Path(output_path))
         console.print(f"Saved predictions to {output_file}")
 
 

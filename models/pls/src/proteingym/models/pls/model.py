@@ -35,16 +35,13 @@ def train(
         PLSRegression: Trained scikit-learn PLS regression model ready for prediction
     """
     train_X, train_Y, test_X, test_Y = load_x_and_y(
-        subset=split_dataset,
-        split=split,
-        test_fold=test_fold, 
-        target=target
+        subset=split_dataset, split=split, test_fold=test_fold, target=target
     )
 
     logger.info(f"Loaded {len(train_Y)} training records and start the training...")
 
     encodings = encode(split_X=train_X, hyper_params=model_card.hyper_parameters)
-    
+
     model = PLSRegression(n_components=model_card.hyper_parameters["n_components"])
     model.fit(encodings, train_Y)
 
@@ -56,51 +53,52 @@ def train(
 def infer(
     split_dataset: Subsets,
     split: str,
-    test_fold: int,
     target: str,
     model_card: ModelCard,
     model: PLSRegression,
-) -> pl.DataFrame:
-    """Generate predictions using a trained PLS regression model on test data.
+) -> Dataset:
+    """Generate predictions using a trained PLS regression model on all sequences.
 
-    This function loads test data from the dataset, encodes the protein sequences
-    using the same hyperparameters from the model card used during training, and generates
-    predictions using the provided trained PLS regression model.
+    This function encodes all protein sequences in the dataset using the same
+    hyperparameters from the model card used during training, generates predictions
+    using the provided trained PLS regression model, and returns a Dataset with
+    the predictions merged in.
 
     Args:
         split_dataset: Dataset object containing protein sequences and targets
         split: Name of the split to use
-        test_fold: Which fold to use as test set
         target: Target column name
         model_card: Configuration object containing model hyperparameters
             used for consistent sequence encoding
         model: Trained scikit-learn PLS regression model
 
     Returns:
-        pl.DataFrame: DataFrame containing test sequences, actual targets, and predictions
-            with columns 'sequence', 'test' (actual values), and 'pred' (predicted values)
+        Dataset: Predictions dataset
     """
-    train_X, train_Y, test_X, test_Y = load_x_and_y(
-        subset=split_dataset,
-        split=split,
-        test_fold=test_fold,
-        target=target
+    dataset = split_dataset[split].dataset
+
+    all_sequences_df = dataset.to_df(target_names=target)
+    all_sequences = all_sequences_df["sequence"].to_list()
+
+    logger.info(f"Loaded {len(all_sequences)} sequences and start the scoring...")
+
+    encodings = encode(split_X=all_sequences, hyper_params=model_card.hyper_parameters)
+    predictions = model.predict(encodings)
+
+    if len(predictions.shape) > 1:
+        predictions = predictions.flatten()
+
+    predictions_df = pl.DataFrame(
+        {
+            "sequence": all_sequences,
+            target: predictions.tolist(),
+        }
     )
 
-    logger.info(f"Loaded {len(test_Y)} test records and start the scoring...")
-
-    encodings = encode(split_X=test_X, hyper_params=model_card.hyper_parameters)
-
-    preds = model.predict(encodings)
-
-    df = pl.DataFrame(
-        {
-            "sequence": test_X,
-            "test": test_Y,
-            "pred": preds.tolist(),
-        }
+    predictions_dataset = dataset.predictions_delta(
+        predictions_df, target=target, allow_extra_predictions=True
     )
 
     logger.info("Finished the scoring.")
 
-    return df
+    return predictions_dataset

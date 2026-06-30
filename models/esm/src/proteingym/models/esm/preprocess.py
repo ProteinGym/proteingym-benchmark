@@ -38,10 +38,10 @@ def load_x_and_y(
 
     train_df = pl.concat(train_dfs)
 
-    train_X = train_df['sequence'].to_list()
+    train_X = train_df["sequence"].to_list()
     train_Y = train_df[target].to_list()
 
-    test_X = test_df['sequence'].to_list()
+    test_X = test_df["sequence"].to_list()
     test_Y = test_df[target].to_list()
 
     return train_X, train_Y, test_X, test_Y

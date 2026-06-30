@@ -10,15 +10,15 @@ framework accesses models via the `train` entrypoint, for example:
 - [models/pls/src/proteingym/models/pls/__main__.py]
 
 The `train` entrypoint expects a reference to a dataset archive, e.g., loaded by
-`proteingym.base.Dataset`:
+`proteingym.base.Subsets`:
 
 ```python
-from proteingym.base import Dataset
-dataset = Dataset.from_path(dataset_path)
+from proteingym.base import Subsets
+subsets = Subsets.from_path(dataset_path)
 ```
 
 Additionally, the `train` entrypoint expects a reference to a model card, e.g., 
-loaded by `proteingym.benchmark.model.ModelCard`:
+loaded by `proteingym.base.model.ModelCard`:
 
 ```python
 from proteingym.benchmark.model import ModelCard
@@ -27,21 +27,21 @@ model_card = ModelCard.from_path(model_card_path)
 
 Finally, common logic in the `train` method:
 
-- For a **supervised** model, like [esm](models/esm/), it calls `load` and `infer` in order: 
+- For a **zero-shot** model, like [esm](models/esm/), it calls `load` and `infer` in order: 
   - `load` uses `model_card` as input, and returns a model object as output.  
-  - `infer` uses `dataset`, `model_card` and the model object as input, and returns the inferred predictions in a data frame as output.
+  - `infer` uses `dataset`, `model_card` and the model object as input, and returns a Dataset with predictions as output.
 
-- For a **zero-shot** model, like [pls](models/pls/), it calls `train` and `infer` in order:
+- For a **supervised** model, like [pls](models/pls/), it calls `train` and `infer` in order:
     - `train` uses `dataset` and `model_card` as input, and returns a model object as output.
-    - `infer` uses `dataset`, `model_card` and the model object as input, and returns the inferred predictions in a data frame as output.
+    - `infer` uses `dataset`, `model_card` and the model object as input, and returns a Dataset with predictions as output.
 
 For reference, below an example Python implementation with `typer`:
 
 ``` python
 # In `__main__.py`
 import typer
-from proteingym.base import Dataset
-from proteingym.benchmark.model import ModelCard
+from proteingym.base import Subsets
+from proteingym.base.model import ModelCard
 
 
 app = typer.Typer(
@@ -66,18 +66,18 @@ def train(
     ],
 ) -> Path:
 
-    dataset = Dataset.from_path(dataset_file)
+    dataset = Subsets.from_path(dataset_file)
     model_card = ModelCard.from_path(model_card_file)
 
     # For a supervised model
     model = load(model_card)
-    df = infer(dataset, model_card, model)
-    df.to_csv(...)
+    predictions_dataset = infer(dataset, model_card, model)
+    predictions_dataset.dump(output_path)
 
     # For a zero-shot model
     model = train(dataset, model_card)
-    df = infer(dataset, model_card, model)
-    df.to_csv(...)
+    predictions_dataset = infer(dataset, model_card, model)
+    predictions_dataset.dump(output_path)
 
 
 if __name__ == "__main__":
@@ -88,9 +88,9 @@ if __name__ == "__main__":
 ## Output
 
 The framework runs ephemeral containers for each model-dataset pair. Therefore,
-the resulting data frame is persisted on disk in the local environment or stored
-in AWS S3 bucket in the cloud environment, so that the data frame can be later used
-for metric calculation.
+the resulting predictions dataset (`.pgdata` file) is persisted on disk in the local 
+environment or stored in AWS S3 bucket in the cloud environment, so that the 
+predictions can be later used for metric calculation.
 
 ## Suggested code structure
 
@@ -155,7 +155,7 @@ def load(model_card: ModelCard) -> Any:
 ```
 
 ``` python
-def infer(dataset: Dataset, model_card: ModelCard, model: Any) -> DataFrame:
+def infer(dataset: Dataset, model_card: ModelCard, model: Any) -> Dataset:
     """Infer predictions on the data."""
     X, y = load_x_and_y(
         dataset=dataset,
@@ -164,9 +164,9 @@ def infer(dataset: Dataset, model_card: ModelCard, model: Any) -> DataFrame:
 
     predictions = model.predict(model_card, X)
 
-    df = DataFrame(predictions)
+    predictions_dataset = dataset.predictions_delta(predictions, target=target)
 
-    return df
+    return predictions_dataset
 ```
 
 ### `utils.py`
