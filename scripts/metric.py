@@ -391,6 +391,10 @@ def calculate_metrics_by_mode(
                     "total_folds": 5
                 }
             }
+
+        Note: When full_dataset mode is used, it scores against the complete dataset
+        ignoring all splits. The metric value is identical across all folds since it
+        evaluates the same data regardless of the fold.
     """
     if score_modes is None:
         score_modes = ["test", "train_available", "per_fold"]
@@ -471,8 +475,9 @@ def evaluate(
             Required for all metric calculations.
         fold: Fold index (as string) designated as the test fold.
             Required when dataset_path is a .splits.pgdata file.
-        score_modes: List of scoring modes. Options: "test", "train_available", "per_fold".
-            If None, defaults to ["test", "train_available", "per_fold"].
+        score_modes: List of scoring modes. Options: "test", "train_available",
+            "per_fold", "full_dataset". If None, defaults to
+            ["test", "train_available", "per_fold"].
             Only used when dataset_path is a .splits.pgdata file.
 
     Returns:
@@ -505,6 +510,9 @@ def evaluate(
                     "fold_0": {"spearman": 0.91},
                     "fold_1": {"spearman": 0.93},
                     ...
+                },
+                "full_dataset": {
+                    "spearman": 0.83
                 },
                 "metadata": {
                     "dataset": "dataset_name",
@@ -664,7 +672,7 @@ def main():
         type=str,
         nargs="*",
         default=None,
-        help="Scoring modes to calculate (e.g., 'test' 'train_available' 'per_fold'). If not specified, all modes are calculated.",
+        help="Scoring modes to calculate (e.g., 'test' 'train_available' 'per_fold' 'full_dataset'). If not specified, defaults to test, train_available, and per_fold.",
     )
 
     args = parser.parse_args()

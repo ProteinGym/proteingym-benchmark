@@ -190,12 +190,14 @@ def aggregate_metrics(
     """Aggregate metrics from all folds into a single JSON file.
 
     Reads all fold metric files and computes the mean and standard deviation of "test"
-    and "train_available" scores across all folds.
+    and "train_available" scores across all folds. Preserves "full_dataset" metrics
+    from any fold (all folds have identical full_dataset values).
 
     Input structure per fold file:
         {
             "test": {"spearman": 0.85},
             "train_available": {"spearman": 0.92},
+            "full_dataset": {"spearman": 0.88},
             "per_fold": {...},
             "metadata": {...}
         }
@@ -204,6 +206,7 @@ def aggregate_metrics(
         {
             "test": {"spearman": 0.86, "spearman_std": 0.02},
             "train_available": {"spearman": 0.93, "spearman_std": 0.01},
+            "full_dataset": {"spearman": 0.88},
             "metadata": {...}
         }
     """
@@ -307,12 +310,14 @@ def generate_metrics_csv(metric_dir: Path, output_path: Path, game: str):
         {
             "test": {"spearman": 0.86, "spearman_std": 0.02, ...},
             "train_available": {"spearman": 0.93, "spearman_std": 0.01, ...},
+            "full_dataset": {"spearman": 0.88, ...},
             "metadata": {...}
         }
 
     And creates CSV with columns:
         game, model, dataset, split, target, test_spearman, test_spearman_std,
-        train_available_spearman, train_available_spearman_std, ...
+        train_available_spearman, train_available_spearman_std,
+        full_dataset_spearman, ...
     """
     rows = []
     for metric_file in sorted(metric_dir.glob("*_aggregated.json")):
@@ -337,6 +342,10 @@ def generate_metrics_csv(metric_dir: Path, output_path: Path, game: str):
         if "train_available" in data:
             for metric_name, value in data["train_available"].items():
                 row[f"train_available_{metric_name}"] = value
+
+        if "full_dataset" in data:
+            for metric_name, value in data["full_dataset"].items():
+                row[f"full_dataset_{metric_name}"] = value
 
         rows.append(row)
 
