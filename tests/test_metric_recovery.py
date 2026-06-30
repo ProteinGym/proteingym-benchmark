@@ -2,7 +2,14 @@ import json
 import pytest
 import polars as pl
 
-from proteingym.base.dataset import Dataset, Field, Assay, Subsets, DatasetSlice
+from proteingym.base.dataset import (
+    Dataset,
+    Field,
+    Assay,
+    Subsets,
+    DatasetSlice,
+    AssaySlice,
+)
 from proteingym.base.sequence import Sequence, SequenceType, SequenceAlphabet
 from Bio.Seq import Seq
 
@@ -315,44 +322,6 @@ class TestMetricRecovery:
 
         assert recovery is None
 
-    def test_recovery_with_top_k_larger_than_dataset(self, recovery_dataset):
-        """Test that recovery handles top_k larger than dataset size and warns."""
-        all_records_mask = [True] * 10
-
-        subsets_large_k = Subsets(
-            dataset=recovery_dataset,
-            slices={
-                "test": [
-                    DatasetSlice(assays=[all_records_mask], metadata={"top_k": 100})
-                ]
-            },
-        )
-
-        predictions_df = pl.DataFrame(
-            {
-                "sequence": [f"SEQ{i:03d}" for i in range(10)],
-                "fitness": [(i + 1) / 10.0 for i in range(10)],
-            }
-        )
-
-        predictions = recovery_dataset.predictions_delta(
-            predictions_df, target="fitness"
-        )
-
-        with pytest.warns(
-            UserWarning,
-            match=r"top_k \(100\) is larger than the number of samples \(10\)",
-        ):
-            recovery = metric_recovery(
-                ground_truth=subsets_large_k,
-                predicted=predictions,
-                target="fitness",
-                split="test",
-                fold=0,
-            )
-
-        assert recovery == pytest.approx(1.0)
-
     def test_recovery_in_calculate_selected_metrics(self, recovery_subsets):
         """Test that recovery is discovered and calculated by calculate_selected_metrics."""
         predictions_df = pl.DataFrame(
@@ -526,3 +495,46 @@ class TestMetricRecovery:
         assert all(expected_json_structure.values()), (
             f"Failed checks: {[k for k, v in expected_json_structure.items() if not v]}"
         )
+
+    def test_top_k_larger_than_samples_raises_error(self, recovery_dataset):
+        """Test that top_k larger than n_samples raises ValueError."""
+        predictions_df = pl.DataFrame(
+            {
+                "sequence": ["SEQ000", "SEQ001"],
+                "fitness": [0.1, 0.2],
+            }
+        )
+        predicted = recovery_dataset.predictions_delta(predictions_df, target="fitness")
+
+        fold_slice = DatasetSlice(
+            assays=[
+                AssaySlice(
+                    records=[
+                        True,
+                        True,
+                        False,
+                        False,
+                        False,
+                        False,
+                        False,
+                        False,
+                        False,
+                        False,
+                    ]
+                )
+            ],
+            metadata={"top_k": 10},
+        )
+        subsets = Subsets(dataset=recovery_dataset, slices={"test": [fold_slice]})
+
+        with pytest.raises(
+            ValueError,
+            match=r"top_k \(10\) is larger than the number of samples \(2\)\.",
+        ):
+            metric_recovery(
+                ground_truth=subsets,
+                predicted=predicted,
+                target="fitness",
+                split="test",
+                fold=0,
+            )

@@ -188,11 +188,8 @@ def metric_recovery(
 
     n_samples = len(gt_values)
     if top_k > n_samples:
-        warnings.warn(
-            f"top_k ({top_k}) is larger than the number of samples ({n_samples}). "
-            f"Using effective_k={n_samples} instead.",
-            UserWarning,
-            stacklevel=2,
+        raise ValueError(
+            f"top_k ({top_k}) is larger than the number of samples ({n_samples})."
         )
     effective_k = min(top_k, n_samples)
 
