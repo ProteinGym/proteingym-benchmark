@@ -161,21 +161,14 @@ def _get_top_k_from_slice(
             - fold is a list (not supported for recovery)
             - metadata doesn't exist or doesn't contain top_k
     """
-    if not isinstance(ground_truth, Subsets):
-        return None
-    if split is None or fold is None:
-        return None
-    if isinstance(fold, list):
-        return None
-
     try:
         dataset_slice = ground_truth.slices[split][fold]
-        if dataset_slice.metadata is None:
-            return None
-        top_k = dataset_slice.metadata.get("top_k")
-        return int(top_k) if top_k is not None else None
-    except (KeyError, IndexError, AttributeError, ValueError, TypeError):
+    except (KeyError, IndexError, AttributeError, TypeError):
         return None
+    if dataset_slice.metadata is None:
+        return None
+    top_k = dataset_slice.metadata.get("top_k", None)
+    return int(top_k) if top_k is not None else None
 
 
 def aggregate_metrics(
