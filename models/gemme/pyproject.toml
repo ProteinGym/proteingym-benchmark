@@ -1,0 +1,36 @@
+[project]
+name = "proteingym-models-gemme"
+version = "0.1.0"
+description = "GEMME model submitted to ProteinGym"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "typer~=0.16.0",
+    "proteingym-base",
+    "numpy~=2.2.5",
+    "pandas>=2.3.3",
+    "polars[pyarrow]~=1.31.0",
+    "loguru~=0.7.2",
+    "requests",
+]
+
+[project.scripts]
+gemme = "proteingym.models.gemme.__main__:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base.git" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/proteingym"]
+
+[tool.ruff]
+line-length = 88
+
+[dependency-groups]
+dev = [
+    "pytest~=8.4.1",
+]
