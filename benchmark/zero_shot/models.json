@@ -3,6 +3,10 @@
     {
       "name": "esm",
       "image": "esm:latest"
+    },
+    {
+      "name": "aidoragplm",
+      "image": "aidoragplm:latest"
     }
   ]
 }
