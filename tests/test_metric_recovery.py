@@ -190,7 +190,12 @@ class TestMetricRecovery:
         return Subsets(
             dataset=recovery_dataset,
             slices={
-                "test": [DatasetSlice(assays=[all_records_mask], metadata={"top_k": 3})]
+                "test": [
+                    DatasetSlice(
+                        assays=[AssaySlice(records=all_records_mask)],
+                        metadata={"top_k": 3},
+                    )
+                ]
             },
         )
 
@@ -357,8 +362,13 @@ class TestMetricRecovery:
             dataset=recovery_dataset,
             slices={
                 "test": [
-                    DatasetSlice(assays=[half_records_mask], metadata={"top_k": 2}),
-                    DatasetSlice(assays=[half_records_mask], metadata=None),
+                    DatasetSlice(
+                        assays=[AssaySlice(records=half_records_mask)],
+                        metadata={"top_k": 2},
+                    ),
+                    DatasetSlice(
+                        assays=[AssaySlice(records=half_records_mask)], metadata=None
+                    ),
                 ]
             },
         )
@@ -400,9 +410,16 @@ class TestMetricRecovery:
             dataset=recovery_dataset,
             slices={
                 "cv": [
-                    DatasetSlice(assays=[all_records_mask], metadata=None),
-                    DatasetSlice(assays=[all_records_mask], metadata=None),
-                    DatasetSlice(assays=[all_records_mask], metadata={"top_k": 3}),
+                    DatasetSlice(
+                        assays=[AssaySlice(records=all_records_mask)], metadata=None
+                    ),
+                    DatasetSlice(
+                        assays=[AssaySlice(records=all_records_mask)], metadata=None
+                    ),
+                    DatasetSlice(
+                        assays=[AssaySlice(records=all_records_mask)],
+                        metadata={"top_k": 3},
+                    ),
                 ]
             },
         )
@@ -453,8 +470,13 @@ class TestMetricRecovery:
             dataset=recovery_dataset,
             slices={
                 "cv": [
-                    DatasetSlice(assays=[all_records_mask], metadata=None),
-                    DatasetSlice(assays=[all_records_mask], metadata={"top_k": 3}),
+                    DatasetSlice(
+                        assays=[AssaySlice(records=all_records_mask)], metadata=None
+                    ),
+                    DatasetSlice(
+                        assays=[AssaySlice(records=all_records_mask)],
+                        metadata={"top_k": 3},
+                    ),
                 ]
             },
         )
