@@ -1,25 +1,28 @@
 name: validate-model
 
-on:    
+on:
   workflow_dispatch:
   pull_request:
     branches: main
-  
+
 
 jobs:
   cml:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
+      packages: write
+      contents: read
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      REGISTRY: ghcr.io
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true
-          
+
       - name: Install system dependencies for CML
         run: |
           sudo apt-get update
@@ -39,46 +42,100 @@ jobs:
         run: |
           pytest tests/ -v
 
-      - name: Check for relevant changes
-        id: check_changes
-        run: |
-          # Get the base branch to compare against
-          git fetch origin ${{ github.base_ref }}
+      - name: Log in to GitHub Container Registry
+        # Fork PRs get a read-only token and cannot push; we still log in so
+        # same-repo runs can pull/push. The pull/push steps below are guarded so
+        # forks fall back to building locally.
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E 'models/'; then
-            echo "build_images=true" >> $GITHUB_OUTPUT
-          else
-            echo "build_images=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Build Docker images for models
-        if: steps.check_changes.outputs.build_images == 'true'
+      - name: Build or reuse model images (content-hash tagged)
+        id: images
+        env:
+          # A same-repo PR (or workflow_dispatch) can pull/push the private
+          # GHCR cache. Fork PRs cannot, so they always build locally.
+          CAN_USE_CACHE: ${{ github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch' }}
         run: |
-          # Build Docker images from models folder
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+
+          : > image_map.txt
+
           for model_folder in models/*/; do
+            [ -f "${model_folder}Dockerfile" ] || continue
             model_name=$(basename "$model_folder")
-            echo "Building Docker image for $model_name with context $model_folder"
-            docker build \
-              -f $model_folder/Dockerfile \
-              -t $model_name:latest \
-              $model_folder
+
+            hash=$(git ls-files -s "$model_folder" | git hash-object --stdin)
+            hash=${hash:0:12}
+
+            remote="${REGISTRY}/${OWNER}/${model_name}:${hash}"
+            local="${model_name}:${hash}"
+
+            if [ "$CAN_USE_CACHE" = "true" ] && docker manifest inspect "$remote" > /dev/null 2>&1; then
+              echo "Reusing cached image for ${model_name}: ${remote}"
+              docker pull "$remote"
+              image="$remote"
+            else
+              echo "Building image for ${model_name}: ${local}"
+              docker build -f "${model_folder}Dockerfile" -t "$local" "$model_folder"
+              image="$local"
+              if [ "$CAN_USE_CACHE" = "true" ]; then
+                echo "Pushing image to cache: ${remote}"
+                docker tag "$local" "$remote"
+                docker push "$remote"
+              fi
+            fi
+
+            echo "${model_name}:latest=${image}" >> image_map.txt
           done
 
+      - name: Point models.json at the resolved GHCR images
+        run: |
+          python - <<'PY'
+          import json
+
+          resolved = {}
+          with open("image_map.txt") as fh:
+              for line in fh:
+                  line = line.strip()
+                  if not line:
+                      continue
+                  key, value = line.split("=", 1)
+                  resolved[key] = value
+
+          for models_json in (
+              "benchmark/supervised/models.json",
+              "benchmark/zero_shot/models.json",
+          ):
+              with open(models_json) as fh:
+                  data = json.load(fh)
+              for model in data["models"]:
+                  original = model["image"]
+                  if original in resolved:
+                      model["image"] = resolved[original]
+                  else:
+                      raise SystemExit(
+                          f"No built/reused image for '{original}' referenced in {models_json}"
+                      )
+              with open(models_json, "w") as fh:
+                  json.dump(data, fh, indent=2)
+              print(f"Updated {models_json}")
+          PY
+
       - name: Set up CI datasets
-        if: steps.check_changes.outputs.build_images == 'true'
         run: |
           cp .github/workflows/ci_datasets.json benchmark/supervised/datasets.json
           cp .github/workflows/ci_datasets.json benchmark/zero_shot/datasets.json
           cp .github/workflows/Dummy_test_P0DX94.splits.pgdata datasets/
 
       - name: Run benchmarking
-        if: steps.check_changes.outputs.build_images == 'true'
         run: |
           dvc repro benchmark/supervised/dvc.yaml --single-item
           dvc repro benchmark/zero_shot/dvc.yaml --single-item
 
       - name: Create PR report
-        if: steps.check_changes.outputs.build_images == 'true'
         env:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -89,9 +146,7 @@ jobs:
           $(cat ./benchmark/metrics.csv)
           \`\`\`
           EOF
-          
+
           # Send comment to PR
           echo "Send comment to PR"
           cml comment create report.md
-
-
