@@ -1,5 +1,5 @@
 import json
-import logging
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Annotated
@@ -7,8 +7,6 @@ from typing import Annotated
 import numpy as np
 import polars as pl
 import typer
-
-logger = logging.getLogger("proteingym.benchmark")
 
 _METADATA_FOLD_KEYS = ("test_fold", "test_folds", "train_available_folds")
 
@@ -70,12 +68,10 @@ def aggregate_metrics(
         metric_files.append(single_file)
 
     if not metric_files:
-        logger.warning(
-            "No metric files found for %s/%s/%s/%s",
-            dataset_name,
-            model_name,
-            target,
-            split,
+        print( #print to log to stderr in dvc
+            f"Warning: No metric files found for "
+            f"{dataset_name}/{model_name}/{target}/{split}",
+            file=sys.stderr,
         )
         return
 
@@ -146,7 +142,7 @@ def generate_metrics_csv(metric_dir: Path, output_path: Path, game: str) -> None
         with open(metric_file) as f:
             data = json.load(f)
         if "metadata" not in data:
-            logger.warning("No metadata found in %s, skipping", metric_file)
+            print(f"Warning: No metadata found in {metric_file}, skipping", file=sys.stderr)
             continue
         metadata = data["metadata"]
         row = {
