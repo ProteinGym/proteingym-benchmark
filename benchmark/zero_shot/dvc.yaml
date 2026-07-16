@@ -9,53 +9,52 @@ stages:
     matrix:
       dataset: ${datasets}
       model: ${models}
-      fold: ${folds}
 
+    # Zero-shot models score all variants once; predictions do not depend on the
+    # training fold, so there is no fold dimension. The model still requires a
+    # --test-fold argument, so a fixed 0 is passed (it is ignored by the model).
+    # Fix this in another PR for zero shot models.
     cmd: >-
-      mkdir -p ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold} &&
+      mkdir -p ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split} &&
       docker run --rm
       -v $(realpath ${item.dataset.input_filename}):/$(basename ${item.dataset.input_filename})
-      -v $(realpath ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}):/opt/program/output
+      -v $(realpath ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}):/opt/program/output
       ${item.model.image}
       train
       --dataset-file /$(basename ${item.dataset.input_filename})
       --split ${item.dataset.split}
-      --test-fold ${item.fold}
+      --test-fold 0
       --target ${item.dataset.target}
 
     deps:
       - ../../models
       - ${item.dataset.input_filename}
     outs:
-      - ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}:
+      - ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}:
           cache: true
 
   calculate_metric:
     matrix:
       dataset: ${datasets}
       model: ${models}
-      fold: ${folds}
 
     cmd:
     - >-
       METRIC_FLAGS=$(python -c "import yaml; d=yaml.safe_load(open('default.yaml')); print(' '.join(f'--selected-metrics {m}' for m in d['metrics']))");
-      MODE_FLAGS=$(python -c "import yaml; d=yaml.safe_load(open('default.yaml')); print(' '.join(f'--score-modes {s}' for s in d['score_modes']))");
-      proteingym-base evaluate-splits
-      --prediction-path ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/${item.dataset.name}_predictions.pgdata
+      proteingym-base evaluate-zero-shot
+      --prediction-path ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/${item.dataset.name}_predictions.pgdata
       --dataset-path ${item.dataset.input_filename}
-      --metric-path ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}.json
+      --metric-path ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}.json
       $METRIC_FLAGS
       --model-name ${item.model.name}
       --split ${item.dataset.split}
-      --target ${item.dataset.target}
-      --fold ${item.fold}
-      $MODE_FLAGS;
+      --target ${item.dataset.target};
 
     deps:
       - ${item.dataset.input_filename}
-      - ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/${item.dataset.name}_predictions.pgdata
+      - ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/${item.dataset.name}_predictions.pgdata
     metrics:
-      - ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}.json:
+      - ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}.json:
           cache: false
 
   aggregate_metrics:
@@ -71,7 +70,6 @@ stages:
       --split ${item.dataset.split}
       --target ${item.dataset.target}
       --output-path ${output.metric}/${item.dataset.name}_${item.model.name}_${item.dataset.split}_${item.dataset.target}_aggregated.json
-      --prediction-dir ${output.prediction}
 
     deps:
       - ../../scripts/utils.py
