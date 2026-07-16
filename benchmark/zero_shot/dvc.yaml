@@ -73,7 +73,7 @@ stages:
 
     deps:
       - ../../scripts/utils.py
-      - ${output.metric}
+      - ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}.json
     metrics:
       - ${output.metric}/${item.dataset.name}_${item.model.name}_${item.dataset.split}_${item.dataset.target}_aggregated.json:
           cache: false
