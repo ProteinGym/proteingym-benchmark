@@ -40,7 +40,7 @@ stages:
     - >-
       METRIC_FLAGS=$(python -c "import yaml; d=yaml.safe_load(open('default.yaml')); print(' '.join(f'--selected-metrics {m}' for m in d['metrics']))");
       MODE_FLAGS=$(python -c "import yaml; d=yaml.safe_load(open('default.yaml')); print(' '.join(f'--score-modes {s}' for s in d['score_modes']))");
-      proteingym-base evaluate
+      proteingym-base evaluate-splits
       --prediction-path ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/${item.dataset.name}_predictions.pgdata
       --dataset-path ${item.dataset.input_filename}
       --metric-path ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}.json
