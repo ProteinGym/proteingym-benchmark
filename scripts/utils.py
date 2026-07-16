@@ -83,7 +83,7 @@ def aggregate_metrics(
     for metric_file in metric_files:
         data = json.loads(metric_file.read_text())
 
-        if metadata is None and "metadata" in data:
+        if metadata is None:
             metadata = {
                 k: v
                 for k, v in data["metadata"].items()
@@ -101,15 +101,7 @@ def aggregate_metrics(
         if full_dataset_metrics is None and "full_dataset" in data:
             full_dataset_metrics = data["full_dataset"]
 
-    result: dict = {
-        "metadata": metadata
-        or {
-            "dataset": dataset_name,
-            "model": model_name,
-            "split": split,
-            "target": target,
-        }
-    }
+    result: dict = {"metadata": metadata}
 
     if test_metrics:
         result["test"] = _aggregate_mode(test_metrics)
