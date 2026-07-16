@@ -78,17 +78,14 @@ def aggregate_metrics(
     test_metrics: dict[str, list[float]] = defaultdict(list)
     train_available_metrics: dict[str, list[float]] = defaultdict(list)
     full_dataset_metrics: dict[str, float] | None = None
-    metadata: dict | None = None
+
+    first = json.loads(metric_files[0].read_text())
+    metadata = {
+        k: v for k, v in first["metadata"].items() if k not in _METADATA_FOLD_KEYS
+    }
 
     for metric_file in metric_files:
         data = json.loads(metric_file.read_text())
-
-        if metadata is None:
-            metadata = {
-                k: v
-                for k, v in data["metadata"].items()
-                if k not in _METADATA_FOLD_KEYS
-            }
 
         for mode, accumulator in (
             ("test", test_metrics),
