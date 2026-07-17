@@ -38,21 +38,20 @@ stages:
 
     cmd:
     - >-
-      METRICS=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['metrics']))");
-      SCORE_MODES=$(python -c "import yaml; data = yaml.safe_load(open('default.yaml')); print(' '.join(data['score_modes']))");
-      PYTHONPATH=$(dvc root) python -m scripts.metric
+      METRIC_FLAGS=$(python -c "import yaml; d=yaml.safe_load(open('default.yaml')); print(' '.join(f'--selected-metrics {m}' for m in d['metrics']))");
+      MODE_FLAGS=$(python -c "import yaml; d=yaml.safe_load(open('default.yaml')); print(' '.join(f'--score-modes {s}' for s in d['score_modes']))");
+      proteingym-base evaluate-subset
       --prediction-path ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/${item.dataset.name}_predictions.pgdata
       --dataset-path ${item.dataset.input_filename}
       --metric-path ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}.json
-      --selected-metrics $METRICS
+      $METRIC_FLAGS
       --model-name ${item.model.name}
       --split ${item.dataset.split}
       --target ${item.dataset.target}
       --fold ${item.fold}
-      --score-modes $SCORE_MODES;
+      $MODE_FLAGS;
 
     deps:
-      - ../../scripts/metric.py
       - ${item.dataset.input_filename}
       - ${output.prediction}/${item.dataset.name}/${item.model.name}/${item.dataset.target}/${item.dataset.split}/fold${item.fold}/${item.dataset.name}_predictions.pgdata
     metrics:
@@ -72,11 +71,10 @@ stages:
       --split ${item.dataset.split}
       --target ${item.dataset.target}
       --output-path ${output.metric}/${item.dataset.name}_${item.model.name}_${item.dataset.split}_${item.dataset.target}_aggregated.json
-      --prediction-dir ${output.prediction}
 
     deps:
       - ../../scripts/utils.py
-      - ${output.metric}
+      - ${output.metric}/${item.dataset.name}/${item.model.name}/${item.dataset.target}
     metrics:
       - ${output.metric}/${item.dataset.name}_${item.model.name}_${item.dataset.split}_${item.dataset.target}_aggregated.json:
           cache: false

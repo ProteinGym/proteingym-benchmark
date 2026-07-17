@@ -1,8 +1,4 @@
 output:
   prediction: prediction
   metric: metric
-metrics:
-  - spearman
-folds: [0, 1, 2, 3, 4]
-score_modes:
-  - full_dataset
+metrics: ["spearman"]
