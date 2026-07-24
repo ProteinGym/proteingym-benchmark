@@ -10,7 +10,6 @@ dependencies = [
     "fair-esm~=2.0.0",
     "torch~=2.7.1",
     "bio~=1.8.0",
-    "msgpack~=1.1.1",
     "polars[pyarrow]~=1.31.0",
 ]
 

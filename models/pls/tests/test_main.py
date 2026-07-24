@@ -1,4 +1,4 @@
-from proteingym.models.hfregressor.__main__ import train
+from proteingym.models.pls.__main__ import train
 
 from tempfile import TemporaryDirectory
 
@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 def test_train(dummy_data_path, model_card_path, monkeypatch):
     with TemporaryDirectory() as temp_dir:
         monkeypatch.setattr(
-            "proteingym.models.hfregressor.__main__.ContainerTrainingJobPath.OUTPUT_PATH",
+            "proteingym.models.pls.__main__.ContainerTrainingJobPath.OUTPUT_PATH",
             temp_dir,
         )
         train(

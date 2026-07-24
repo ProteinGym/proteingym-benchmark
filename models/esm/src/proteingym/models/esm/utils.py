@@ -46,15 +46,16 @@ def score_sequence_difference(
             wt_encoded = alphabet.get_idx(wt_aa)
             mt_encoded = alphabet.get_idx(mt_aa)
             # add 1 for BOS token
-            score = token_probs[0, 1 + idx, mt_encoded] - token_probs[0, 1 + idx, wt_encoded]
+            score = (
+                token_probs[0, 1 + idx, mt_encoded]
+                - token_probs[0, 1 + idx, wt_encoded]
+            )
             total_score += score.item()
 
     return total_score
 
 
-def compute_pppl(
-    sequence: str, model: object, alphabet: object
-) -> float:
+def compute_pppl(sequence: str, model: object, alphabet: object) -> float:
     """Compute the pseudo-perplexity (PPPL) score for a protein sequence.
 
     This function calculates the pseudo-perplexity by computing the sum of log
@@ -95,10 +96,6 @@ def compute_pppl(
             token_probs = torch.log_softmax(
                 model(batch_tokens_masked)["logits"], dim=-1
             )
-        log_probs.append(
-            token_probs[0, i, alphabet.get_idx(sequence[i])].item()
-        )
+        log_probs.append(token_probs[0, i, alphabet.get_idx(sequence[i])].item())
 
     return sum(log_probs)
-
-

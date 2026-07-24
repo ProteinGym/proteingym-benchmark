@@ -100,21 +100,26 @@ def train(
         )
         model.fit(data.filter(pl.col("split") == "train"))
 
-        test_data = data.filter(pl.col("split") == "test")
-        test_preds = model.predict(
-            data=test_data,
-        )
+        all_preds = model.predict(data=data)
 
-        df = pl.DataFrame(
+        if len(all_preds.shape) > 1:
+            all_preds = all_preds.flatten()
+
+        predictions_df = pl.DataFrame(
             {
-                "sequence": test_data["sequence"],
-                "test": test_data[target],
-                "pred": test_preds.tolist(),
+                "sequence": data["sequence"],
+                target: all_preds.tolist(),
             }
         )
 
-        output_file = f"{output_path}/predictions.json"
-        df.write_json(output_file)
+        dataset = subsets[split].dataset
+
+        predictions_dataset = dataset.predictions_delta(
+            predictions_df, target=target, allow_extra_predictions=True
+        )
+
+        output_file = Path(output_path) / "predictions.pgdata"
+        predictions_dataset.dump(path=Path(output_path))
         console.print(f"Saved predictions to {output_file}")
 
 

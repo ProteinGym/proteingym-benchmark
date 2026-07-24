@@ -2,12 +2,12 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
-from proteingym.base import Dataset, Subsets
+from proteingym.base import Subsets
 from proteingym.base.model import ModelCard
 from rich.console import Console
 
-from .model import infer
-from .model import train as train_model
+from .model import train as train_model, infer
+
 
 app = typer.Typer(
     help="PLS model CLI",
@@ -57,7 +57,6 @@ def train(
     ] = ContainerTrainingJobPath.MODEL_CARD_PATH,
 ):
     subsets = Subsets.from_path(dataset_file)
-    dataset = subsets[split].dataset
     model_card = ModelCard.from_path(model_card_file)
 
     model = train_model(
@@ -68,17 +67,16 @@ def train(
         model_card=model_card,
     )
 
-    df = infer(
+    predictions_dataset = infer(
         split_dataset=subsets,
         split=split,
-        test_fold=test_fold,
         target=target,
         model_card=model_card,
         model=model,
     )
 
-    output_file = f"{ContainerTrainingJobPath.OUTPUT_PATH}/predictions.json"
-    df.write_json(output_file)
+    output_file = Path(ContainerTrainingJobPath.OUTPUT_PATH) / "predictions.pgdata"
+    predictions_dataset.dump(path=ContainerTrainingJobPath.OUTPUT_PATH)
     console.print(f"Saved predictions to {output_file}")
 
 
