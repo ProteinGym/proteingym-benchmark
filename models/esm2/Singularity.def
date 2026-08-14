@@ -25,4 +25,4 @@ From: python:3.12-slim-bookworm
 
 %runscript
     cd /opt/program
-    exec uv run --no-sync esm-evedesign "$@"
+    exec uv run --no-sync esm2 "$@"

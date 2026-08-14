@@ -1,5 +1,5 @@
 [project]
-name = "proteingym-models-esm-evedesign"
+name = "proteingym-models-esm2"
 version = "0.1.0"
 description = "ESM2 model (evedesign-wrapped) submitted to ProteinGym"
 readme = "README.md"
@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-esm-evedesign = "proteingym.models.esm_evedesign.__main__:app"
+esm2 = "proteingym.models.esm2.__main__:app"
 
 [build-system]
 requires = ["hatchling"]

@@ -1039,7 +1039,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "proteingym-models-esm-evedesign"
+name = "proteingym-models-esm2"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

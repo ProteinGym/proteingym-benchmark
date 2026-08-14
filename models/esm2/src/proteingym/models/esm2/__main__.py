@@ -240,24 +240,28 @@ def train(
     )
 
     # Score the test dataset (the whole dataset in the zero-shot case).
-    instances, values, _, _ = test_dataset.select(name=target, drop_missing=False)
+    instances, _, _, _ = test_dataset.select(name=target, drop_missing=False)
 
     # score() returns scored instance copies (order preserved)
     scored_instances = model.score(instances)
 
     sequences = ["".join(instance[0].rep) for instance in scored_instances]
 
-    # will have to come back later and add something to pull uncertainties if present
-    df = pl.DataFrame(
+    predictions_df = pl.DataFrame(
         {
             "sequence": sequences,
-            "test": values,
-            "pred": [float(instance.score) for instance in scored_instances],
+            target: [float(instance.score) for instance in scored_instances],
         }
     )
 
-    output_file = f"{ContainerTrainingJobPath.OUTPUT_PATH}/predictions.json"
-    df.write_json(output_file)
+    predictions_dataset = subsets.dataset.predictions_delta(
+        predictions_df, target=target, allow_extra_predictions=True
+    )
+
+    output_file = Path(ContainerTrainingJobPath.OUTPUT_PATH) / (
+        f"{subsets.dataset.name}_predictions.pgdata"
+    )
+    predictions_dataset.dump(path=ContainerTrainingJobPath.OUTPUT_PATH)
     console.print(f"Saved predictions to {output_file}")
 
 
