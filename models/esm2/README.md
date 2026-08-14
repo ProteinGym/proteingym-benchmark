@@ -21,7 +21,7 @@ hyper_parameters:
     # Number of sequences scored per forward pass
     batch_size: 64
     # Device to run the model on ("cpu", "cuda", or "mps")
-    device: "cuda"
+    device: "cpu"
 ---
 
 # Model Card for ESM-2 (evedesign-wrapped)
