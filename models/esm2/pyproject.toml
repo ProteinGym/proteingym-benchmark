@@ -1,20 +1,19 @@
 [project]
-name = "proteingym-models-esm"
+name = "proteingym-models-esm2"
 version = "0.1.0"
-description = "ESM model submitted to ProteinGym"
+description = "ESM2 model (evedesign-wrapped) submitted to ProteinGym"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "typer~=0.16.0",
     "proteingym-base",
-    "fair-esm~=2.0.0",
-    "torch~=2.7.1",
-    "bio~=1.8.0",
+    "evedesign[esm2]",
     "polars[pyarrow]~=1.31.0",
+    "dill~=0.3.8",
 ]
 
 [project.scripts]
-esm = "proteingym.models.esm.__main__:app"
+esm2 = "proteingym.models.esm2.__main__:app"
 
 [build-system]
 requires = ["hatchling"]

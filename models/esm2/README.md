@@ -1,6 +1,6 @@
 ---
 # Model identifier used for referencing this model in the benchmark system
-name: esm-evedesign
+name: esm2
 
 # Import string for the evedesign model class to run. Accepts entry-point style
 # ("package.module:ClassName") or fully dotted style ("package.module.ClassName").
@@ -21,7 +21,7 @@ hyper_parameters:
     # Number of sequences scored per forward pass
     batch_size: 64
     # Device to run the model on ("cpu", "cuda", or "mps")
-    device: "cuda"
+    device: "cpu"
 ---
 
 # Model Card for ESM-2 (evedesign-wrapped)
@@ -29,22 +29,17 @@ hyper_parameters:
 This model scores protein sequences with the [evedesign](https://github.com/evedesignbio/evedesign)
 `ESM2` wrapper, which loads an ESM-2 masked language model via HuggingFace
 `transformers`. Scoring is zero-shot: each sequence is assigned the sum of the
-per-position log-likelihoods of its residues under the model.
+per-position (unmasked) log-likelihoods of its residues under the model.
 
 The benchmark entrypoint converts the ProteinGym subset into evedesign
 datatypes with `evedesign.proteingym.dataset_to_evedesign`, builds the wrapper
 on the resulting `System`, and scores the requested test fold. Because the
 wrapper exposes the full evedesign model API, additional capabilities such as
 `transform()` (embeddings), `generate()` (Gibbs sampling), and mutation scoring
-come along with the import for free.
+are also available.
 
-ESM-2 is a state-of-the-art protein model trained on a masked language modelling
-objective. For detailed information on the model architecture and training data,
+For detailed information on the model architecture and training data,
 please refer to the [accompanying paper](https://www.biorxiv.org/content/10.1101/2022.07.20.500902v2).
-
-Several ESM-2 checkpoints are available in the Hub with varying sizes. Larger
-sizes generally have somewhat better accuracy, but require much more memory and
-time to run:
 
 | Checkpoint name | Num layers | Num parameters |
 |------------------------------|----|----------|

@@ -1,8 +1,8 @@
 {
   "models": [
     {
-      "name": "esm",
-      "image": "esm:latest"
+      "name": "esm2",
+      "image": "esm2:latest"
     }
   ]
 }
