@@ -15,4 +15,4 @@ COPY uv.lock uv.lock
 COPY src/ src/
 RUN uv sync --no-cache
 
-ENTRYPOINT ["uv", "run", "rsalor"]
+ENTRYPOINT ["uv", "run", "proteingym-rsalor"]
