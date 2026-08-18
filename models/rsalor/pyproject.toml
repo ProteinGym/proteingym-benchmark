@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.scripts]
-rsalor = "proteingym.models.rsalor.__main__:app"
+proteingym-rsalor = "proteingym.models.rsalor.__main__:app"
 
 [build-system]
 requires = ["hatchling"]
