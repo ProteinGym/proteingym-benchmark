@@ -7,6 +7,10 @@
     {
       "name": "rsalor",
       "image": "rsalor:latest"
+    },
+    {
+      "name": "evmutation",
+      "image": "evmutation:latest"
     }
   ]
 }
