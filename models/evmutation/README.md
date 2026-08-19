@@ -23,7 +23,7 @@ hyper_parameters:
     # Sequence reweighting identity threshold, used as a fallback when the
     # provided Sequences carry no precomputed weights. Leave null to require
     # precomputed weights on the input. (will fail if no weights + null)
-    theta: null
+    theta: 0.8
     # L2 regularisation strength on fields h_i
     lambda_h: 0.01
     # L2 regularisation strength on couplings J_ij, before scaling
