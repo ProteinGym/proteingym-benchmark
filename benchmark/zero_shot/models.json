@@ -3,6 +3,10 @@
     {
       "name": "esm2",
       "image": "esm2:latest"
+    },
+    {
+      "name": "rsalor",
+      "image": "rsalor:latest"
     }
   ]
 }
