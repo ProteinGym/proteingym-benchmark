@@ -38,10 +38,36 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      - name: Check for relevant changes
+        id: check_changes
+        run: |
+          # Get the base branch to compare against
+          git fetch origin ${{ github.base_ref }}
+
+          changed_files=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          if echo "$changed_files" | grep -qE 'models/'; then
+            echo "build_images=true" >> $GITHUB_OUTPUT
+          else
+            echo "build_images=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Model matrix is set to just the model(s) that changed
+          if echo "$changed_files" | grep -qE 'models\.json|dvc\.yaml|scripts/'; then
+            changed_models=ALL
+          else
+            changed_models=$(echo "$changed_files" | grep -oE 'models/[^/]+/' | sed -e 's#^models/##' -e 's#/$##' | sort -u | paste -sd, -)
+            if [ -z "$changed_models" ]; then
+              changed_models=ALL
+            fi
+          fi
+          echo "changed_models=$changed_models" >> $GITHUB_OUTPUT
+
       - name: Log in to GitHub Container Registry
         # Fork PRs get a read-only token and cannot push; we still log in so
         # same-repo runs can pull/push. The pull/push steps below are guarded so
         # forks fall back to building locally.
+        if: steps.check_changes.outputs.build_images == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -49,11 +75,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build or reuse model images (content-hash tagged)
+        if: steps.check_changes.outputs.build_images == 'true'
         id: images
         env:
           # A same-repo PR (or workflow_dispatch) can pull/push the private
           # GHCR cache. Fork PRs cannot, so they always build locally.
           CAN_USE_CACHE: ${{ github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch' }}
+          CHANGED_MODELS: ${{ steps.check_changes.outputs.changed_models }}
         run: |
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
 
@@ -62,6 +90,13 @@ jobs:
           for model_folder in models/*/; do
             [ -f "${model_folder}Dockerfile" ] || continue
             model_name=$(basename "$model_folder")
+
+            if [ "$CHANGED_MODELS" != "ALL" ]; then
+              case ",${CHANGED_MODELS}," in
+                *",${model_name},"*) ;;
+                *) echo "Skipping ${model_name}: not changed in this PR"; continue ;;
+              esac
+            fi
 
             hash=$(git ls-files -s "$model_folder" | git hash-object --stdin)
             hash=${hash:0:12}
@@ -88,9 +123,13 @@ jobs:
           done
 
       - name: Point models.json at the resolved GHCR images
+        if: steps.check_changes.outputs.build_images == 'true'
+        env:
+          CHANGED_MODELS: ${{ steps.check_changes.outputs.changed_models }}
         run: |
           python - <<'PY'
           import json
+          import os
 
           resolved = {}
           with open("image_map.txt") as fh:
@@ -101,13 +140,21 @@ jobs:
                   key, value = line.split("=", 1)
                   resolved[key] = value
 
+          changed_models = os.environ["CHANGED_MODELS"]
+          changed = None if changed_models == "ALL" else set(changed_models.split(","))
+
           for models_json in (
               "benchmark/supervised/models.json",
               "benchmark/zero_shot/models.json",
           ):
               with open(models_json) as fh:
                   data = json.load(fh)
-              for model in data["models"]:
+
+              models = data["models"]
+              if changed is not None:
+                  models = [m for m in models if m["image"].split(":", 1)[0] in changed]
+
+              for model in models:
                   original = model["image"]
                   if original in resolved:
                       model["image"] = resolved[original]
@@ -115,23 +162,28 @@ jobs:
                       raise SystemExit(
                           f"No built/reused image for '{original}' referenced in {models_json}"
                       )
+
+              data["models"] = models
               with open(models_json, "w") as fh:
                   json.dump(data, fh, indent=2)
-              print(f"Updated {models_json}")
+              print(f"Updated {models_json} ({len(models)} model(s))")
           PY
 
       - name: Set up CI datasets
+        if: steps.check_changes.outputs.build_images == 'true'
         run: |
           cp .github/workflows/ci_datasets.json benchmark/supervised/datasets.json
           cp .github/workflows/ci_datasets.json benchmark/zero_shot/datasets.json
           cp .github/workflows/Dummy_test_P0DX94.splits.pgdata datasets/
 
       - name: Run benchmarking
+        if: steps.check_changes.outputs.build_images == 'true'
         run: |
           dvc repro benchmark/supervised/dvc.yaml --single-item
           dvc repro benchmark/zero_shot/dvc.yaml --single-item
 
       - name: Create PR report
+        if: steps.check_changes.outputs.build_images == 'true'
         env:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
         run: |
