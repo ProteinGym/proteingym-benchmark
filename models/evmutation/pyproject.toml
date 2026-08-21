@@ -1,0 +1,43 @@
+[project]
+name = "proteingym-models-evmutation"
+version = "0.1.0"
+description = "EVmutation model (evedesign-wrapped) submitted to ProteinGym"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "typer~=0.16.0",
+    "proteingym-base",
+    "evedesign[evcouplings]",
+    "polars[pyarrow]~=1.31.0",
+    "dill~=0.3.8",
+    # evcouplings imports pkg_resources at runtime (setuptools>=18.2 in its
+    # own metadata), but setuptools>=82 dropped pkg_resources entirely
+    "setuptools<82",
+    # Listed directly (in addition to being pulled in via the evedesign extra
+    # above) so the [tool.uv.sources] override applies to it
+    "evcouplings",
+]
+
+[project.scripts]
+evmutation = "proteingym.models.evmutation.__main__:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base.git" }
+# PyPI's evcouplings==0.2.1 lacks the weight_file argument to run_plmc that
+# evedesign's EVcouplingsPLM wrapper requires
+evcouplings = { git = "https://github.com/debbiemarkslab/EVcouplings.git", branch = "develop" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/proteingym"]
+
+[tool.ruff]
+line-length = 88
+
+[dependency-groups]
+dev = [
+    "pytest~=8.4.1",
+]
