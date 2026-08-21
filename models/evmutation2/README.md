@@ -34,7 +34,7 @@ hyper_parameters:
     # conditional scores
     decoder_num_mutant_samples: 16
     # Device to run the model on ("cpu", "cuda", or "mps")
-    device: "cuda"
+    device: "cpu"
 ---
 
 # Model Card for EVmutation2 (evedesign-wrapped)
