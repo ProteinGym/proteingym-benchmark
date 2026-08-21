@@ -1,0 +1,32 @@
+Bootstrap: docker
+From: python:3.12-slim-bookworm
+
+%setup
+    mkdir -p ${SINGULARITY_ROOTFS}/opt/program
+    cp -r src/ pyproject.toml uv.lock README.md .python-version ${SINGULARITY_ROOTFS}/opt/program/
+    mkdir -p ${SINGULARITY_ROOTFS}/opt/program/data
+    mkdir -p ${SINGULARITY_ROOTFS}/mnt/host-uv-cache
+
+%post
+    apt-get update && apt-get install -y git curl ca-certificates build-essential && rm -rf /var/lib/apt/lists/*
+
+    # install uv (defaults to /root/.local/bin)
+    curl -kLsSf https://astral.sh/uv/install.sh | sh
+
+    # move binaries to a globally accessible system path
+    mv /root/.local/bin/uv /root/.local/bin/uvx /usr/local/bin/
+
+    export UV_CACHE_DIR=/mnt/host-uv-cache
+
+    cd /opt/program
+    uv sync
+
+    curl -kL https://huggingface.co/thomashopf/evmutation2/resolve/main/msa-only-small.ckpt \
+        -o /opt/program/data/msa-only-small.ckpt
+
+%environment
+    export PATH="/opt/program/.venv/bin:$PATH"
+
+%runscript
+    cd /opt/program
+    exec uv run --no-sync evmutation2 "$@"
