@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "proteingym-models-structuredca"
+version = "0.1.0"
+description = "StructureDCA model (evedesign-wrapped) submitted to ProteinGym"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = [
+    "typer~=0.16.0",
+    "proteingym-base",
+    "evedesign",
+    "structuredca",
+    "polars[pyarrow]~=1.31.0",
+    "dill~=0.3.8",
+]
+
+[project.scripts]
+structuredca = "proteingym.models.structuredca.__main__:app"
+
+[tool.uv.sources]
+proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base.git" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/proteingym"]
+
+[tool.ruff]
+line-length = 88
+
+[dependency-groups]
+dev = [
+    "pytest~=8.4.1",
+]
