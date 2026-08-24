@@ -11,6 +11,10 @@
     {
       "name": "evmutation",
       "image": "evmutation:latest"
+    },
+    {
+      "name": "evmutation2",
+      "image": "evmutation2:latest"
     }
   ]
 }
