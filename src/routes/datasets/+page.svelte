@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { base } from "$app/paths";
-  import { datasetsStore } from "$lib/stores/datasets";
+  import { datasetsStore, datasetsCommitHash } from "$lib/stores/datasets";
   import Pagination from '$lib/components/Pagination.svelte';
 
   const datasetsPerPage = 12;
@@ -110,3 +110,7 @@
 </main>
 
 <Pagination bind:currentPage {totalPages}/>
+
+<div class="text-center py-6">
+  <p class="text-sm text-gray-500">Datasets commit: {$datasetsCommitHash}</p>
+</div>

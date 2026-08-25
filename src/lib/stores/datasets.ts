@@ -12,6 +12,7 @@ function createDatasetsStore() {
       const responseData = await response.json();
 
       const manifestsData = responseData.manifests as Record<string, string>;
+      const commitHash = responseData.commit_hash as string;
 
       const datasets: Dataset[] = [];
 
@@ -25,6 +26,7 @@ function createDatasetsStore() {
       }
 
       set(datasets);
+      datasetsCommitHash.set(commitHash);
     } catch (error) {
       console.error("Error loading datasets from HuggingFace:", error);
       set([]);
@@ -38,3 +40,4 @@ function createDatasetsStore() {
 }
 
 export const datasetsStore = createDatasetsStore();
+export const datasetsCommitHash = writable<string>("");

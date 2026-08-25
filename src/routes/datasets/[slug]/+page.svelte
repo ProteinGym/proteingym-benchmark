@@ -2,7 +2,7 @@
   import { goto } from "$app/navigation";
   import { base } from "$app/paths";
   import { page } from "$app/stores";
-  import { datasetsStore } from "$lib/stores/datasets";
+  import { datasetsStore, datasetsCommitHash } from "$lib/stores/datasets";
   import { getDatasetDownloadUrl } from "$lib/config";
 
   const datasets = $derived($datasetsStore);
@@ -129,6 +129,10 @@
         {/each}
       </div>
     </main>
+
+    <div class="text-center py-6">
+      <p class="text-sm text-gray-500">Datasets commit: {$datasetsCommitHash}</p>
+    </div>
   </div>
 {:else}
   <div class="min-h-screen bg-gray-50 flex items-center justify-center">
