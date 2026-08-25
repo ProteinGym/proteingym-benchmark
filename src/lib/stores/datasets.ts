@@ -9,20 +9,15 @@ function createDatasetsStore() {
   async function loadDatasets() {
     try {
       const response = await fetch(HUGGINGFACE_MANIFESTS_URL);
-      const manifestsData = await response.json();
+      const responseData = await response.json();
+
+      const manifestsData = responseData.manifests as Record<string, string>;
 
       const datasets: Dataset[] = [];
 
       for (const [slug, tomlContent] of Object.entries(manifestsData)) {
-        if (slug === "commit_hash") {
-          continue;
-        }
-
         try {
-          const data = TOML.parse(tomlContent as string) as Record<
-            string,
-            unknown
-          >;
+          const data = TOML.parse(tomlContent) as Record<string, unknown>;
           datasets.push({ slug, data });
         } catch (error) {
           console.warn(`Error parsing TOML for ${slug}:`, error);
