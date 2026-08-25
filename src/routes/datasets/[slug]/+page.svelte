@@ -2,7 +2,8 @@
   import { goto } from "$app/navigation";
   import { base } from "$app/paths";
   import { page } from "$app/stores";
-  import { datasetsStore } from "$lib/stores/datasets";
+  import { datasetsStore, datasetsCommitHash } from "$lib/stores/datasets";
+  import { getDatasetDownloadUrl } from "$lib/config";
 
   const datasets = $derived($datasetsStore);
 
@@ -55,18 +56,16 @@
               {/if}
             {/each}
           </div>
-          {#if dataset.data._archive_filename}
-            <a
-              href="https://github.com/ProteinGym/proteingym-benchmark/raw/main/datasets/{dataset.data._archive_filename}"
-              class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              download
-            >
+          <a
+            href={getDatasetDownloadUrl(dataset.slug)}
+            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            download
+          >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
               </svg>
               Download Dataset
             </a>
-          {/if}
         </div>
       </div>
     </header>
@@ -88,8 +87,8 @@
                         {#if typeof item === "object" && item !== null}
                           <dl class="space-y-3">
                             {#each Object.entries(item) as [k, v]}
-                              <div class="grid grid-cols-[10rem_1fr] gap-4">
-                                <dt class="text-sm font-medium text-gray-600">{k}:</dt>
+                              <div class="grid grid-cols-[14rem_1fr] gap-4">
+                                <dt class="text-sm font-medium text-gray-600 break-words">{k}:</dt>
                                 <dd class="text-sm text-gray-900 min-w-0" style="overflow-wrap: anywhere; word-break: break-all;">
                                   {#if typeof v === "object" && v !== null}
                                     <pre class="text-xs break-words whitespace-pre-wrap">{JSON.stringify(v, null, 2)}</pre>
@@ -130,6 +129,10 @@
         {/each}
       </div>
     </main>
+
+    <div class="text-center py-6">
+      <p class="text-sm text-gray-500">Datasets commit: {$datasetsCommitHash}</p>
+    </div>
   </div>
 {:else}
   <div class="min-h-screen bg-gray-50 flex items-center justify-center">
