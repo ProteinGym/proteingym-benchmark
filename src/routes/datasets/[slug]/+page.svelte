@@ -87,8 +87,8 @@
                         {#if typeof item === "object" && item !== null}
                           <dl class="space-y-3">
                             {#each Object.entries(item) as [k, v]}
-                              <div class="grid grid-cols-[10rem_1fr] gap-4">
-                                <dt class="text-sm font-medium text-gray-600">{k}:</dt>
+                              <div class="grid grid-cols-[14rem_1fr] gap-4">
+                                <dt class="text-sm font-medium text-gray-600 break-words">{k}:</dt>
                                 <dd class="text-sm text-gray-900 min-w-0" style="overflow-wrap: anywhere; word-break: break-all;">
                                   {#if typeof v === "object" && v !== null}
                                     <pre class="text-xs break-words whitespace-pre-wrap">{JSON.stringify(v, null, 2)}</pre>
