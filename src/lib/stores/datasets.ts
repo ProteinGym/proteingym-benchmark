@@ -2,13 +2,14 @@ import { writable } from "svelte/store";
 import type { Dataset } from "$lib/types/dataset";
 import TOML from "smol-toml";
 import { HUGGINGFACE_MANIFESTS_URL } from "$lib/config";
+import { base } from "$app/paths";
 
 function createDatasetsStore() {
   const { subscribe, set } = writable<Dataset[]>([]);
 
   async function loadDatasets() {
     try {
-      const response = await fetch(HUGGINGFACE_MANIFESTS_URL);
+      const response = await fetch(`${base}${HUGGINGFACE_MANIFESTS_URL}`);
       const responseData = await response.json();
 
       const manifestsData = responseData.manifests as Record<string, string>;
