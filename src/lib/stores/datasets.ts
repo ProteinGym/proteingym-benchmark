@@ -1,31 +1,39 @@
 import { writable } from "svelte/store";
 import type { Dataset } from "$lib/types/dataset";
 import TOML from "smol-toml";
-import { base } from "$app/paths";
+import { HUGGINGFACE_MANIFESTS_URL } from "$lib/config";
 
 function createDatasetsStore() {
   const { subscribe, set } = writable<Dataset[]>([]);
 
   async function loadDatasets() {
-    const response = await fetch(`${base}/datasets-list.json`);
-    const { slugs } = await response.json();
+    try {
+      const response = await fetch(HUGGINGFACE_MANIFESTS_URL);
+      const manifestsData = await response.json();
 
-    const datasets = await Promise.all(
-      slugs.map(async (slug: string) => {
-        try {
-          const response = await fetch(`${base}/datasets/${slug}.toml`);
-          const tomlContent = await response.text();
-          const data = TOML.parse(tomlContent) as Record<string, unknown>;
+      const datasets: Dataset[] = [];
 
-          return { slug, data };
-        } catch (error) {
-          console.warn(`Error loading ${slug}:`, error);
-          return null;
+      for (const [slug, tomlContent] of Object.entries(manifestsData)) {
+        if (slug === "commit_hash") {
+          continue;
         }
-      }),
-    );
 
-    set(datasets.filter((dataset): dataset is Dataset => dataset !== null));
+        try {
+          const data = TOML.parse(tomlContent as string) as Record<
+            string,
+            unknown
+          >;
+          datasets.push({ slug, data });
+        } catch (error) {
+          console.warn(`Error parsing TOML for ${slug}:`, error);
+        }
+      }
+
+      set(datasets);
+    } catch (error) {
+      console.error("Error loading datasets from HuggingFace:", error);
+      set([]);
+    }
   }
 
   return {
