@@ -1,0 +1,32 @@
+[project]
+name = "proteingym-models-cytolexmuta"
+version = "0.1.0"
+description = "cytolexmuta zero-shot map-fusion model for ProteinGym2"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "typer~=0.16.0",
+    "proteingym-base",
+    "polars[pyarrow]~=1.31.0",
+]
+
+[project.scripts]
+cytolexmuta = "proteingym.models.cytolexmuta.__main__:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base.git" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/proteingym"]
+
+[tool.ruff]
+line-length = 88
+
+[dependency-groups]
+dev = [
+    "pytest~=8.4.1",
+]
