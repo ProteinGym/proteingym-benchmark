@@ -15,7 +15,7 @@ jobs:
       - name: Download manifests.json from Hugging Face
         run: |
           curl -o static/manifests.json \
-            https://huggingface.co/datasets/ProteinGym/proteingym/raw/main/datasets.json
+            https://huggingface.co/datasets/ProteinGym/ProteinGym2.0/raw/metadata/manifests.json
 
       - name: Commit and push if changed
         run: |
