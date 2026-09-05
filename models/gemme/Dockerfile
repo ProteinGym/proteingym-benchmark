@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 
 # fetch computePred.R, pred.R, default.conf, blosum62p.txt, alphabets/, and
 # LICENSE.txt from GEMME
-RUN curl -LsSf http://www.lcqb.upmc.fr/GEMME/package/GEMME.tgz | tar xz -C /tmp \
+RUN curl -kLsSf http://www.lcqb.upmc.fr/GEMME/package/GEMME.tgz | tar xz -C /tmp \
     && mkdir -p /opt/program \
     && cp -r /tmp/GEMME/computePred.R /tmp/GEMME/pred.R /tmp/GEMME/default.conf \
         /tmp/GEMME/blosum62p.txt /tmp/GEMME/alphabets /tmp/GEMME/LICENSE.txt \
