@@ -1,0 +1,41 @@
+Bootstrap: docker
+From: python:3.12-slim-bookworm
+
+%setup
+    mkdir -p ${SINGULARITY_ROOTFS}/opt/program
+    cp -r src/ pyproject.toml uv.lock README.md JET2/ \
+        ${SINGULARITY_ROOTFS}/opt/program/
+    cp bin/muscle ${SINGULARITY_ROOTFS}/usr/local/bin/muscle
+    chmod +x ${SINGULARITY_ROOTFS}/usr/local/bin/muscle
+
+%post
+    apt-get update && apt-get install -y \
+        git curl ca-certificates \
+        default-jdk-headless \
+        r-base \
+        && rm -rf /var/lib/apt/lists/*
+
+    curl -LsSf http://www.lcqb.upmc.fr/GEMME/package/GEMME.tgz | tar xz -C /tmp
+    cp -r /tmp/GEMME/computePred.R /tmp/GEMME/pred.R /tmp/GEMME/default.conf \
+        /tmp/GEMME/blosum62p.txt /tmp/GEMME/alphabets /tmp/GEMME/LICENSE.txt \
+        /opt/program/
+    rm -rf /tmp/GEMME
+
+    R -e 'install.packages(c("seqinr", "RColorBrewer"), repos="https://cloud.r-project.org")'
+
+    # install uv (defaults to /root/.local/bin)
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    # move binaries to a globally accessible system path
+    mv /root/.local/bin/uv /root/.local/bin/uvx /usr/local/bin/
+
+    # sync dependencies
+    cd /opt/program
+    uv sync --no-cache
+
+%environment
+    export PATH="/opt/program/.venv/bin:$PATH"
+
+%runscript
+    cd /opt/program
+    exec uv run --no-sync gemme "$@"
