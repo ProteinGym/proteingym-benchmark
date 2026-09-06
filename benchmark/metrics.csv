@@ -1,4 +1,4 @@
-﻿game,model,dataset,split,target
+﻿game,model,dataset,split,spearman
 zero_shot,ESM2_150M_UR50D,ERBB2_HUMAN_Elazar_2016,random,
 zero_shot,ESM2_150M_UR50D,A0A2Z5U3Z0_9INFA_Doud_2016,random,0.12927650473053645
 zero_shot,ESM2_150M_UR50D,AICDA_HUMAN_Gajula_2014_3cycles,random,0.20110452626735534
