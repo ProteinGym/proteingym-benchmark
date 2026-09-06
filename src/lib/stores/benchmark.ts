@@ -5,6 +5,7 @@ export type MetricRow = {
   game: string;
   model: string;
   dataset: string;
+  split: string;
   spearman: string;
 };
 
