@@ -9,6 +9,10 @@
       "image": "rsalor:latest"
     },
     {
+      "name": "gemme",
+      "image": "gemme:latest"
+    },
+    {
       "name": "evmutation",
       "image": "evmutation:latest"
     },
