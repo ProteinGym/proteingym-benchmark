@@ -4,6 +4,79 @@ This file contains documentation about contributing to this project.
 
 After cloning the repository, you can start developing locally for both the benchmarking system and the static website to show the model cards and benchmarking results.
 
+## Model Submission Policy
+
+We welcome public PRs adding new models to the benchmark. The goal of the
+benchmark is to advance the field, not to accumulate leaderboard entries, so
+submissions are evaluated on usability and and novelty, not on score alone.
+
+To keep the benchmark useful, every model submission must satisfy the
+criteria below. If you are in doubt, please open an issue to confirm
+suitability before working on your pull-request.
+
+### 1. Contribute something the field can learn from
+
+In your PR description or model card, briefly explain what is novel or
+interesting about the model (a new architecture, a new use of
+data/features, a reproduction of a notable published method,
+etc.). Minor hyperparameter sweeps or re-submissions of an
+already-present architecture with cosmetic changes or straight-forward
+ensembles (unless performance gains are substantial) are not
+sufficient for inclusion.
+
+### 2. Ship small weights for a sanity check
+
+Every submission must include a small (e.g. a few MB, and no more than
+500MB) set of trained weights, or a fast, seeded training recipe that
+produces one, so that reviewers and CI can run an end-to-end sanity
+check without depending on the contributor's original training run or
+infrastructure. Large pretrained backbones (ESM, MSA Transformer,
+etc.) are fine to depend on, but the *model-specific* weights (the
+part you trained) should be small enough to check into the repo (via
+[DVC](https://dvc.org/)) or to reproduce quickly during the build.
+
+### 3. No external network access
+
+Models must run fully offline at inference/training time inside their
+container. The benchmark is executed in an isolated environment (this is a
+security requirement, not just a reproducibility one), and containers may be
+run with networking disabled (e.g. `docker run --network none`).
+
+Concretely:
+
+- All weights, tokenizers, and other assets must be fetched and baked into
+  the Docker image at **build time** (e.g. in the `Dockerfile`, via `RUN`
+  steps), never at `train`/`infer` runtime.
+- No calls to external APIs, model hubs, license servers, telemetry/analytics
+  endpoints, or any other network resource once the container is running.
+- In your model card, list every URL your Dockerfile or code touches during
+  the build, along with the HTTP method (GET/POST) and why it's needed (e.g.
+  "GET https://huggingface.co/... to download pretrained ESM2 weights").
+  This makes the review straightforward and lets us catch anything that
+  should instead be vendored or pinned.
+
+### Other requirements
+
+- **License:** declare the license of your code and of any pretrained
+  weights you depend on, and confirm it permits inclusion in and
+  benchmarking by this project. Flag anything non-commercial or otherwise
+  restrictive.
+- **Reproducibility:** pin dependency versions (`pyproject.toml`/lockfile)
+  and avoid non-deterministic behavior where practical (fixed seeds).
+- **Resource budget:** keep image size, memory, and runtime reasonable so CI
+  stays fast and affordable — this is enforced by CI timeouts and image size
+  checks, not fixed numbers.
+- **Attribution:** credit the original paper/repo for any borrowed code or
+  architecture, both in the model card and in code comments where relevant.
+- **No malicious or obfuscated code:** the entrypoint and its dependencies
+  are read as part of review; anything that tries to execute arbitrary
+  commands, exfiltrate data, or otherwise behave outside the documented
+  `train`/`infer` contract will be rejected.
+- **Complete model card:** see [models/README.md](models/README.md) for the
+  required entrypoints and structure. The card should describe the
+  architecture, training data, and hyperparameters, not just report a score.
+- **One model per PR**, following the [PR checklist](.github/pull_request_template.md).
+
 ## Benchmarking
 
 The benchmarking system evaluates protein machine learning models using [DVC (Data Version Control)](https://dvc.org/) to orchestrate reproducible machine learning pipelines. It tests models on different datasets for supervised and zero-shot games by containerizing each model with Docker, running predictions, and calculating performance metrics. The system supports two environments: local development and CI/CD (GitHub Actions).
