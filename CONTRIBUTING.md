@@ -21,8 +21,7 @@ interesting about the model (a new architecture, a new use of
 data/features, a reproduction of a notable published method,
 etc.). Minor hyperparameter sweeps or re-submissions of an
 already-present architecture with cosmetic changes or straight-forward
-ensembles (unless performance gains are substantial) are not
-sufficient for inclusion.
+ensembles are not sufficient for inclusion.
 
 ### 2. Ship small weights for a sanity check
 
