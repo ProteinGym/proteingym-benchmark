@@ -1,0 +1,39 @@
+Bootstrap: docker
+From: python:3.12-slim-bookworm
+
+%setup
+    mkdir -p ${SINGULARITY_ROOTFS}/opt/program
+    cp -r src/ pyproject.toml uv.lock README.md ${SINGULARITY_ROOTFS}/opt/program/
+
+%post
+    # build-essential only for triton's runtime C-wrapper JIT
+    apt-get update && apt-get install -y git curl ca-certificates build-essential && rm -rf /var/lib/apt/lists/*
+
+    # install uv (defaults to /root/.local/bin)
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    mv /root/.local/bin/uv /root/.local/bin/uvx /usr/local/bin/
+
+    # sync dependencies
+    cd /opt/program
+    uv sync --no-cache
+
+    # SaProt_35M_AF2 checkpoint (HF westlake-repl/SaProt_35M_AF2, commit-pinned)
+    # and the static foldseek release used for 3Di structure tokens
+    mkdir -p /opt/program/data/SaProt_35M_AF2 /opt/program/bin
+    for f in config.json special_tokens_map.json tokenizer_config.json vocab.txt pytorch_model.bin; do
+        curl -fL --retry 3 -o /opt/program/data/SaProt_35M_AF2/$f \
+            https://huggingface.co/westlake-repl/SaProt_35M_AF2/resolve/316cd4017d29f4657b959365f24b57f1ee278912/$f
+    done
+    curl -fL https://github.com/steineggerlab/foldseek/releases/download/10-941cd33/foldseek-linux-avx2.tar.gz \
+        | tar -xz -C /opt/program/bin --strip-components=2 foldseek/bin/foldseek
+    chmod 755 /opt/program/bin/foldseek
+    /opt/program/bin/foldseek version
+
+%environment
+    export PATH="/opt/program/.venv/bin:$PATH"
+    export HF_HUB_OFFLINE=1
+
+%runscript
+    cd /opt/program
+    exec uv run --no-sync saprot "$@"
