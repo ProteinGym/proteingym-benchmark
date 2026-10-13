@@ -36,6 +36,10 @@ _AA3 = {
     "W": "TRP", "Y": "TYR",
 }
 
+# JET2 refuses to analyse sequences with 20 or fewer residues (JetAnalysis.java,
+# "ref.size()>20") and silently writes an all-zero trace instead
+_JET_MIN_LENGTH = 21
+
 
 class ExternalToolError(RuntimeError):
     """Raised when JET2 or the R prediction script fails or produces no output."""
@@ -300,7 +304,8 @@ class GEMME(BaseModel, Scorer, MutationScorer, ConditionalMutationScorer):
     def _run_jet(self, prot: str, tmp: Path, pdb_file: Path, jet_fasta: Path, length: int):
         """
         Run JET2 on the provided alignment and move its output to tmp/<prot>_jet.res,
-        where computePred.R expects it.
+        where computePred.R expects it. Queries too short for JET2 get a uniform
+        trace of 1.0 instead.
 
         Parameters
         ----------
@@ -320,6 +325,14 @@ class GEMME(BaseModel, Scorer, MutationScorer, ConditionalMutationScorer):
         ExternalToolError
             If JET2 produces no output, the wrong length, or an all-zero trace
         """
+        if length < _JET_MIN_LENGTH:
+            # too short for JET2; weight every position equally instead
+            with open(tmp / f"{prot}_jet.res", "w") as f:
+                f.write("pos traceMax\n")
+                for i in range(1, length + 1):
+                    f.write(f"{i} 1.0\n")
+            return
+
         conf_file = tmp / "default.conf"
         self._write_conf(conf_file)
 
