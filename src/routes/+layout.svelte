@@ -1,6 +1,6 @@
 <script lang="ts">
   import "../app.css";
-  import favicon from "$lib/assets/favicon.svg";
+  import favicon from "$lib/assets/favicon.png";
   import { modelsStore } from "$lib/stores/models";
   import { datasetsStore } from "$lib/stores/datasets";
   import { benchmarkStore } from "$lib/stores/benchmark";
