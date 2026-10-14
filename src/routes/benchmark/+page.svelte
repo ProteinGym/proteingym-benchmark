@@ -18,7 +18,7 @@
   let games = $derived([...new Set(rawData.map((r) => r.game))].sort());
   let splits = $derived([...new Set(rawData.map((r) => r.split))].sort());
   let game = $state('zero_shot');
-  let split = $state('');
+  let split = $state('random');
   let sizes = $state<'all' | 'best'>('best');
   let activeGame = $derived(game || games[0] || '');
   let activeSplit = $derived(split || splits[0] || '');
@@ -111,8 +111,8 @@
   // shortcut: model -> family by name prefix; move to model README frontmatter once more models land.
   const FAMILIES = [
     { label: 'Sequence-structure', color: '#156591', match: /^(RSALOR|AIDO)/i },
-    { label: 'MSA (classic)', color: '#5CBAD0', match: /^(EVCOUPLINGS|EVmutation|GEMME|Site)/i },
-    { label: 'PLM', color: '#EDC77D', match: /^(ESM2|ESMC|ESM1|ProGen|Tranception)/i },
+    { label: 'MSA', color: '#5CBAD0', match: /^(EVCOUPLINGS|EVmutation|GEMME|Site)/i },
+    { label: 'pLM', color: '#EDC77D', match: /^(ESM2|ESMC|ESM1|ProGen|Tranception)/i },
     { label: 'Structure', color: '#E86861', match: /^(ProteinMPNN|MPNN|ESM-?IF|SaProt)/i }
   ];
   const familyColor = (model: string) => FAMILIES.find((f) => f.match.test(model))?.color ?? '#AAAAAA';
@@ -185,7 +185,7 @@
       </select>
     </label>
     <span class="text-gray-500">
-      {shown.length} of {summary.models.length} models · {summary.common} of {summary.total} datasets scored by every model
+      {shown.length} of {summary.models.length} models · Scores are plotted using the datasets that are scored by every model ({summary.common}/{summary.total})
     </span>
     <a href="{base}/benchmark-table" class="ml-auto text-blue-700 hover:underline">View as table →</a>
   </div>
@@ -203,7 +203,7 @@
         {#if domain[0] <= 0 && domain[1] >= 0}
           <line x1={x(0)} x2={x(0)} y1={TOP - 8} y2={H - BOTTOM} stroke="black" stroke-width="1" />
         {/if}
-        <text x={(LABEL_W + W - MEAN_W) / 2} y={H - 6} text-anchor="middle" class="fill-gray-700 text-xs font-semibold">Spearman ρ</text>
+        <text x={(LABEL_W + W - MEAN_W) / 2} y={H - 6} text-anchor="middle" class="fill-gray-700 text-xs font-semibold">Spearman (ρ)</text>
         <text x={W - MEAN_W + 10} y={TOP - 12} class="fill-gray-700 text-xs font-semibold">Mean</text>
 
         {#each shown as m, i (m.model)}
@@ -229,8 +229,8 @@ Q1 {m.q1.toFixed(4)} · Q3 {m.q3.toFixed(4)}</title>
         {/each}
       </div>
       <p class="mt-2 text-xs text-gray-500">
-        Violin: kernel density over common datasets · dashed lines: Q1, median (bold), Q3 ·
-        <span style="color: #142142">◆</span> mean. Sorted by mean Spearman. Hover a row for details.
+        Violin: kernel density over common datasets (<span style="color: #142142">◆</span> mean)
+        Hover a row for details.
       </p>
     </div>
 
