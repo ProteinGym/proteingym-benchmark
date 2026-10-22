@@ -1,6 +1,17 @@
 <script lang="ts">
   import { benchmarkStore } from '$lib/stores/benchmark';
-  import { criticalDifference, meanRanks } from '$lib/stats';
+  import { datasetsStore } from '$lib/stores/datasets';
+  import { tooltip } from '$lib/tooltip';
+  import NormalizeToggle from '$lib/components/NormalizeToggle.svelte';
+  import {
+    bestSizes,
+    datasetMeta,
+    FAMILIES,
+    familyColor,
+    normalizationKeys,
+    scoresByModel,
+    summarize
+  } from '$lib/benchmark';
   import { base } from '$app/paths';
 
   // Prototype: one horizontal boxplot per model on a shared Spearman axis,
@@ -8,7 +19,9 @@
 
   const W = 960;
   const LABEL_W = 240;
-  const MEAN_W = 90;
+  const MEAN_W = 180;
+  const MEAN_X = W - MEAN_W + 14;
+  const RANK_X = W - MEAN_W + 90;
   const ROW_H = 48;
   const TOP = 30;
   const BOTTOM = 40;
@@ -20,8 +33,30 @@
   let game = $state('zero_shot');
   let split = $state('random');
   let sizes = $state<'all' | 'best'>('best');
+  let sortBy = $state<'rank' | 'mean'>('mean');
+  let byProtein = $state(false);
+  let byPaper = $state(false);
+  let unitLabel = $derived(
+    byProtein && byPaper ? 'protein/paper groups' : byProtein ? 'proteins' : byPaper ? 'papers' : 'common datasets'
+  );
   let activeGame = $derived(game || games[0] || '');
   let activeSplit = $derived(split || splits[0] || '');
+
+  let metaOf = $derived(datasetMeta($datasetsStore));
+  const phenotype = (dataset: string) => metaOf.get(dataset)?.phenotype ?? 'unknown';
+  // dataset count per phenotype; empty until manifests load so bubbles don't flash as "unknown"
+  let phenotypeCounts = $derived.by(() => {
+    if (!metaOf.size) return [];
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity
+    const counts = new Map<string, number>();
+    const inView = rawData.filter((r) => r.game === activeGame && r.split === activeSplit);
+    for (const d of new Set(inView.map((r) => r.dataset))) counts.set(phenotype(d), (counts.get(phenotype(d)) ?? 0) + 1);
+    return [...counts].sort(([a], [b]) => (a === 'unknown' ? 1 : b === 'unknown' ? -1 : a.localeCompare(b)));
+  });
+  // store the deselected ones so every phenotype starts switched on
+  let hiddenPhenotypes = $state<string[]>([]);
+  const togglePhenotype = (p: string) =>
+    (hiddenPhenotypes = hiddenPhenotypes.includes(p) ? hiddenPhenotypes.filter((h) => h !== p) : [...hiddenPhenotypes, p]);
 
   function quantile(sorted: number[], q: number): number {
     const pos = (sorted.length - 1) * q;
@@ -31,32 +66,18 @@
   }
 
   let summary = $derived.by(() => {
-    // eslint-disable-next-line svelte/prefer-svelte-reactivity
-    const byModel = new Map<string, Map<string, number>>();
-    for (const row of rawData) {
-      if (row.game !== activeGame || row.split !== activeSplit) continue;
-      const score = parseFloat(row.spearman);
-      if (!Number.isFinite(score)) continue;
-      if (!byModel.has(row.model)) byModel.set(row.model, new Map());
-      byModel.get(row.model)!.set(row.dataset, score);
-    }
-    const scored = [...byModel.values()];
-    const common = scored.length
-      ? [...scored[0].keys()].filter((d) => scored.every((m) => m.has(d)))
-      : [];
-    const allDatasets = new Set(scored.flatMap((m) => [...m.keys()]));
-
-    // Friedman blocks = common datasets (rows) x models (columns), alpha 0.05.
-    const blocks = common.map((d) => [...byModel.values()].map((m) => m.get(d)!));
-    const ranks = blocks.length ? meanRanks(blocks) : [];
-    const cd = blocks.length ? criticalDifference(byModel.size, blocks.length) : 0;
-
-    const models = [...byModel].map(([model, scores], idx) => {
-      const values = common.map((d) => scores.get(d)!).sort((a, b) => a - b);
+    const base = summarize(
+      scoresByModel(rawData, activeGame, activeSplit),
+      (d) => !hiddenPhenotypes.includes(phenotype(d)),
+      normalizationKeys(metaOf),
+      byProtein,
+      byPaper
+    );
+    const models = base.models.map(({ model, rank, mean, values: unsorted }) => {
+      const values = [...unsorted].sort((a, b) => a - b);
       const q1 = quantile(values, 0.25);
       const q3 = quantile(values, 0.75);
       const median = quantile(values, 0.5);
-      const mean = values.reduce((s, v) => s + v, 0) / values.length;
       const sd = Math.sqrt(values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length);
       // Gaussian KDE with Silverman's bandwidth, clipped to the data range like seaborn's cut=0.
       const h = 0.9 * Math.min(sd, (q3 - q1) / 1.34 || sd) * values.length ** -0.2 || 0.01;
@@ -68,7 +89,7 @@
       const width = (v: number) => kde(v) / peak;
       return {
         model,
-        rank: ranks[idx],
+        rank,
         mean,
         median,
         q1,
@@ -79,20 +100,18 @@
         quartiles: [q1, median, q3].map((v) => [v, width(v)])
       };
     });
-    models.sort((a, b) => b.mean - a.mean);
-    return { models, cd, common: common.length, total: allDatasets.size };
+    models.sort((a, b) => a.rank - b.rank || b.mean - a.mean);
+    return { ...base, models };
   });
 
-  // Size family: ESM2_8M_UR50D and ESM2_3B_UR50D both belong to ESM2_UR50D.
-  // SaProt variants also differ in structure source (AF2 / PDB / AFDB), so they collapse to one family.
-  const sizeFamily = (model: string) =>
-    /^SaProt/i.test(model) ? 'SaProt' : model.replace(/_\d+(\.\d+)?[MB](?=_|$)/i, '');
-  // summary.models is sorted by mean, so the first member of each family is its best size.
-  let shown = $derived(
-    sizes === 'all'
+  // Violin order: mean rank (matches the CD diagram) or mean Spearman; the other breaks ties.
+  let ordered = $derived(
+    sortBy === 'rank'
       ? summary.models
-      : summary.models.filter((m, _, all) => all.find((o) => sizeFamily(o.model) === sizeFamily(m.model)) === m)
+      : [...summary.models].sort((a, b) => b.mean - a.mean || a.rank - b.rank)
   );
+  // ordered is best-first, so the first member of each family is its best size under the chosen sort.
+  let shown = $derived(sizes === 'all' ? ordered : bestSizes(ordered));
 
   let domain = $derived.by(() => {
     const all = shown.flatMap((m) => [m.lo, m.hi]);
@@ -107,15 +126,6 @@
   let x = $derived((v: number) => LABEL_W + ((v - domain[0]) / (domain[1] - domain[0])) * (W - LABEL_W - MEAN_W));
   const HALF = ROW_H * 0.45;
 
-  // FAMILY_COLORS from the rank-correlation notebook, desaturated to 75% like sns.desaturate(c, 0.75).
-  // shortcut: model -> family by name prefix; move to model README frontmatter once more models land.
-  const FAMILIES = [
-    { label: 'Sequence-structure', color: '#156591', match: /^(RSALOR|AIDO)/i },
-    { label: 'MSA', color: '#5CBAD0', match: /^(EVCOUPLINGS|EVmutation|GEMME|Site)/i },
-    { label: 'pLM', color: '#EDC77D', match: /^(ESM2|ESMC|ESM1|ProGen|Tranception)/i },
-    { label: 'Structure', color: '#E86861', match: /^(ProteinMPNN|MPNN|ESM-?IF|SaProt)/i }
-  ];
-  const familyColor = (model: string) => FAMILIES.find((f) => f.match.test(model))?.color ?? '#AAAAAA';
   let violinPath = (outline: number[][], cy: number) =>
     'M ' +
     outline.map(([v, w]) => `${x(v)} ${cy - w * HALF}`).join(' L ') +
@@ -167,31 +177,50 @@
   <div class="mb-4 flex flex-wrap items-center gap-4 text-sm">
     <label class="flex items-center gap-2">
       <span class="font-semibold text-gray-700">Game</span>
-      <select class="border border-gray-300 rounded-md px-2 py-1" bind:value={game}>
+      <select class="bg-white border border-gray-300 rounded-md px-2 py-1" bind:value={game}>
         {#each games as g (g)}<option value={g}>{g}</option>{/each}
       </select>
     </label>
     <label class="flex items-center gap-2">
       <span class="font-semibold text-gray-700">Split</span>
-      <select class="border border-gray-300 rounded-md px-2 py-1" bind:value={split}>
+      <select class="bg-white border border-gray-300 rounded-md px-2 py-1" bind:value={split}>
         {#each splits as s (s)}<option value={s}>{s}</option>{/each}
       </select>
     </label>
     <label class="flex items-center gap-2">
       <span class="font-semibold text-gray-700">Model sizes</span>
-      <select class="border border-gray-300 rounded-md px-2 py-1" bind:value={sizes}>
+      <select class="bg-white border border-gray-300 rounded-md px-2 py-1" bind:value={sizes}>
         <option value="all">Display all param sizes</option>
         <option value="best">Display best param size</option>
       </select>
     </label>
+    {#if phenotypeCounts.length}
+      <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filter datasets by phenotype">
+        <span class="font-semibold text-gray-700">Phenotype</span>
+        {#each phenotypeCounts as [p, count] (p)}
+          {@const on = !hiddenPhenotypes.includes(p)}
+          <button
+            type="button"
+            aria-pressed={on}
+            onclick={() => togglePhenotype(p)}
+            class="px-2.5 py-0.5 text-xs font-medium rounded-full border transition-colors {on
+              ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200'
+              : 'bg-white text-gray-400 border-gray-300 line-through hover:text-gray-600'}"
+          >
+            {p} <span class="opacity-70">({count})</span>
+          </button>
+        {/each}
+      </div>
+    {/if}
+    <NormalizeToggle bind:byProtein bind:byPaper />
     <span class="text-gray-500">
-      {shown.length} of {summary.models.length} models · Scores are plotted using the datasets that are scored by every model ({summary.common}/{summary.total})
+      {shown.length} of {summary.models.length} models · Scores are plotted using the datasets that are scored by every model ({summary.common}/{summary.total}){#if byProtein || byPaper}, weighted into {summary.units} {unitLabel}{/if}
     </span>
-    <a href="{base}/benchmark-table" class="ml-auto text-blue-700 hover:underline">View as table →</a>
+    <a href="{base}/benchmark-table" class="ml-auto text-accent-600 hover:text-accent-700 hover:underline">View as table →</a>
   </div>
 
   {#if summary.models.length && summary.common}
-    <div class="border border-gray-300 rounded-lg bg-white shadow-sm p-4 overflow-x-auto">
+    <div class="border border-gray-200 rounded-lg bg-white shadow-sm p-4 overflow-x-auto">
       <svg viewBox="0 0 {W} {H}" class="w-full min-w-[640px]" role="img" aria-label="Spearman distribution per model (violin plots)">
         {#each shown as _, i (i)}
           {#if i % 2}<rect x="0" y={TOP + i * ROW_H} width={W} height={ROW_H} class="fill-gray-50" />{/if}
@@ -204,22 +233,38 @@
           <line x1={x(0)} x2={x(0)} y1={TOP - 8} y2={H - BOTTOM} stroke="black" stroke-width="1" />
         {/if}
         <text x={(LABEL_W + W - MEAN_W) / 2} y={H - 6} text-anchor="middle" class="fill-gray-700 text-xs font-semibold">Spearman (ρ)</text>
-        <text x={W - MEAN_W + 10} y={TOP - 12} class="fill-gray-700 text-xs font-semibold">Mean</text>
+        {#each [{ key: 'mean', label: 'Mean ρ', arrow: '▼', at: MEAN_X }, { key: 'rank', label: 'Mean rank', arrow: '▲', at: RANK_X }] as const as col (col.key)}
+          <text
+            x={col.at}
+            y={TOP - 12}
+            role="button"
+            tabindex="0"
+            aria-pressed={sortBy === col.key}
+            aria-label="Sort by {col.label}"
+            onclick={() => (sortBy = col.key)}
+            onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), (sortBy = col.key))}
+            class="text-xs cursor-pointer select-none outline-none focus-visible:underline {sortBy === col.key
+              ? 'fill-gray-900 font-bold'
+              : 'fill-gray-500 font-semibold hover:fill-gray-900'}"
+          >
+            {col.label}{sortBy === col.key ? ` ${col.arrow}` : ''}
+          </text>
+        {/each}
 
         {#each shown as m, i (m.model)}
           {@const cy = TOP + i * ROW_H + ROW_H / 2}
           <g>
-            <title>{m.model}
-mean {m.mean.toFixed(4)} · median {m.median.toFixed(4)}
-Q1 {m.q1.toFixed(4)} · Q3 {m.q3.toFixed(4)}</title>
-            <rect x="0" y={cy - ROW_H / 2} width={W} height={ROW_H} class="fill-transparent" />
             <text x={LABEL_W - 12} y={cy + 4} text-anchor="end" class="fill-gray-800 text-xs">{m.model}</text>
-            <path d={violinPath(m.outline, cy)} fill={familyColor(m.model)} stroke="#333333" stroke-width="0.8" />
-            {#each m.quartiles as [v, w], k (k)}
-              <line x1={x(v)} x2={x(v)} y1={cy - w * HALF} y2={cy + w * HALF} stroke="#333333" stroke-width={k === 1 ? 1.5 : 1} stroke-dasharray={k === 1 ? '4 2' : '2 2'} />
-            {/each}
-            <path d="M {x(m.mean)} {cy - 5} l 5 5 l -5 5 l -5 -5 z" fill="#142142" />
-            <text x={W - MEAN_W + 10} y={cy + 4} class="fill-gray-900 text-xs font-mono">{m.mean.toFixed(3)}</text>
+            <!-- only the violin itself (and the marks drawn on it) triggers the hover tip -->
+            <g use:tooltip={`${m.model}\nmean ρ ${m.mean.toFixed(4)} · mean rank ${m.rank.toFixed(2)}\nmedian ${m.median.toFixed(4)} · Q1 ${m.q1.toFixed(4)} · Q3 ${m.q3.toFixed(4)}`}>
+              <path d={violinPath(m.outline, cy)} fill={familyColor(m.model)} stroke="#333333" stroke-width="0.8" />
+              {#each m.quartiles as [v, w], k (k)}
+                <line x1={x(v)} x2={x(v)} y1={cy - w * HALF} y2={cy + w * HALF} stroke="#333333" stroke-width={k === 1 ? 1.5 : 1} stroke-dasharray={k === 1 ? '4 2' : '2 2'} />
+              {/each}
+              <path d="M {x(m.mean)} {cy - 5} l 5 5 l -5 5 l -5 -5 z" fill="#142142" />
+            </g>
+            <text x={RANK_X} y={cy + 4} class="fill-gray-900 text-xs font-mono">{m.rank.toFixed(2)}</text>
+            <text x={MEAN_X} y={cy + 4} class="fill-gray-900 text-xs font-mono">{m.mean.toFixed(3)}</text>
           </g>
         {/each}
       </svg>
@@ -229,12 +274,12 @@ Q1 {m.q1.toFixed(4)} · Q3 {m.q3.toFixed(4)}</title>
         {/each}
       </div>
       <p class="mt-2 text-xs text-gray-500">
-        Violin: kernel density over common datasets (<span style="color: #142142">◆</span> mean)
-        Hover a row for details.
+        Violin: kernel density over {unitLabel} (<span style="color: #142142">◆</span> mean)
+        Hover a violin for details.
       </p>
     </div>
 
-    <div class="mt-6 border border-gray-300 rounded-lg bg-white shadow-sm p-4 overflow-x-auto">
+    <div class="mt-6 border border-gray-200 rounded-lg bg-white shadow-sm p-4 overflow-x-auto">
       <h2 class="text-sm font-semibold text-gray-800">Critical difference diagram (Friedman + Nemenyi, α = 0.05)</h2>
       <svg bind:this={cdSvg} viewBox={cdViewBox} class="w-full min-w-[640px]" role="img" aria-label="Critical difference diagram of mean ranks">
         <line x1={CD_L} x2={CD_L + (summary.cd / Math.max(1, rankHi - rankLo)) * (CD_R - CD_L)} y1="14" y2="14" stroke="#142142" stroke-width="2" />
@@ -248,8 +293,7 @@ Q1 {m.q1.toFixed(4)} · Q3 {m.q3.toFixed(4)}</title>
           {@const left = i >= cdHalf}
           {@const ly = cdLabelTop + (left ? cdModels.length - 1 - i : i) * 22}
           {@const lx = left ? CD_L - 20 : CD_R + 20}
-          <g>
-            <title>{m.model}: mean rank {m.rank.toFixed(3)}</title>
+          <g use:tooltip={`${m.model}\nmean rank ${m.rank.toFixed(3)}`}>
             <polyline points="{rx(m.rank)},{CD_AXIS} {rx(m.rank)},{ly} {lx},{ly}" fill="none" class="stroke-gray-500" />
             <circle cx={rx(m.rank)} cy={CD_AXIS} r="5" fill={familyColor(m.model)} stroke="black" stroke-width="0.5" />
             <text x={left ? lx - 6 : lx + 6} y={ly + 4} text-anchor={left ? 'end' : 'start'} class="fill-gray-800 text-xs">{m.model} <tspan class="fill-gray-500 font-mono">{m.rank.toFixed(2)}</tspan></text>
@@ -260,13 +304,15 @@ Q1 {m.q1.toFixed(4)} · Q3 {m.q3.toFixed(4)}</title>
         {/each}
       </svg>
       <p class="mt-2 text-xs text-gray-500">
-        Mean rank over the {summary.common} common datasets (1 = highest Spearman). Models joined by a bar are not
+        Mean rank over the {summary.units} {unitLabel} (1 = highest Spearman). Models joined by a bar are not
         significantly different (|ΔR| ≤ CD).
         {#if shown.length < summary.models.length}
           Ranks and CD come from the full {summary.models.length}-model test.
         {/if}
       </p>
     </div>
+  {:else if !rawData.length}
+    <p class="text-gray-500">Loading benchmark…</p>
   {:else}
     <p class="text-gray-500">No datasets are scored by every model for this game and split.</p>
   {/if}
