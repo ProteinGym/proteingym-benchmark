@@ -17,8 +17,8 @@
       "image": "evmutation2:latest"
     },
     {
-      "name": "gemme",
-      "image": "gemme:latest"
+      "name": "pottsmpnn",
+      "image": "pottsmpnn:latest"
     }
   ]
 }
