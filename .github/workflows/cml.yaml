@@ -115,7 +115,14 @@ jobs:
               if [ "$CAN_USE_CACHE" = "true" ]; then
                 echo "Pushing image to cache: ${remote}"
                 docker tag "$local" "$remote"
-                docker push "$remote"
+                for attempt in 1 2 3; do
+                  docker push "$remote" && break
+                  if [ "$attempt" = 3 ]; then
+                    echo "::warning::Could not push ${remote} to cache; continuing with local image"
+                  else
+                    sleep $((attempt * 15))
+                  fi
+                done
               fi
             fi
 
