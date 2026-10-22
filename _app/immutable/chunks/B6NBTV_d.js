@@ -1,4 +1,4 @@
-import{w as D}from"./jUNiloI4.js";import{b as G}from"./DgmthkvH.js";/*!
+import{w as D}from"./jUNiloI4.js";import{b as G}from"./3YWk_sD9.js";/*!
  * Copyright (c) Squirrel Chat et al., All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  *
