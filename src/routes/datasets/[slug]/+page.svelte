@@ -17,8 +17,8 @@
   $effect(() => {
     const slug = $page.params.slug;
     fetch(`${base}/histograms.json`)
-      .then((r): Promise<Record<string, HistogramData>> => (r.ok ? r.json() : Promise.resolve({})))
-      .then((h) => (histogram = slug ? (h[slug] ?? null) : null))
+      .then((r): Promise<{ histograms?: Record<string, HistogramData> }> => (r.ok ? r.json() : Promise.resolve({})))
+      .then((h) => (histogram = slug ? (h.histograms?.[slug] ?? null) : null))
       .catch(() => (histogram = null));
   });
 

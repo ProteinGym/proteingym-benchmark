@@ -10,12 +10,12 @@
     },
     {
       key: 'paper',
-      label: 'Paper',
-      help: 'Datasets from the same paper (same DOI) are averaged first, so a paper with many datasets counts as much as a paper with one.'
+      label: 'Publication',
+      help: 'Datasets from the same publication (same DOI) are averaged first, so a publication with many datasets counts as much as a publication with one.'
     }
   ] as const;
   const BOTH_HELP =
-    'With both on: datasets that share a protein or a paper form one group. Repeat proteins are averaged within each paper, then the papers are averaged, and each group counts once.';
+    'With both on: datasets that share a protein or a publication form one group. Repeat proteins are averaged within each publication, then the publications are averaged, and each group counts once.';
 </script>
 
 <div class="flex items-center gap-2" role="group" aria-label="Normalize by">

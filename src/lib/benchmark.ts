@@ -4,6 +4,9 @@ import { normalizationWeights, type DatasetKeys } from "$lib/normalize";
 import type { MetricRow } from "$lib/stores/benchmark";
 import type { Dataset } from "$lib/types/dataset";
 
+/** URL segment -> setting value in the metrics.csv `game` column. */
+export const SETTINGS: Record<string, string> = { "zero-shot": "zero_shot", supervised: "supervised" };
+
 export type DatasetMeta = { slug: string; phenotype?: string; protein?: string; paper?: string };
 
 /** Manifest facts keyed by slug and by `name` (metrics.csv uses the name, which can differ from the slug). */
@@ -31,12 +34,31 @@ export const normalizationKeys =
     paper: meta.get(dataset)?.paper ?? dataset,
   });
 
-/** model -> dataset -> Spearman for one game/split, skipping missing scores. */
-export function scoresByModel(rows: MetricRow[], game: string, split: string): Map<string, Map<string, number>> {
+const KEY_COLUMNS = ["game", "model", "dataset", "split"];
+
+/** Every metrics.csv column besides the keys that holds numbers (text columns like `target` are skipped). */
+export function metricColumns(rows: MetricRow[]): string[] {
+  const columns = rows.length ? Object.keys(rows[0]) : [];
+  return columns.filter((c) => !KEY_COLUMNS.includes(c) && rows.some((r) => Number.isFinite(parseFloat(r[c]))));
+}
+
+// shortcut: direction is guessed from the name; list metrics explicitly if one breaks the pattern.
+export const lowerIsBetter = (metric: string) => /(^|_)(mse|rmse|mae|loss|error|std)(_|$)/i.test(metric);
+/** Short name for headers ("Mean ρ") and the full one for axes ("Spearman ρ"). */
+export const metricSymbol = (metric: string) => (metric === "spearman" ? "ρ" : metric.replaceAll("_", " "));
+export const metricName = (metric: string) => (metric === "spearman" ? "Spearman ρ" : metric.replaceAll("_", " "));
+
+/** model -> dataset -> score for one setting/split/metric, skipping missing scores. */
+export function scoresByModel(
+  rows: MetricRow[],
+  setting: string,
+  split: string,
+  metric: string,
+): Map<string, Map<string, number>> {
   const byModel = new Map<string, Map<string, number>>();
   for (const row of rows) {
-    if (row.game !== game || row.split !== split) continue;
-    const score = parseFloat(row.spearman);
+    if (row.game !== setting || row.split !== split) continue;
+    const score = parseFloat(row[metric]);
     if (!Number.isFinite(score)) continue;
     if (!byModel.has(row.model)) byModel.set(row.model, new Map());
     byModel.get(row.model)!.set(row.dataset, score);
@@ -56,6 +78,7 @@ export function summarize(
   keys: (dataset: string) => DatasetKeys,
   byProtein: boolean,
   byPaper: boolean,
+  lowerBetter = false,
 ) {
   const scored = [...byModel.values()];
   const kept = new Set(scored.flatMap((m) => [...m.keys()]).filter(keep));
@@ -71,7 +94,8 @@ export function summarize(
 
   const perModel = scored.map(unitScores);
   // Friedman blocks = units (rows) x models (columns)
-  const blocks = [...units.keys()].map((_, u) => perModel.map((v) => v[u]));
+  // rank 1 = best, so flip the sign when lower scores are better
+  const blocks = [...units.keys()].map((_, u) => perModel.map((v) => (lowerBetter ? -v[u] : v[u])));
   const ranks = blocks.length ? meanRanks(blocks) : [];
   const cd = blocks.length ? criticalDifference(byModel.size, blocks.length) : 0;
 

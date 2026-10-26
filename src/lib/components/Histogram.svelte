@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tooltip } from "$lib/tooltip";
+  import { niceTicks as ticks } from "$lib/ticks";
 
   let { target, n, edges, counts }: { target: string; n: number; edges: number[]; counts: number[] } =
     $props();
@@ -7,18 +8,6 @@
   const W = 640, H = 300;
   const m = { top: 16, right: 16, bottom: 48, left: 60 };
   const pw = W - m.left - m.right, ph = H - m.top - m.bottom;
-
-  // d3-style "nice" tick step so axes land on round numbers
-  function ticks(lo: number, hi: number, count: number): number[] {
-    const raw = (hi - lo) / count;
-    const p = 10 ** Math.floor(Math.log10(raw));
-    const e = raw / p;
-    const step = (e >= 7.07 ? 10 : e >= 3.16 ? 5 : e >= 1.41 ? 2 : 1) * p;
-    const out = [];
-    for (let t = Math.ceil(lo / step) * step; t <= hi + step * 1e-9; t += step)
-      out.push(Number(t.toPrecision(12)));
-    return out;
-  }
 
   const x0 = $derived(edges[0]);
   const x1 = $derived(edges[edges.length - 1]);

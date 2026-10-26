@@ -54,3 +54,33 @@ export function meanRanks(blocks: number[][]): number[] {
 export function criticalDifference(k: number, n: number, alpha = 0.05): number {
   return (studentizedRangeQuantile(1 - alpha, k) / Math.SQRT2) * Math.sqrt((k * (k + 1)) / (6 * n));
 }
+
+/**
+ * Mean of the paired differences a[i] − b[i] with a 95% percentile bootstrap CI.
+ * Pairs are resampled together (same units for both models); the RNG is seeded so
+ * the interval doesn't change between renders.
+ */
+export function pairedDeltaCI(a: number[], b: number[], reps = 10000, seed = 1) {
+  const d = a.map((v, i) => v - b[i]);
+  const n = d.length;
+  // mulberry32
+  let s = seed >>> 0;
+  const rand = () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), s | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const means = new Float64Array(reps);
+  for (let r = 0; r < reps; r++) {
+    let sum = 0;
+    for (let i = 0; i < n; i++) sum += d[Math.floor(rand() * n)];
+    means[r] = sum / n;
+  }
+  means.sort();
+  return {
+    mean: d.reduce((sum, v) => sum + v, 0) / n,
+    lo: means[Math.floor(0.025 * reps)],
+    hi: means[Math.ceil(0.975 * reps) - 1],
+  };
+}
