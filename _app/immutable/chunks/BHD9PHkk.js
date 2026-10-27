@@ -1,0 +1,1 @@
+function u(c,e,a){const s=(e-c)/a,r=10**Math.floor(Math.log10(s)),o=s/r,t=(o>=7.07?10:o>=3.16?5:o>=1.41?2:1)*r,i=[];for(let n=Math.ceil(c/t);n*t<=e+t*1e-9;n++)i.push(Number((n*t).toPrecision(12)));return i}export{u as n};
