@@ -17,8 +17,8 @@
       "image": "evmutation2:latest"
     },
     {
-      "name": "esm-if1",
-      "image": "esm-if1:latest"
+      "name": "structuredca",
+      "image": "structuredca:latest"
     }
   ]
 }
