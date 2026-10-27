@@ -9,10 +9,8 @@
     <li>
       <button
         onclick={() => currentPage--}
-        class="flex items-center rounded-lg px-2.5 py-1 hover:bg-gray-100 text-gray-400 hover:text-gray-700 {currentPage ===
-        1
-          ? 'pointer-events-none cursor-default'
-          : ''}"
+        disabled={currentPage <= 1}
+        class="flex items-center rounded-lg px-2.5 py-1 text-gray-700 hover:bg-gray-100 disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-default"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -32,15 +30,13 @@
       </button>
     </li>
     <li>
-      <span class="text-gray-400">Page {currentPage} of {totalPages}</span>
+      <span class="text-gray-500 tabular-nums">Page {currentPage} of {Math.max(totalPages, 1)}</span>
     </li>
     <li>
       <button
         onclick={() => currentPage++}
-        class="text-base flex items-center rounded-lg px-2.5 py-1 hover:bg-gray-100 text-gray-400 hover:text-gray-700 {currentPage ===
-        totalPages
-          ? 'pointer-events-none cursor-default'
-          : ''}"
+        disabled={currentPage >= totalPages}
+        class="text-base flex items-center rounded-lg px-2.5 py-1 text-gray-700 hover:bg-gray-100 disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-default"
       >
         Next
         <svg
