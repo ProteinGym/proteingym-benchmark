@@ -1,0 +1,1393 @@
+"""
+Code in this file was originally written by or adapted from:
+
+    1) Ingraham et al. "Generative Models for Graph-Based Protein Design" NeurIPS, 2019 
+        - Code: https://github.com/jingraham/neurips19-graph-protein-design
+
+    2) Birnbaum and Keating "Beyond native sequence recovery: Improved modeling of the
+    sequence-energy landscape of protein structures"
+    PNAS, 2026. doi:10.1073/pnas.2535494123
+       - Code: https://github.com/KeatingLab/PottsMPNN
+"""
+
+import torch
+import torch.nn.functional as F
+import copy
+import numpy as np
+import os
+import json
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+from matplotlib.patches import Rectangle
+from matplotlib.collections import LineCollection
+from collections import defaultdict
+import omegaconf
+import itertools
+from tqdm import tqdm
+from Bio.PDB import PDBParser, PDBIO
+from Bio.Data.IUPACData import protein_letters_1to3
+from . import etab_utils
+from .data_utils import parse_PDB_seq_only, tied_featurize
+# Re-exported for callers that import these graph helpers from run_utils.
+from .potts_mpnn_utils import cat_neighbors_nodes, gather_nodes
+
+def optimize_sequence(seq, etab, E_idx, mask, chain_mask, opt_type, seq_encoder, optimization_temp=0.0001,
+                      constant=None, constant_bias=None, bias_by_res=None,
+                      pssm_bias_flag=False, pssm_coef=None, pssm_bias=None, pssm_multi=None,
+                      pssm_log_odds_flag=False, pssm_log_odds_mask=None, omit_AA_mask=None,
+                      model=None, h_E=None, h_EXV_encoder=None, h_V=None,
+                      decoding_order=None, partition_etabs=None,
+                      partition_index=None, inter_mask=None, binding_optimization=None, vocab=21):
+    """
+    Sequence optimization wrapper supporting several strategies.
+
+    Parameters
+    ----------
+    seq : list or str
+        Input sequence in a human-readable form (converted by `seq_encoder`).
+    etab, E_idx : torch.Tensor
+        Energy table and neighbor index tensors used by energy calculations.
+    mask, chain_mask : torch.Tensor
+        Binary masks indicating valid positions and chain membership.
+    opt_type : str
+        Optimization strategy indicator (e.g., contains 'nodes' or 'converge').
+    seq_encoder : callable
+        Function that encodes sequences to integer tensors.
+    optimization_temp : float
+        Temperature parameter for optimization sampling.
+
+    Returns
+    -------
+    torch.Tensor or list
+        Best sequence (encoded or as characters depending on branch).
+    """
+    omit_AA_mask_flag = omit_AA_mask != None
+    etab = etab.clone().view(etab.shape[0], etab.shape[1], etab.shape[2], int(np.sqrt(etab.shape[3])), int(np.sqrt(etab.shape[3])))
+    etab = torch.nn.functional.pad(etab, (0, 2, 0, 2), "constant", 0)
+    seq = torch.Tensor(seq_encoder(seq)).unsqueeze(0).to(dtype=torch.int64, device=E_idx.device)
+    
+    if decoding_order is None:
+        decoding_order = np.arange(seq.shape[1])
+
+    if 'nodes' not in opt_type:
+        ener_delta = 1
+        iters_done = 0
+        if 'converge' not in opt_type:
+            max_iters = 1
+        else:
+            max_iters = 1000
+        while (ener_delta != 0 and iters_done < max_iters):
+            ener_delta = 0
+            for pos in decoding_order:
+                if not mask[0,pos] or not chain_mask[0,pos]:
+                    continue
+                sort_seqs = [] 
+                
+                for mut_ind in range(20):
+                    mut_seq = copy.deepcopy(seq)
+                    mut_seq[0, pos] = mut_ind
+                    sort_seqs.append(mut_seq)
+
+                sort_seqs = torch.stack(sort_seqs, dim=1).to(etab.device)
+
+                # Perform standard stability prediction by default, binding energy if requested
+                if binding_optimization == 'only' and not inter_mask[0, pos]:
+                    continue
+            
+                predicted_E = etab_utils.positional_potts_energy(etab, E_idx, seq, pos)
+                if binding_optimization in ['only', 'both'] and inter_mask[0, pos]:
+                    partition_mask = partition_index == partition_index[0,pos]
+                    partition_seq = seq[:, partition_mask[0]]
+                    partition_pos = partition_mask[:, :pos].sum(dim=1).cpu().item()
+                    partition_etab, partition_E_idx, _ = partition_etabs[partition_index[0, pos].cpu().item()]
+                    unbound_predicted_E = etab_utils.positional_potts_energy(
+                        partition_etab, partition_E_idx, partition_seq, partition_pos
+                    )
+                    # predicted_E = (predicted_E / etab.shape[2]) - (unbound_predicted_E / partition_etab.shape[2]) # Bound - unbound
+                    predicted_E = (predicted_E - predicted_E[seq[0,pos].cpu().item()]) - (unbound_predicted_E - unbound_predicted_E[seq[0,pos].cpu().item()]) # Bound - unbound
+
+                # Sample from predicted energies
+                predicted_E = predicted_E[:vocab]
+                t = torch.tensor([pos], dtype=torch.long, device=E_idx.device)
+                bias_by_res_gathered = torch.gather(bias_by_res, 1, t[:,None,None].repeat(1,1,predicted_E.shape[-1]))[:,0,:20] #[B, 20]
+                logits = -predicted_E / optimization_temp
+                logits = logits[:20] # Gap and X should never be chosen
+                constant = constant[:20]
+                constant_bias = constant_bias[:20]
+                probs = F.softmax(logits-constant[None,:]*1e8+constant_bias[None,:]/optimization_temp+bias_by_res_gathered/optimization_temp, dim=-1)
+                pad = (0, vocab-20)
+                probs = F.pad(probs, pad, "constant", 0) # Reshape to match other tensor shapes
+                if pssm_bias_flag and (pssm_coef.numel()>0) or (pssm_bias.numel()>0):
+                    pssm_coef_gathered = torch.gather(pssm_coef, 1, t[:,None])[:,0]
+                    pssm_bias_gathered = torch.gather(pssm_bias, 1, t[:,None,None].repeat(1,1,pssm_bias.shape[-1]))[:,0]
+                    probs = (1-pssm_multi*pssm_coef_gathered[:,None])*probs + pssm_multi*pssm_coef_gathered[:,None]*pssm_bias_gathered
+                if pssm_log_odds_flag and pssm_log_odds_mask.numel()>0:
+                    pssm_log_odds_mask_gathered = torch.gather(pssm_log_odds_mask, 1, t[:,None, None].repeat(1,1,pssm_log_odds_mask.shape[-1]))[:,0] #[B, self.vocab]
+                    probs_masked = probs*pssm_log_odds_mask_gathered
+                    probs_masked += probs * 0.001
+                    probs = probs_masked/torch.sum(probs_masked, dim=-1, keepdim=True) #[B, self.vocab]
+                if omit_AA_mask_flag and omit_AA_mask.numel()>0:
+                    omit_AA_mask_gathered = torch.gather(omit_AA_mask, 1, t[:,None, None].repeat(1,1,omit_AA_mask.shape[-1]))[:,0] #[B, self.vocab]
+                    probs_masked = probs*(1.0-omit_AA_mask_gathered)
+                    probs = probs_masked/torch.sum(probs_masked, dim=-1, keepdim=True) #[B, self.vocab]
+                mut_res = torch.multinomial(probs, num_samples=1).squeeze(-1)
+                seq = sort_seqs[0, mut_res]
+                ener_delta += predicted_E[mut_res.cpu().item()]
+
+            iters_done += 1
+        best_seq = seq[0]
+    else:
+        S = seq.clone() # [B, L]
+        h_S = model.W_s(S)             # [B, L, D]
+        h_V_stack = [h_V] + [torch.zeros_like(h_V, device=h_V.device) for _ in range(len(model.decoder_layers))]
+
+        # Ensure decoding order has batch dimension
+        decoding_order = torch.as_tensor(decoding_order, dtype=torch.long, device=h_V.device).unsqueeze(0)
+        mask_1D = mask.view([mask.size(0), mask.size(1), 1, 1])
+        mask_bw = torch.ones((mask.size(0), mask.size(1), E_idx.size(2), 1)).to(device=h_V.device) * mask_1D
+        mask_bw[:,:,0,0] = 0
+        mask_fw = mask_1D * (1 - mask_bw)
+        h_EXV_encoder_fw = h_EXV_encoder * mask_fw
+
+        for t_ in range(seq.shape[1]):
+            t = decoding_order[:, t_]  # [B]
+            if not mask[0,t[0].cpu().item()] or not chain_mask[0,t[0].cpu().item()]:
+                continue
+            mask_gathered = torch.gather(mask, 1, t[:, None])  # [B, 1]
+
+            if (mask_gathered == 0).all():
+                continue
+
+            # --- MASK the current position ---
+            h_S_masked = h_S.clone()
+            # Expand t to match h_S shape for scatter
+            # index = t[:, None, None].expand(-1, 1, h_S.shape[-1])  # [B, 1, D]
+            h_EXV_encoder_t = torch.gather(
+                h_EXV_encoder_fw,
+                1,
+                t[:, None, None, None].expand(-1, 1, h_EXV_encoder_fw.shape[-2], h_EXV_encoder_fw.shape[-1]),
+            )
+
+            # Hidden layers
+            E_idx_t = torch.gather(E_idx, 1, t[:, None, None].expand(-1, 1, E_idx.shape[-1]))
+            h_E_t = torch.gather(
+                h_E, 1, t[:, None, None, None].expand(-1, 1, h_E.shape[-2], h_E.shape[-1])
+            )
+            h_ES_t = cat_neighbors_nodes(h_S_masked, h_E_t, E_idx_t)
+            
+            mask_t = torch.gather(mask, 1, t[:, None])
+
+            for l, layer in enumerate(model.decoder_layers):
+                h_ESV_decoder_t = cat_neighbors_nodes(h_V_stack[l], h_ES_t, E_idx_t)
+                # h_ESV_decoder_t[:,:,0] = h_EXV_encoder_t[:,:,0]
+                h_V_t = torch.gather(
+                    h_V_stack[l], 1, t[:, None, None].expand(-1, 1, h_V_stack[l].shape[-1])
+                )
+                
+                h_ESV_t = (
+                    torch.gather(
+                        mask_bw,
+                        1,
+                        t[:, None, None, None].expand(-1, 1, mask_bw.shape[-2], mask_bw.shape[-1]),
+                    )
+                    * h_ESV_decoder_t
+                    + h_EXV_encoder_t
+                )
+                h_V_stack[l + 1].scatter_(
+                    1,
+                    t[:, None, None].expand(-1, 1, h_V.shape[-1]),
+                    layer(h_V_t, h_ESV_t, mask_V=mask_t),
+                )
+
+            # Compute residue probabilities and sample new residue
+            h_V_t = torch.gather(
+                h_V_stack[-1], 1, t[:, None, None].expand(-1, 1, h_V_stack[-1].shape[-1])
+            )[:, 0]
+            bias_by_res_gathered = torch.gather(bias_by_res, 1, t[:,None,None].repeat(1,1,vocab))[:,0,:] #[B, self.vocab]
+            logits = model.W_out(h_V_t) / optimization_temp
+            probs = F.softmax(logits-constant[None,:]*1e8+constant_bias[None,:]/optimization_temp+bias_by_res_gathered/optimization_temp, dim=-1)
+            if pssm_bias_flag and (pssm_coef.numel()>0) or (pssm_bias.numel()>0):
+                pssm_coef_gathered = torch.gather(pssm_coef, 1, t[:,None])[:,0]
+                pssm_bias_gathered = torch.gather(pssm_bias, 1, t[:,None,None].repeat(1,1,pssm_bias.shape[-1]))[:,0]
+                probs = (1-pssm_multi*pssm_coef_gathered[:,None])*probs + pssm_multi*pssm_coef_gathered[:,None]*pssm_bias_gathered
+            if pssm_log_odds_flag and pssm_log_odds_mask.numel()>0:
+                pssm_log_odds_mask_gathered = torch.gather(pssm_log_odds_mask, 1, t[:,None, None].repeat(1,1,pssm_log_odds_mask.shape[-1]))[:,0] #[B, self.vocab]
+                probs_masked = probs*pssm_log_odds_mask_gathered
+                probs_masked += probs * 0.001
+                probs = probs_masked/torch.sum(probs_masked, dim=-1, keepdim=True) #[B, self.vocab]
+            if omit_AA_mask_flag and omit_AA_mask.numel()>0:
+                omit_AA_mask_gathered = torch.gather(omit_AA_mask, 1, t[:,None, None].repeat(1,1,omit_AA_mask.shape[-1]))[:,0] #[B, self.vocab]
+                probs_masked = probs*(1.0-omit_AA_mask_gathered)
+                probs = probs_masked/torch.sum(probs_masked, dim=-1, keepdim=True) #[B, self.vocab]
+            S_t = torch.multinomial(probs, num_samples=1) # [B, 1]
+
+            # Update sequence embedding at this position
+            temp1 = model.W_s(S_t)  # [B, 1, D]
+            h_S.scatter_(1, t[:, None, None].expand(-1, 1, temp1.shape[-1]), temp1)
+            S.scatter_(1, t[:, None], S_t)
+    
+        best_seq = S[0]
+    return best_seq
+
+def tied_optimize_sequence(seq, etab, E_idx, mask, chain_mask, opt_type, seq_encoder, optimization_temp=0.0001,
+                      constant=None, constant_bias=None, bias_by_res=None,
+                      pssm_bias_flag=False, pssm_coef=None, pssm_bias=None, pssm_multi=None,
+                      pssm_log_odds_flag=False, pssm_log_odds_mask=None, omit_AA_mask=None,
+                      model=None, h_E=None, h_EXV_encoder=None, h_V=None,
+                      decoding_order=None, partition_etabs=None,
+                      partition_index=None, inter_mask=None, binding_optimization=None, vocab=21,
+                      tied_pos=None, tied_beta=None, tied_epistasis=True):
+    """
+    Sequence optimization wrapper supporting several strategies.
+
+    Parameters
+    ----------
+    seq : list or str
+        Input sequence in a human-readable form (converted by `seq_encoder`).
+    etab, E_idx : torch.Tensor
+        Energy table and neighbor index tensors used by energy calculations.
+    mask, chain_mask : torch.Tensor
+        Binary masks indicating valid positions and chain membership.
+    opt_type : str
+        Optimization strategy indicator (e.g., contains 'nodes' or 'converge').
+    seq_encoder : callable
+        Function that encodes sequences to integer tensors.
+    optimization_temp : float
+        Temperature parameter for optimization sampling.
+
+    Returns
+    -------
+    torch.Tensor or list
+        Best sequence (encoded or as characters depending on branch).
+    """
+    omit_AA_mask_flag = omit_AA_mask != None
+    etab = etab.clone().view(etab.shape[0], etab.shape[1], etab.shape[2], int(np.sqrt(etab.shape[3])), int(np.sqrt(etab.shape[3])))
+    etab = torch.nn.functional.pad(etab, (0, 2, 0, 2), "constant", 0)
+    seq = torch.Tensor(seq_encoder(seq)).unsqueeze(0).to(dtype=torch.int64, device=E_idx.device)
+    
+    if decoding_order is None:
+        decoding_order = np.arange(seq.shape[1])
+
+    new_decoding_order = []
+    for t_dec in decoding_order:
+        if t_dec not in list(itertools.chain(*new_decoding_order)):
+            list_a = [item for item in tied_pos if t_dec in item]
+            if list_a:
+                new_decoding_order.append(list_a[0])
+            else:
+                new_decoding_order.append([t_dec])
+
+    if 'nodes' not in opt_type:
+        ener_delta = 1
+        iters_done = 0
+        if 'converge' not in opt_type:
+            max_iters = 1
+        else:
+            max_iters = 1000
+        while (ener_delta != 0 and iters_done < max_iters):
+            ener_delta = 0
+            for pos_list in new_decoding_order:
+                # If any of the positions are masked, set all other residues to that position and skip
+                skip_pos = False
+                for pos in pos_list:
+                    if not mask[0,pos] or not chain_mask[0,pos]:
+                        skip_pos = True
+                        for pos_inner in pos_list:
+                            seq[0, pos_inner] = seq[0, pos]
+                        break
+                if skip_pos:
+                    continue
+
+                predicted_E = 0.0
+                num_pos = 0
+                if tied_epistasis:
+                    sort_seqs = []
+                    skip_pos = True
+                    for mut_ind in range(20):
+                        mut_seq = copy.deepcopy(seq)
+                        for pos in pos_list:
+                            if binding_optimization == 'only' and not inter_mask[0, pos]:
+                                    continue
+                            else:
+                                skip_pos = False
+                            mut_seq[0, pos] = mut_ind
+                        sort_seqs.append(mut_seq)
+                    if skip_pos: # Skip if all positions in tied set are non-binding and optimizing only binding energy
+                        continue
+                    sort_seqs = torch.stack(sort_seqs, dim=1).to(etab.device)
+
+                    # Perform standard stability prediction by default, binding energy if requested
+                    predicted_E_pos = etab_utils.positional_potts_energy(etab, E_idx, seq, pos)
+                    if binding_optimization in ['only', 'both'] and inter_mask[0, pos]:
+                        partition_mask = partition_index == partition_index[0,pos]
+                        partition_seq = seq[:, partition_mask[0]]
+                        partition_pos = partition_mask[:, :pos].sum(dim=1).cpu().item()
+                        partition_etab, partition_E_idx, _ = partition_etabs[partition_index[0, pos].cpu().item()]
+                        unbound_predicted_E_pos = etab_utils.positional_potts_energy(
+                            partition_etab, partition_E_idx, partition_seq, partition_pos
+                        )
+
+                        predicted_E_pos = predicted_E_pos - unbound_predicted_E_pos # Bound - unbound
+                    predicted_E += predicted_E_pos
+                    num_pos = 1
+                else:              
+                    for pos in pos_list:
+
+                        # Perform standard stability prediction by default, binding energy if requested
+                        if binding_optimization == 'only' and not inter_mask[0, pos]:
+                            continue
+
+                        sort_seqs = [] 
+                        for mut_ind in range(20):
+                            mut_seq = copy.deepcopy(seq)
+                            mut_seq[0, pos] = mut_ind
+                            sort_seqs.append(mut_seq)
+                        sort_seqs = torch.stack(sort_seqs, dim=1).to(etab.device)
+                        
+                        predicted_E_pos = etab_utils.positional_potts_energy(etab, E_idx, seq, pos)
+                        if binding_optimization in ['only', 'both'] and inter_mask[0, pos]:
+                            partition_mask = partition_index == partition_index[0,pos]
+                            partition_seq = seq[:, partition_mask[0]]
+                            partition_pos = partition_mask[:, :pos].sum(dim=1).cpu().item()
+                            partition_etab, partition_E_idx, _ = partition_etabs[partition_index[0, pos].cpu().item()]
+                            unbound_predicted_E_pos = etab_utils.positional_potts_energy(
+                                partition_etab, partition_E_idx, partition_seq, partition_pos
+                            )
+
+                            predicted_E_pos = predicted_E_pos - unbound_predicted_E_pos # Bound - unbound
+                        predicted_E += predicted_E_pos
+                        num_pos += 1
+                predicted_E /= num_pos
+                # Sample from predicted energies
+                predicted_E = predicted_E[:vocab] # Gap should never be chosen if not in model vocab
+                t = torch.tensor([pos], dtype=torch.long, device=E_idx.device)
+                bias_by_res_gathered = torch.gather(bias_by_res, 1, t[:,None,None].repeat(1,1,predicted_E.shape[-1]))[:,0,:] #[B, self.vocab]
+                logits = -predicted_E / optimization_temp
+                probs = F.softmax(logits-constant[None,:]*1e8+constant_bias[None,:]/optimization_temp+bias_by_res_gathered/optimization_temp, dim=-1)
+                if pssm_bias_flag and (pssm_coef.numel()>0) or (pssm_bias.numel()>0):
+                    pssm_coef_gathered = torch.gather(pssm_coef, 1, t[:,None])[:,0]
+                    pssm_bias_gathered = torch.gather(pssm_bias, 1, t[:,None,None].repeat(1,1,pssm_bias.shape[-1]))[:,0]
+                    probs = (1-pssm_multi*pssm_coef_gathered[:,None])*probs + pssm_multi*pssm_coef_gathered[:,None]*pssm_bias_gathered
+                if pssm_log_odds_flag and pssm_log_odds_mask.numel()>0:
+                    pssm_log_odds_mask_gathered = torch.gather(pssm_log_odds_mask, 1, t[:,None, None].repeat(1,1,pssm_log_odds_mask.shape[-1]))[:,0] #[B, self.vocab]
+                    probs_masked = probs*pssm_log_odds_mask_gathered
+                    probs_masked += probs * 0.001
+                    probs = probs_masked/torch.sum(probs_masked, dim=-1, keepdim=True) #[B, self.vocab]
+                if omit_AA_mask_flag and omit_AA_mask.numel()>0:
+                    omit_AA_mask_gathered = torch.gather(omit_AA_mask, 1, t[:,None, None].repeat(1,1,omit_AA_mask.shape[-1]))[:,0] #[B, self.vocab]
+                    probs_masked = probs*(1.0-omit_AA_mask_gathered)
+                    probs = probs_masked/torch.sum(probs_masked, dim=-1, keepdim=True) #[B, self.vocab]
+                mut_seq = torch.multinomial(probs, num_samples=1).squeeze(-1)
+                if tied_epistasis:
+                    seq = sort_seqs[0, mut_seq]
+                else:
+                    mut_res = sort_seqs[0, mut_seq][0, pos]
+                    for pos in pos_list:
+                        seq[0, pos] = mut_res
+                ener_delta += predicted_E[mut_seq.cpu().item()]
+
+            iters_done += 1
+        best_seq = seq[0]
+    else:
+        S = seq.clone() # [B, L]
+        h_S = model.W_s(S)             # [B, L, D]
+        h_V_stack = [h_V] + [torch.zeros_like(h_V, device=h_V.device) for _ in range(len(model.decoder_layers))]
+
+        # Ensure decoding order has batch dimension
+        decoding_order = torch.as_tensor(decoding_order, dtype=torch.long, device=h_V.device).unsqueeze(0)
+        new_decoding_order = []
+        for t_dec in list(decoding_order[0,].cpu().data.numpy()):
+            if t_dec not in list(itertools.chain(*new_decoding_order)):
+                list_a = [item for item in tied_pos if t_dec in item]
+                if list_a:
+                    new_decoding_order.append(list_a[0])
+                else:
+                    new_decoding_order.append([t_dec])
+        decoding_order = torch.tensor(list(itertools.chain(*new_decoding_order)), device=h_V.device)[None,].repeat(h_V.shape[0],1)
+
+        mask_1D = mask.view([mask.size(0), mask.size(1), 1, 1])
+        mask_bw = torch.ones((mask.size(0), mask.size(1), E_idx.size(2), 1)).to(device=h_V.device) * mask_1D
+        mask_bw[:,:,0,0] = 0
+
+        # Mask paired positions to model epistasis
+        if tied_epistasis:
+            N = mask.shape[1]
+            group_map = torch.full((N,), -1, device=h_V.device, dtype=torch.long)
+            for group_id, group_indices in enumerate(new_decoding_order):
+                # Assign a unique integer (group_id) to all indices in this group
+                group_map[group_indices] = group_id
+            self_groups = group_map.view(1, N, 1)
+            neighbor_groups = group_map[E_idx]
+            is_same_group = (neighbor_groups == self_groups) & (neighbor_groups != -1)
+            mask_bw.masked_fill_(is_same_group.unsqueeze(-1), 0.0)
+
+        mask_fw = mask_1D * (1 - mask_bw)
+        h_EXV_encoder_fw = h_EXV_encoder * mask_fw
+
+        for t_list in new_decoding_order:
+            logits = 0.0
+            logit_list = []
+            done_flag = False
+            for t in t_list:
+                if (mask[:,t]==0).all():
+                    S_t = S[:,t]
+                    for t in t_list:
+                        h_S[:,t,:] = model.W_s(S_t)
+                        S[:,t] = S_t
+                    done_flag = True
+                    break
+                else:
+                    E_idx_t = E_idx[:,t:t+1,:]
+                    h_E_t = h_E[:,t:t+1,:,:]
+                    h_ES_t = cat_neighbors_nodes(h_S, h_E_t, E_idx_t)
+                    h_EXV_encoder_t = h_EXV_encoder_fw[:,t:t+1,:,:]
+                    mask_t = mask[:,t:t+1]
+                    for l, layer in enumerate(model.decoder_layers):
+                        h_ESV_decoder_t = cat_neighbors_nodes(h_V_stack[l], h_ES_t, E_idx_t)
+                        h_V_t = h_V_stack[l][:,t:t+1,:]
+                        h_ESV_t = mask_bw[:,t:t+1,:,:] * h_ESV_decoder_t + h_EXV_encoder_t
+                        h_V_stack[l+1][:,t,:] = layer(h_V_t, h_ESV_t, mask_V=mask_t).squeeze(1)
+                    h_V_t = h_V_stack[-1][:,t,:]
+                    logit_list.append((model.W_out(h_V_t) / optimization_temp)/len(t_list))
+                    logits += tied_beta[t]*(model.W_out(h_V_t) / optimization_temp)/len(t_list)
+            if done_flag:
+                pass
+            else:
+                bias_by_res_gathered = bias_by_res[:,t,:] #[B, self.vocab]
+                probs = F.softmax(logits-constant[None,:]*1e8+constant_bias[None,:]/optimization_temp+bias_by_res_gathered/optimization_temp, dim=-1)
+                if pssm_bias_flag and (pssm_coef.numel()>0) or (pssm_bias.numel()>0):
+                    pssm_coef_gathered = pssm_coef[:,t]
+                    pssm_bias_gathered = pssm_bias[:,t]
+                    probs = (1-pssm_multi*pssm_coef_gathered[:,None])*probs + pssm_multi*pssm_coef_gathered[:,None]*pssm_bias_gathered
+                if pssm_log_odds_flag and pssm_log_odds_mask.numel()>0:
+                    pssm_log_odds_mask_gathered = pssm_log_odds_mask[:,t]
+                    probs_masked = probs*pssm_log_odds_mask_gathered
+                    probs_masked += probs * 0.001
+                    probs = probs_masked/torch.sum(probs_masked, dim=-1, keepdim=True) #[B, self.vocab]
+                if omit_AA_mask_flag and omit_AA_mask.numel()>0:
+                    omit_AA_mask_gathered = omit_AA_mask[:,t]
+                    probs_masked = probs*(1.0-omit_AA_mask_gathered)
+                    probs = probs_masked/torch.sum(probs_masked, dim=-1, keepdim=True) #[B, self.vocab]
+                S_t_repeat = torch.multinomial(probs, 1).squeeze(-1)
+                S_t_repeat = (chain_mask[:,t]*S_t_repeat + (1-chain_mask[:,t])*S[:,t]).long() #hard pick fixed positions
+                for t in t_list:
+                    h_S[:,t,:] = model.W_s(S_t_repeat)
+                    S[:,t] = S_t_repeat
+    
+        best_seq = S[0]
+    return best_seq
+
+def string_to_int(s):
+    """
+    Convert a string to an integer by summing character values.
+
+    Parameters
+    ----------
+    s : str
+        Input string to convert.
+
+    Returns
+    -------
+    result : int
+        Integer representation of the string.
+    """
+    result = 0
+    for char in s:
+        value = ord(char.lower()) - ord('a')  # a=0, b=1, ..., z=25
+        result += value
+    return result
+
+def process_configs(cfg):
+    """
+    Loads input JSONL files for inference configuration.
+
+    Parameters
+    ----------
+    cfg : OmegaConf object
+        Configuration object with paths to JSONL files.
+
+    Returns
+    -------
+    list of configuration dicts or None
+    """
+    if cfg.inference.fixed_positions_json and os.path.isfile(cfg.inference.fixed_positions_json):
+        with open(cfg.inference.fixed_positions_json, 'r') as json_file:
+            json_list = list(json_file)
+        for json_str in json_list:
+            fixed_positions_dict = json.loads(json_str)
+    else:
+        fixed_positions_dict = None
+    
+    if cfg.inference.pssm_json and os.path.isfile(cfg.inference.pssm_json):
+        with open(cfg.inference.pssm_json, 'r') as json_file:
+            json_list = list(json_file)
+        pssm_dict = {}
+        for json_str in json_list:
+            pssm_dict.update(json.loads(json_str))
+    else:
+        pssm_dict = None
+    
+    
+    if cfg.inference.omit_AA_json and os.path.isfile(cfg.inference.omit_AA_json):
+        with open(cfg.inference.omit_AA_json, 'r') as json_file:
+            json_list = list(json_file)
+        for json_str in json_list:
+            omit_AA_dict = json.loads(json_str)
+    else:
+        omit_AA_dict = None
+    
+    
+    if cfg.inference.bias_AA_json and os.path.isfile(cfg.inference.bias_AA_json):
+        with open(cfg.inference.bias_AA_json, 'r') as json_file:
+            json_list = list(json_file)
+        for json_str in json_list:
+            bias_AA_dict = json.loads(json_str)
+    else:
+        bias_AA_dict = None
+
+
+    if cfg.inference.tied_positions_json and os.path.isfile(cfg.inference.tied_positions_json):
+        with open(cfg.inference.tied_positions_json, 'r') as json_file:
+            json_list = list(json_file)
+        for json_str in json_list:
+            tied_positions_dict = json.loads(json_str)
+    else:
+        tied_positions_dict = None
+
+    if cfg.inference.bias_by_res_json and os.path.isfile(cfg.inference.bias_by_res_json):
+        with open(cfg.inference.bias_by_res_json, 'r') as json_file:
+            json_list = list(json_file)
+    
+        for json_str in json_list:
+            bias_by_res_dict = json.loads(json_str)
+    else:
+        bias_by_res_dict = None
+
+    omit_AAs_list = cfg.inference.omit_AAs
+    alphabet = 'ACDEFGHIKLMNPQRSTVWYX-'
+    if cfg.model.vocab == 21:
+        alphabet = alphabet[:-1]
+    omit_AAs_np = np.array([AA in omit_AAs_list for AA in alphabet]).astype(np.float32)
+
+    return fixed_positions_dict, pssm_dict, omit_AA_dict, bias_AA_dict, tied_positions_dict, bias_by_res_dict, omit_AAs_np
+
+def is_float(s):
+    """
+    Checks if the input string 's' can be converted to a float.
+    Returns the converted float if it can, None otherwise.
+    """
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+def process_data(cfg):
+    """
+    Process data settings for energy prediction.
+
+    Parameters
+    ----------
+    cfg : OmegaConf object
+
+    Returns
+    -------
+    dataset_settings : dict of dicts
+        Processed dataset settings per pdb
+    chain_lens_dicts : dict of lists
+        Chain lengths per pdb
+    pdb_list : list of pdb names
+    binding_energy_chains : None or dict of chain list pairs for binding energy calculation
+
+    """
+    # Get pdb info
+    with open(cfg.input_list, 'r') as f:
+        pdb_list = f.readlines()
+    pdb_list = [line.strip() for line in pdb_list]
+
+    # If predicting binding energies, load information about chain separation
+    if cfg.inference.binding_energy_json:
+        if type(cfg.inference.binding_energy_json) in [dict, omegaconf.dictconfig.DictConfig]:
+            binding_energy_chains = cfg.inference.binding_energy_json
+        else:
+            with open(cfg.inference.binding_energy_json, 'r') as f:
+                binding_energy_chains = json.load(f)
+            for pdb in pdb_list:
+                if not pdb in binding_energy_chains:
+                    binding_energy_chains[pdb] = None
+    else:
+        binding_energy_chains = None
+
+    # Set up data structures
+    mutant_data = {'pdb': [], 'sequences': [], 'partitioned_sequences': [], 'ddG_expt': [], 'mut_chains': []}
+    chain_lens_dicts = {}
+    mut_alphabet = 'ACDEFGHIKLMNPQRSTVWY'
+    # Load mutant sequence information
+    if cfg.mutant_fasta is not None: # Predict energies for provided mutant sequences from a FASTA file
+        with open(cfg.mutant_fasta, 'r') as f:
+            mutant_seq_lines = f.readlines()
+        mutant_seqs = defaultdict(list)
+        for pdb, line in zip(mutant_seq_lines[::2], mutant_seq_lines[1::2]):
+            mutant_seqs[pdb.strip().split('|')[0].strip('>')].append((pdb.strip(), line.strip()))
+
+        for pdb in pdb_list:
+            # Gather information about wild-type sequence
+            wt_info = parse_PDB_seq_only(os.path.join(cfg.input_dir, pdb + '.pdb'), skip_gaps=cfg.inference.skip_gaps)
+            for header, seq in mutant_seqs[pdb]:
+                header = header.strip('>')
+                # Parse mutant sequence header
+                header_parts = header.split('|')
+                assert len(header_parts) <= 3, "Header information cannot exceed 3 '|' parts"
+                mut_chains = None
+                ddG_expt = None
+                if len(header_parts) == 2:
+                    ddG_expt = is_float(header_parts[1])
+                    if not ddG_expt:
+                        mut_chains = header_parts[1]
+                elif len(header_parts) == 3:
+                    mut_chains = header_parts[1]
+                    ddG_expt = is_float(header_parts[2])
+                if not ddG_expt: ddG_expt = np.nan
+
+                # Create full mutant sequence
+                mut_seq = []
+                if mut_chains: # If chain info in header, processes provided sequence accordingly
+                    mut_chains = mut_chains.split(':')
+                else: # Assume mutant sequence provided has all chains present
+                    assert len(wt_info['chain_order']) == len(seq.split(':')), "If chains not specified, mutant sequence must contain information on all chains"
+                    mut_chains = wt_info['chain_order']
+                mut_seq_dict = {chain: chain_seq for chain, chain_seq in zip(mut_chains, seq.split(':'))}
+
+                for chain in wt_info['chain_order']:
+                    if chain in mut_seq_dict: # Use mutant sequence
+                        assert len(mut_seq_dict[chain]) == len(wt_info[f'seq_chain_{chain}']), "Mutant sequence length must match wildtype sequence length"
+                        # Check mutant seq to ensure mutations are all canonical amino acids
+                        for wc, mc in zip(wt_info[f'seq_chain_{chain}'], mut_seq_dict[chain]):
+                            if wc != mc: assert mc in mut_alphabet, "Mutation must be one of 20 canonical amino acids"
+                        mut_seq.append((chain, mut_seq_dict[chain]))
+                    else: # Use wildtype sequence
+                        mut_seq.append((chain, wt_info[f'seq_chain_{chain}']))
+                mutant_data['pdb'].append(pdb)
+                mutant_data['sequences'].append(mut_seq)
+                mutant_data['ddG_expt'].append(ddG_expt)
+                mutant_data['mut_chains'].append(':'.join(mut_chains))
+            chain_lens_dicts[pdb] = {chain: len(chain_seq) for chain, chain_seq in mutant_data['sequences'][-1]}
+
+    elif cfg.mutant_csv is not None: # Predict energies for provided mutant sequences from a CSV file
+        mutant_df = pd.read_csv(cfg.mutant_csv)
+        assert all(col in mutant_df.columns for col in ['pdb', 'chain', 'mut_type']), "CSV must contain 'pdb', 'chain', and 'mut_type' columns"
+        if not 'ddG_expt' in mutant_df.columns:
+            mutant_df['ddG_expt'] = [np.nan] * len(mutant_df)
+        for pdb in mutant_df['pdb'].unique():
+            pdb_df = mutant_df[mutant_df['pdb'] == pdb]
+            wt_info = parse_PDB_seq_only(os.path.join(cfg.input_dir, pdb + '.pdb'), skip_gaps=cfg.inference.skip_gaps)
+            for chain_list, mut_type_list, ddG_expt in zip(pdb_df['chain'], pdb_df['mut_type'], pdb_df['ddG_expt']):
+                mut_type_dict = defaultdict(list)
+                for chain, mut_type in zip(chain_list.split(':'), mut_type_list.split(':')):
+                    mut_type_dict[chain].append(mut_type)
+                mut_seq = []
+                for chain in wt_info['chain_order']:
+                    mut_chain = copy.deepcopy(wt_info[f'seq_chain_{chain}'])
+                    if '-' in mut_chain:
+                        warning = "Try setting 'cfg.inference.skip_gaps' to True in config to avoid issues with gaps in mutant sequences."
+                    else:
+                        warning = ""
+                    if len(mut_type_dict[chain]) > 0: # Use mutant sequence
+                        for mut_type in mut_type_dict[chain]:
+                            wt, pos, mut = mut_type[0], int(mut_type[1:-1]), mut_type[-1]
+                            assert wt == mut_chain[pos], f"Mutation information ({mut_type}) must match wildtype sequence ({mut_chain}) at the mutation position for pdb {pdb}, chain {chain}. {warning}"
+                            assert mut in mut_alphabet, "Mutation must be one of 20 canonical amino acids"
+                            mut_chain = mut_chain[:pos] + mut + mut_chain[pos+1:]
+                        mut_seq.append((chain, mut_chain))
+                    else: # Use wildtype sequence
+                        mut_seq.append((chain, wt_info[f'seq_chain_{chain}']))
+                mutant_data['pdb'].append(pdb)
+                mutant_data['sequences'].append(mut_seq)
+                mutant_data['ddG_expt'].append(ddG_expt)
+                mutant_data['mut_chains'].append(chain_list)
+            chain_lens_dicts[pdb] = {chain: len(chain_seq) for chain, chain_seq in mutant_data['sequences'][-1]}
+
+    else: # Do a DMS screen of all single mutants
+        for pdb in pdb_list:
+            wt_info = parse_PDB_seq_only(os.path.join(cfg.input_dir, pdb + '.pdb'), skip_gaps=cfg.inference.skip_gaps)
+            wt_chains = [(chain, wt_info[f'seq_chain_{chain}']) for chain in wt_info['chain_order']]
+            for i_chain, chain in enumerate(wt_info['chain_order']):
+                if 'exclude_chains' in cfg.inference and chain in cfg.inference.exclude_chains: continue
+                mut_seq = ""
+                for i, wtAA in enumerate(wt_info[f'seq_chain_{chain}']):
+                    if wtAA != '-':
+                        for mutAA in mut_alphabet:
+                            if mutAA != wtAA:
+                                mut_seq = copy.deepcopy(wt_info[f'seq_chain_{chain}'])
+                                mut_seq = mut_seq[:i] + mutAA + mut_seq[i+1:]
+                                mutant_data['pdb'].append(pdb)
+                                full_mut_seq = copy.deepcopy(wt_chains)
+                                full_mut_seq[i_chain] = (chain, mut_seq)
+                                mutant_data['sequences'].append(full_mut_seq)
+                                mutant_data['ddG_expt'].append(np.nan)
+                                mutant_data['mut_chains'].append(chain)
+            chain_lens_dicts[pdb] = {chain: len(chain_seq) for chain, chain_seq in mutant_data['sequences'][-1]}
+
+    if binding_energy_chains: # Split sequences into separate chains if requested for binding prediction
+        for pdb, seq in zip(mutant_data['pdb'], mutant_data['sequences']):
+            assert pdb in binding_energy_chains.keys(), "To calculate binding energies, chain partition information must be present for each structure"
+            all_chains = []
+            for partition in binding_energy_chains[pdb]:
+                all_chains += partition
+            assert sorted(all_chains) == sorted([chain for chain, _ in seq]), "Chain partitions must include all chains in structure"
+            partitioned_sequences = []
+            for partition in binding_energy_chains[pdb]:
+                partitioned_sequences.append("".join([chain_seq for chain, chain_seq in seq if chain in partition]))
+            mutant_data['partitioned_sequences'].append(partitioned_sequences)
+    else:
+        mutant_data['partitioned_sequences'] = [None] * len(mutant_data['sequences'])
+
+    # Save mutant sequences and energies to tensors
+    for i_mut in range(len(mutant_data['sequences'])):
+        mutant_data['sequences'][i_mut] = "".join([chain_seq for _, chain_seq in mutant_data['sequences'][i_mut]])
+    
+    return pd.DataFrame(mutant_data), chain_lens_dicts, pdb_list, binding_energy_chains
+
+def get_etab(model, pdb_data, cfg, partition):
+    """
+    Get energy table for a given PDB structure.
+    
+    Parameters
+    ----------
+    model : PottsMPNN model
+        Model with which to score sequences
+    pdb_data : dict
+        dict with PDB information
+    cfg : omegacong
+        Config object
+    partition : list (optional, default None)
+        list of chains to analyze
+
+    Returns
+    -------
+    etab : torch.Tensor
+        Energy table
+    E_idx : torch.Tensor
+        Neighbor indices
+    wt_seq : String
+        Wildtype sequence
+    """
+    # Featurize all chains
+    if partition:
+        full_seq = pdb_data[0]['seq']
+        partition_dict = {pdb_data[0]['name']: [partition, []]}
+        wt_seq = "".join([pdb_data[0][f'seq_chain_{chain}'] for chain in partition])
+        pdb_data[0]['seq'] = wt_seq # Temporarily set sequence to only the partitioned chains for featurization
+    else:
+        partition_dict = None
+        wt_seq = pdb_data[0]['seq']
+    X, _, mask, _, _, chain_encoding_all, _, _, _, _, _, _, residue_idx, _, _, _, _, _, _, _, _ = tied_featurize(
+        [pdb_data[0]], cfg.dev, partition_dict, None, None, 
+        None, None, None, ca_only=False, vocab=cfg.model.vocab
+    )
+    if partition:
+        pdb_data[0]['seq'] = full_seq # Restore full sequence after featurization
+
+    # Run encoder
+    _, E_idx, _, etab = model.run_encoder(X, mask, residue_idx, chain_encoding_all)
+    etab = etab_utils.functionalize_etab(etab, E_idx)
+    pad = (0, 2, 0, 2) # Pad for 'X' and '-' tokens
+    etab = torch.nn.functional.pad(etab, pad, "constant", 0) # Add padding to account for 'X' and '-' tokens
+    return etab, E_idx, wt_seq
+
+def score_seqs(model, cfg, pdb_data, nrgs, seqs, partition=None, track_progress=False, keep_seqs=True):
+    """
+    Score sequences using the energy table.
+
+    Parameters
+    ----------  
+    model : PottsMPNN model
+        Model with which to score sequences
+    cfg : omegaconf
+        Config object
+    pdb_data : dict
+        dict with PDB information
+    nrgs : list of shape (N,)
+        Mutant energy information
+    seqs : list of shape (N, L)
+        Mutant sequence information
+    partition : list (optional, default None)
+        list of chains to analyze
+    track_progress : bool (optional, default False)
+        Whether to track progress with tqdm
+    keep_seqs : bool (optional, default True)
+        Whether to accumulate and return the per-sequence tensors. Set to False
+        when only the scalar scores are needed, to keep peak memory flat in the
+        number of sequences scored.
+
+    Returns
+    -------
+    scores : torch.Tensor, shape (N,)
+        Scores for each sequence.
+    scored_seqs : torch.Tensor, shape (N, L) or None
+        Scored sequences, or None if keep_seqs is False
+    reference_scores : torch.Tensor, shape (N,) or None
+        References for scored sequences, or None if keep_seqs is False
+    """
+    etab, E_idx, wt_seq = get_etab(model, pdb_data, cfg, partition)
+    
+    # Run energy prediction according to config
+    if cfg.inference.ddG: # If ddG prediction (default), use wildtype as reference energy
+        nrgs = np.insert(nrgs, 0, 0.0)
+        seqs = np.insert(seqs, 0, wt_seq)
+    # Transform nrgs and seqs to tensors. Keep the full inputs on the host and
+    # move only the current batch to the GPU, so peak device memory scales with
+    # the batch size rather than the sequence count.
+    nrgs = torch.from_numpy(np.array(nrgs)).to(dtype=torch.float32).unsqueeze(0)
+    seqs = etab_utils.seqs_to_tensor(seqs, dev='cpu').unsqueeze(0)
+
+    if etab.size(1)*nrgs.shape[1] > cfg.inference.max_tokens:
+        batch_size = int(cfg.inference.max_tokens / etab.size(1))
+    else:
+        batch_size = nrgs.shape[1]
+
+    # Calculate energies
+    scores, scored_seqs, reference_scores = [], [], []
+    for batch in tqdm(range(0, nrgs.shape[1], batch_size), disable=not track_progress, desc="Calculating energies"):
+        seqs_batch = seqs[:, batch:batch+batch_size].to(cfg.dev)
+        nrgs_batch = nrgs[:, batch:batch+batch_size].to(cfg.dev)
+        batch_scores, batch_seqs, batch_refs = etab_utils.calc_eners(etab, E_idx, seqs_batch, nrgs_batch, filter=cfg.inference.filter)
+        scores.append(batch_scores)
+        # scored_seqs/reference_scores are only needed by callers that inspect
+        # the per-sequence outputs (e.g. energy_prediction); accumulating them
+        # holds a full copy of every sequence on the GPU.
+        if keep_seqs:
+            scored_seqs.append(batch_seqs)
+            reference_scores.append(batch_refs)
+    scores = torch.cat(scores, 1)
+    if keep_seqs:
+        scored_seqs, reference_scores = torch.cat(scored_seqs, 1), torch.cat(reference_scores, 1)
+    else:
+        scored_seqs, reference_scores = None, None
+
+    if cfg.inference.ddG: # If ddG prediction (default), compare to wildtype and remove reference
+        scores = scores -scores[:, 0]
+        scores = scores[:, 1:]
+        if keep_seqs:
+            scored_seqs, reference_scores = scored_seqs[:, 1:], reference_scores[:, 1:]
+
+    if cfg.inference.mean_norm: # By default, normalize so mean is 0 (helps when comparing proteins with large numbers of mutants)
+        scores -= torch.mean(scores, dim=1)
+    return scores, scored_seqs, reference_scores
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import matplotlib.colors as mcolors
+from matplotlib.collections import LineCollection
+from matplotlib.patches import Rectangle
+
+def plot_data(data,
+              only_mutated_positions=False,
+              title='PottsMPNN Predictions',
+              clabel=r'Predicted $\Delta\Delta$G (a.u.)',
+              save_path=None,
+              figsize=(20, 5),
+              ener_type='ddG',
+              chain_ranges=None,
+              chain_order=None,
+              verbose=True,
+              pos_dict=None):
+    """
+    Plots a heatmap of mutation energies from a dataframe.
+
+    Parameters:
+    - data : DataFrame with columns 'mutant', 'wildtype', 'ddG_pred'.
+            Sequences use ':' as chain delimiters.
+    - only_mutated_positions : If True, only plots columns (residues) that have at least one mutation.
+    - chain_ranges : Dict { 'A': [start, stop] } defining inclusive 1-indexed ranges for specific chains.
+    - chain_order : List of strings (e.g. ['H', 'L']). 
+                   1. Maps the split input sequences to these names (Index 0 -> chain_order[0]).
+                   2. Determines the order in which chains are plotted.
+                   If None, defaults to ['A', 'B', 'C'...] and alphabetical sort.
+    - verbose : Bool, if True the plot window will be shown.
+    - pos_dict : Optional Dict { int: int }.
+                 Keys are 0-indexed positions in the original sequence/heatmap.
+                 Values are the new ranking positions.
+                 If provided, the heatmap columns are filtered to include only keys in pos_dict,
+                 and sorted by their corresponding values.
+    """
+
+    amino_acids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
+                   'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+    aa_to_idx = {aa: i for i, aa in enumerate(amino_acids)}
+
+    # --- 1. Parse Data ---
+    parsed_data = {}     # parsed_data[chain_name][pos] = {wt, muts}
+    chain_sequences = {} # chain_sequences[chain_name] = list(sequence)
+
+    for _, row in data.iterrows():
+        wt_seq = row['wildtype']
+        mut_seq = row['mutant']
+        energy = row['ddG_pred']
+
+        wt_chains = wt_seq.split(':')
+        mut_chains = mut_seq.split(':')
+
+        if len(wt_chains) != len(mut_chains):
+            continue 
+
+        # Determine Chain Names for this row
+        current_chain_names = []
+        if chain_order:
+            current_chain_names = chain_order[:len(wt_chains)]
+        else:
+            current_chain_names = [chr(65 + i) for i in range(len(wt_chains))]
+
+        # Identify mutations
+        global_mutations = [] 
+        
+        for c_name, w_chain, m_chain in zip(current_chain_names, wt_chains, mut_chains):
+            if len(w_chain) != len(m_chain): continue 
+            
+            # Store WT sequence logic (first time we see this chain name)
+            if c_name not in chain_sequences:
+                chain_sequences[c_name] = list(w_chain)
+            
+            # Find mismatches
+            for i, (w, m) in enumerate(zip(w_chain, m_chain)):
+                if w != m:
+                    # 1-indexed position
+                    global_mutations.append((c_name, i + 1, w, m))
+
+        # Constraint: Only single mutations allowed per row
+        if len(global_mutations) == 1:
+            c_name, pos, wt, mut = global_mutations[0]
+            
+            if c_name not in parsed_data: parsed_data[c_name] = {}
+            if pos not in parsed_data[c_name]: parsed_data[c_name][pos] = {'wt': wt, 'muts': {}}
+            
+            parsed_data[c_name][pos]['muts'][mut] = energy
+
+    # --- 2. Determine Chains to Plot ---
+    if chain_order:
+        active_chain_names = [c for c in chain_order if c in chain_sequences]
+    else:
+        active_chain_names = sorted(chain_sequences.keys())
+
+    if not active_chain_names:
+        print("No valid data found to plot.")
+        return
+
+    # --- 3. Construct Matrix Columns (Natural Order) ---
+    matrix_columns = []   # List of (chain_name, pos, wt_residue)
+    
+    # We remove the chain_boundaries calculation here because reordering invalidates it.
+    # We will calculate boundaries dynamically after reordering.
+
+    for c_name in active_chain_names:
+        full_seq = chain_sequences[c_name]
+        
+        # Determine valid range for this chain
+        start_r, stop_r = 1, len(full_seq)
+        if chain_ranges and c_name in chain_ranges:
+            start_r, stop_r = chain_ranges[c_name]
+            if start_r == 0:
+                start_r = 1
+            if stop_r == -1:
+                stop_r = len(full_seq)
+        elif chain_ranges:
+            continue 
+
+        # Determine which positions to include
+        if only_mutated_positions:
+            existing_pos = sorted(parsed_data.get(c_name, {}).keys())
+            positions = [p for p in existing_pos if start_r <= p <= stop_r]
+        else:
+            actual_start = max(1, start_r)
+            actual_stop = min(len(full_seq), stop_r)
+            if actual_start > actual_stop:
+                positions = []
+            else:
+                positions = range(actual_start, actual_stop + 1)
+
+        for pos in positions:
+            wt_aa = full_seq[pos - 1] # 0-indexed lookup
+            matrix_columns.append((c_name, pos, wt_aa))
+
+    # --- 3.5 Reorder Columns ---
+    if pos_dict is not None:
+        # Filter and Sort based on pos_dict
+        # Keys of pos_dict correspond to the index in the matrix_columns list generated above
+        new_columns_with_order = []
+        for i, col_data in enumerate(matrix_columns):
+            if i in pos_dict:
+                # Store (column_data, new_rank)
+                new_columns_with_order.append((col_data, pos_dict[i]))
+        
+        # Sort by the new rank
+        new_columns_with_order.sort(key=lambda x: x[1])
+        
+        # Unpack back to matrix_columns
+        matrix_columns = [x[0] for x in new_columns_with_order]
+
+    # Initialize matrix with the (potentially) new shape
+    heatmap_data = np.full((len(amino_acids), len(matrix_columns)), np.nan)
+
+    # Fill matrix
+    for col_idx, (c_name, pos, wt_aa) in enumerate(matrix_columns):
+        if ener_type == 'ddG' and wt_aa in aa_to_idx:
+            heatmap_data[aa_to_idx[wt_aa], col_idx] = 0.0
+
+        if c_name in parsed_data and pos in parsed_data[c_name]:
+            muts = parsed_data[c_name][pos]['muts']
+            for mut_aa, ener in muts.items():
+                if mut_aa in aa_to_idx:
+                    row_idx = aa_to_idx[mut_aa]
+                    heatmap_data[row_idx, col_idx] = ener
+
+    # --- 4. Plotting ---
+    blue = (0.0, 0.0, 1.0)
+    gray90 = (0.9, 0.9, 0.9)
+    red = (1.0, 0.0, 0.0)
+    cmap = mcolors.LinearSegmentedColormap.from_list("Blue_Gray90_Red", [blue, gray90, red])
+    
+    if ener_type == 'ddG':
+        center = 0
+    else:
+        center = np.nanmean(heatmap_data)
+
+    fig, ax = plt.subplots(figsize=figsize, dpi=150)
+    sns.set(font_scale=0.8)
+    ax.set_facecolor('#E0E0E0')
+
+    # Prepare labels
+    tick_labels = [f"{wt}{pos}" for (_, pos, wt) in matrix_columns]
+
+    sns.heatmap(
+        heatmap_data,
+        cmap=cmap,
+        center=center,
+        yticklabels=amino_acids,
+        xticklabels=False, 
+        cbar_kws={'shrink': 0.8, 'pad': 0.02, 'label': clabel},
+        mask=np.isnan(heatmap_data),
+        ax=ax
+    )
+    ax.collections[0].colorbar.ax.set_ylabel(clabel, fontsize=12) 
+    ax.collections[0].colorbar.ax.tick_params(labelsize=12)
+
+    # --- 5. Styling Missing Data ---
+    segments = []
+    rows, cols = heatmap_data.shape
+    for r in range(rows):
+        for c in range(cols):
+            if np.isnan(heatmap_data[r, c]):
+                p1 = (c, r)
+                p2 = (c + 1, r + 1)
+                p3 = (c, r + 1)
+                p4 = (c + 1, r)
+                segments.append([p1, p2])
+                segments.append([p3, p4])
+    
+    if segments:
+        lc = LineCollection(segments, color='gray', linewidths=0.5, alpha=0.5)
+        ax.add_collection(lc)
+
+    # --- 6. Formatting Axes & Dynamic Borders ---
+    for tick in ax.get_yticklabels():
+        tick.set_rotation(0)
+        tick.set_ha('left')
+        tick.set_position((-0.02, tick.get_position()[1]))
+        tick.set_fontsize(12)
+
+    # Font size calculation
+    n_cols = len(matrix_columns)
+    tick_indices = np.arange(0, n_cols, 1)
+    tick_locs = tick_indices + 0.5
+    fig_w, _ = fig.get_size_inches()
+    ax_w_frac = ax.get_position().width
+    box_w_inches = (fig_w * ax_w_frac) / max(1, n_cols)
+    max_font_size = box_w_inches * 72 * 0.9
+    final_fontsize = min(12, max_font_size)
+
+    ax.set_xticks(tick_locs)
+    ax.set_xticklabels(tick_labels, rotation=90, fontsize=final_fontsize)
+
+    plt.xlabel('Wildtype Residue', fontsize=12, labelpad=25) 
+    plt.ylabel('Mutant Residue', fontsize=12)
+    plt.title(title, fontsize=12)
+
+    # --- Identify Contiguous Chain Segments for Borders ---
+    # Because of pos_dict, chains might be split or reordered.
+    # We must scan matrix_columns to find where chain ID changes.
+    chain_segments = []
+    if len(matrix_columns) > 0:
+        current_chain = matrix_columns[0][0] # (chain_name, pos, wt)
+        start_idx = 0
+        
+        for i, (c_name, _, _) in enumerate(matrix_columns):
+            if c_name != current_chain:
+                # End of previous segment
+                chain_segments.append((current_chain, start_idx, i))
+                # Start of new segment
+                current_chain = c_name
+                start_idx = i
+        
+        # Append the final segment
+        chain_segments.append((current_chain, start_idx, len(matrix_columns)))
+
+    # Draw Borders and Labels
+    for c_name, start, end in chain_segments:
+        width = end - start
+        height = len(amino_acids)
+        
+        # 1. Draw Border
+        rect = Rectangle((start, 0), width, height, 
+                         fill=False, edgecolor='black', lw=2, clip_on=False)
+        ax.add_patch(rect)
+
+        # 2. Add Chain Label (Centered on the segment)
+        center_x = (start + end) / 2
+        ax.text(center_x, -0.14, f"Chain {c_name}", 
+                ha='center', va='top', fontsize=12, fontweight='bold',
+                transform=ax.get_xaxis_transform())
+
+    if save_path is not None:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    if verbose:
+        plt.show()
+    else:
+        plt.close()
+
+def rewrite_pdb_sequences(pdb_dict, pdb_in_dir, pdb_out_dir):
+    """
+    Save new .pdb files with updated sequences
+    
+    Parameters
+    ----------
+    pdb_dict : dict
+        Keys: "<pdb>|<vis_chains>|<hidden_chains>"
+        Values: (seq_string, sample)
+            seq_string: ':'-separated sequences for vis chains then hidden chains
+            sample: int (unused, but accepted)
+    pdb_in_dir : str
+        Input directory
+    pdb_out_dir : str
+        Output directory
+    """
+    # Reverse map: 1-letter -> 3-letter
+    AA1_TO_AA3 = {k.upper(): v.upper() for k, v in protein_letters_1to3.items()}
+
+    os.makedirs(pdb_out_dir, exist_ok=True)
+    parser = PDBParser(QUIET=True)
+    io = PDBIO()
+
+    for key, (seq_string, _) in pdb_dict.items():
+        # Get chain info
+        chain_info = key.split("|")
+        if len(chain_info) == 3:
+            pdb_name, hidden_chains_str, vis_chains_str = chain_info
+            vis_chains = vis_chains_str.split(":") if vis_chains_str else []
+            hidden_chains = hidden_chains_str.split(":") if hidden_chains_str else []
+            all_chains = hidden_chains + vis_chains
+            if len(vis_chains) > 0:
+                out_name = f"{pdb_name}_{hidden_chains_str.replace(':', '-')}_{vis_chains_str.replace(':', '-')}.pdb"
+            else:
+                out_name = f"{pdb_name}_{hidden_chains_str.replace(':', '-')}.pdb"
+        else:
+            pdb_name = chain_info[0]
+            wt_info = parse_PDB_seq_only(os.path.join(pdb_in_dir, pdb_name + '.pdb'))
+            vis_chains = []
+            all_chains = wt_info['chain_order']
+            out_name = f"{pdb_name}.pdb"
+
+        seqs = seq_string.split(":")
+        if len(seqs) != len(all_chains):
+            raise ValueError(
+                f"Sequence count ({len(seqs)}) does not match chain count "
+                f"({len(all_chains)}) for {key}"
+            )
+
+        structure = parser.get_structure(
+            pdb_name, os.path.join(pdb_in_dir, pdb_name + ".pdb")
+        )
+
+        chain_to_seq = dict(zip(all_chains, seqs))
+
+        for model in structure:
+            for chain in model:
+                chain_id = chain.id
+                if chain_id not in chain_to_seq:
+                    continue
+
+                raw_seq = chain_to_seq[chain_id]
+                is_visible = chain_id in vis_chains
+
+                residues = [
+                    res for res in chain
+                    if res.id[0] == " " or 'MSE' in res.id[0]
+                ]
+
+                if is_visible:
+                    # ----------------------------
+                    # Visible chain: gap-aware
+                    # ----------------------------
+                    seq_i = 0
+
+                    for res in residues:
+                        if seq_i >= len(raw_seq):
+                            raise ValueError(
+                                f"Sequence too short for visible chain {chain_id} in {key}"
+                            )
+
+                        aa1 = raw_seq[seq_i].upper()
+                        seq_i += 1
+
+                        # Gap → keep original residue
+                        if aa1 == "-":
+                            continue
+
+                        if aa1 not in AA1_TO_AA3:
+                            raise ValueError(
+                                f"Invalid amino acid '{aa1}' in chain {chain_id} in {key}"
+                            )
+
+                        res.resname = AA1_TO_AA3[aa1]
+
+                    if seq_i != len(raw_seq):
+                        raise ValueError(
+                            f"Sequence not fully consumed for visible chain {chain_id} in {key}"
+                        )
+
+                else:
+                    # ----------------------------
+                    # Hidden chain: strip gaps
+                    # ----------------------------
+                    seq = raw_seq.replace("-", "")
+                    if len(seq) != len(residues):
+                        raise ValueError(
+                            f"Length mismatch for hidden chain {chain_id} in {key}: "
+                            f"{len(residues)} residues vs {len(seq)} sequence"
+                        )
+
+                    for res, aa1 in zip(residues, seq):
+                        aa1 = aa1.upper()
+                        if aa1 not in AA1_TO_AA3:
+                            raise ValueError(
+                                f"Invalid amino acid '{aa1}' in chain {chain_id} in {key}"
+                            )
+                        res.resname = AA1_TO_AA3[aa1]
+                        
+        out_path = os.path.join(pdb_out_dir, out_name)
+
+        io.set_structure(structure)
+        io.save(out_path)
+
+def chain_to_partition_map(
+    chain_encoding_all: torch.Tensor,
+    chains: list[str],
+    partitions: list[list[str]],
+) -> torch.Tensor:
+    """
+    Convert chain indices to partition indices.
+
+    Parameters
+    ----------
+    chain_encoding_all : torch.Tensor
+        Shape (1, L), 1-indexed chain indices
+    chains : list[str]
+        Ordered list of chain IDs defining the chain index mapping
+    partitions : list[list[str]]
+        List of chain partitions
+
+    Returns
+    -------
+    partition_encoding_all : torch.Tensor
+        Shape (1, L), 0-indexed partition indices
+    """
+
+    if chain_encoding_all.ndim != 2 or chain_encoding_all.shape[0] != 1:
+        raise ValueError(
+            "chain_encoding_all must have shape (1, L)"
+        )
+
+    # -----------------------------
+    # Validation
+    # -----------------------------
+    chain_set = set(chains)
+
+    part_chain_list = [c for part in partitions for c in part]
+    part_chain_set = set(part_chain_list)
+
+    unknown = part_chain_set - chain_set
+    if unknown:
+        raise ValueError(f"Partitions contain unknown chains: {unknown}")
+
+    missing = chain_set - part_chain_set
+    if missing:
+        raise ValueError(f"Chains not covered by partitions: {missing}")
+
+    if len(part_chain_list) != len(part_chain_set):
+        raise ValueError("A chain appears in more than one partition")
+
+    # -----------------------------
+    # Build chain_idx → partition_idx map
+    # -----------------------------
+    # chain index is 1-indexed
+    # partition index is 0-indexed
+    chain_to_partition = {}
+
+    for p_idx, part in enumerate(partitions):
+        for c in part:
+            chain_to_partition[c] = p_idx
+
+    idx_map = torch.empty(len(chains) + 1, dtype=torch.long, device=chain_encoding_all.device)
+
+    for i, chain in enumerate(chains, start=1):
+        idx_map[i] = chain_to_partition[chain]
+
+    # -----------------------------
+    # Remap tensor
+    # -----------------------------
+    if chain_encoding_all.min() < 1 or chain_encoding_all.max() > len(chains):
+        raise ValueError("chain_encoding_all contains invalid chain indices")
+
+    partition_encoding_all = idx_map[chain_encoding_all]
+
+    return partition_encoding_all
+
+def inter_partition_contact_mask(
+    ca_pos: torch.Tensor,
+    partition_index: torch.Tensor,
+    inter_cutoff: float,
+) -> torch.Tensor:
+    """
+    Identify residues at interface of two partitions
+    
+    Parameters
+    ----------
+    ca_pos : torch.Tensor
+        Shape (b, L, 3), Cα coordinates
+    partition_index : torch.Tensor
+        Shape (b, L), integer partition labels
+    inter_cutoff : float
+        Distance cutoff in Angstroms
+
+    Returns
+    -------
+    inter_mask : torch.Tensor
+        Shape (b, L), mask
+    """
+
+    # Pairwise distances: (b, L, L)
+    diff = ca_pos[:, :, None, :] - ca_pos[:, None, :, :]
+    dist2 = torch.sum(diff ** 2, dim=-1)
+    cutoff2 = inter_cutoff ** 2
+
+    # Different partition mask: (b, L, L)
+    diff_partition = partition_index[:, :, None] != partition_index[:, None, :]
+
+    # Distance cutoff
+    close_enough = dist2 <= cutoff2
+
+    inter_contacts = diff_partition & close_enough
+    inter_mask = inter_contacts.any(dim=-1)
+
+    return inter_mask

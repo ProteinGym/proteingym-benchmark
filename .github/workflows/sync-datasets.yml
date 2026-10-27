@@ -1,0 +1,30 @@
+name: Sync Datasets from Hugging Face
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download manifests.json and histograms.json from Hugging Face
+        run: |
+          for f in manifests histograms; do
+            curl -fsSL -o static/$f.json \
+              https://huggingface.co/datasets/ProteinGym/ProteinGym2.0/raw/metadata/$f.json
+          done
+          # Both come from the same metadata commit; refuse to publish a mismatched pair
+          test "$(jq -r .commit_hash static/manifests.json)" = "$(jq -r .commit_hash static/histograms.json)"
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add static/manifests.json static/histograms.json
+          git diff --staged --quiet || git commit -m "chore: sync datasets from Hugging Face"
+          git push

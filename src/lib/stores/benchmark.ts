@@ -1,11 +1,12 @@
 import { writable } from "svelte/store";
 import Papa from "papaparse";
 
-export type MetricRow = {
+/** One metrics.csv row: the key columns plus one column per metric (spearman, ...). */
+export type MetricRow = Record<string, string> & {
   game: string;
   model: string;
   dataset: string;
-  spearman: string;
+  split: string;
 };
 
 type BenchmarkState = {
