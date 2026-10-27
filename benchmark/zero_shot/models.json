@@ -17,8 +17,8 @@
       "image": "evmutation2:latest"
     },
     {
-      "name": "saprot",
-      "image": "saprot:latest"
+      "name": "esm-if1",
+      "image": "esm-if1:latest"
     }
   ]
 }

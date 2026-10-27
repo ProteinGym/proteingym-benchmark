@@ -1,0 +1,33 @@
+Bootstrap: docker
+From: python:3.12-slim-bookworm
+
+%setup
+    mkdir -p ${SINGULARITY_ROOTFS}/opt/program
+    cp -r src/ pyproject.toml uv.lock README.md .python-version LICENSE ${SINGULARITY_ROOTFS}/opt/program/
+    cp -r vendor/ ${SINGULARITY_ROOTFS}/opt/program/
+    mkdir -p ${SINGULARITY_ROOTFS}/opt/program/data
+    mkdir -p ${SINGULARITY_ROOTFS}/mnt/host-uv-cache
+
+%post
+    apt-get update && apt-get install -y git curl ca-certificates build-essential && rm -rf /var/lib/apt/lists/*
+
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    mv /root/.local/bin/uv /root/.local/bin/uvx /usr/local/bin/
+
+    export UV_CACHE_DIR=/mnt/host-uv-cache
+    export UV_LOCK_TIMEOUT=1800
+
+    cd /opt/program
+    uv sync
+
+    uv run --no-sync python -c "import torch, torch_scatter; from proteingym.models.esm_if1 import model; print('esm_if1.model import OK, torch', torch.__version__)"
+
+    curl -kL https://dl.fbaipublicfiles.com/fair-esm/models/esm_if1_gvp4_t16_142M_UR50.pt \
+        -o /opt/program/data/esm_if1_gvp4_t16_142M_UR50.pt
+
+%environment
+    export PATH="/opt/program/.venv/bin:$PATH"
+
+%runscript
+    cd /opt/program
+    exec uv run --no-sync esm-if1 "$@"
