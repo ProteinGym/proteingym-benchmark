@@ -17,8 +17,8 @@
       "image": "evmutation2:latest"
     },
     {
-      "name": "pottsmpnn",
-      "image": "pottsmpnn:latest"
+      "name": "saprot",
+      "image": "saprot:latest"
     }
   ]
 }
