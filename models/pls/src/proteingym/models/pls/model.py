@@ -1,104 +1,105 @@
-import logging
+"""
+Wrapper class around scikit-learn's PLSRegression
+(https://scikit-learn.org/stable/modules/generated/sklearn.cross_decomposition.PLSRegression.html)
+on one-hot encoded sequences
+"""
+from typing import Literal, Self
 
-import polars as pl
-from proteingym.base import Dataset, Subsets
-from proteingym.base.model import ModelCard
 from sklearn.cross_decomposition import PLSRegression
 
-from .preprocess import encode, load_x_and_y
+from evedesign.dataset import LabeledInstanceDataset
+from evedesign.models.embedders import OneHotEmbedder
+from evedesign.models.supervised import SklearnPredictorOnEmbeddingsScores
+from evedesign.system import System
+from evedesign.types import BatchSize, StatusCallback
 
-logger = logging.getLogger(__name__)
 
-
-def train(
-    split_dataset: Subsets,
-    split: str,
-    test_fold: int,
-    target: str,
-    model_card: ModelCard,
-) -> PLSRegression:
-    """Train a PLS regression model on protein sequence data from the dataset.
-
-    This function loads training data from the dataset, encodes the protein sequences
-    using hyperparameters from the model card, fits a Partial Least Squares (PLS)
-    regression model, and returns the trained model.
-
-    Args:
-        split_dataset: Dataset object containing protein sequences and targets
-        split: Name of the split to use
-        test_fold: Which fold to use as test set
-        target: Target column name
-        model_card: Configuration object containing model hyperparameters
-            including encoding parameters and n_components for PLS regression
-
-    Returns:
-        PLSRegression: Trained scikit-learn PLS regression model ready for prediction
+class pls(SklearnPredictorOnEmbeddingsScores):
     """
-    train_X, train_Y, test_X, test_Y = load_x_and_y(
-        subset=split_dataset, split=split, test_fold=test_fold, target=target
-    )
-
-    logger.info(f"Loaded {len(train_Y)} training records and start the training...")
-
-    encodings = encode(split_X=train_X, hyper_params=model_card.hyper_parameters)
-
-    model = PLSRegression(n_components=model_card.hyper_parameters["n_components"])
-    model.fit(encodings, train_Y)
-
-    logger.info("Finished the training.")
-
-    return model
-
-
-def infer(
-    split_dataset: Subsets,
-    split: str,
-    target: str,
-    model_card: ModelCard,
-    model: PLSRegression,
-) -> Dataset:
-    """Generate predictions using a trained PLS regression model on all sequences.
-
-    This function encodes all protein sequences in the dataset using the same
-    hyperparameters from the model card used during training, generates predictions
-    using the provided trained PLS regression model, and returns a Dataset with
-    the predictions merged in.
-
-    Args:
-        split_dataset: Dataset object containing protein sequences and targets
-        split: Name of the split to use
-        target: Target column name
-        model_card: Configuration object containing model hyperparameters
-            used for consistent sequence encoding
-        model: Trained scikit-learn PLS regression model
-
-    Returns:
-        Dataset: Predictions dataset
+    Partial Least Squares regression on per-residue one-hot sequence encodings.
     """
-    dataset = split_dataset[split].dataset
+    name: str = "pls"
+    citations: list[str] = [
+        # Scikit-learn: Machine Learning in Python
+        "10.48550/arXiv.1201.0490",
+    ]
 
-    all_sequences_df = dataset.to_df(target_names=target)
-    all_sequences = all_sequences_df["sequence"].to_list()
+    def __init__(
+        self,
+        n_components: int = 2,
+        scale: bool = True,
+        max_iter: int = 500,
+        tol: float = 1e-06,
+        pooling: Literal["mean", "max"] | None = None,
+        independent_insertion_alphabet: bool = False,
+        batch_size: BatchSize = 128,
+    ):
+        """
+        Instantiate a PLS model.
 
-    logger.info(f"Loaded {len(all_sequences)} sequences and start the scoring...")
+        Parameters
+        ----------
+        n_components
+            Number of PLS components to extract (dimensionality of the reduced
+            space)
+        scale
+            Whether to scale X and Y to unit variance before fitting
+        max_iter
+            Maximum number of iterations of the NIPALS inner loop
+        tol
+            Convergence tolerance of the NIPALS inner loop
+        pooling
+            Aggregation of the per-residue one-hot matrix across positions. None
+            (default) flattens it, keeping one feature per (position, symbol)
+            pair; this requires every instance to have the target's length.
+            "mean"/"max" reduce each sequence to its composition and drop all
+            positional information
+        independent_insertion_alphabet
+            Forwarded to OneHotEmbedder. If False (default), lowercase insert
+            states are folded into match states before encoding
+        batch_size
+            Number of instances to one-hot encode at a time
+        """
+        embedder = OneHotEmbedder(
+            merge_alphabets=True,
+            independent_insertion_alphabet=independent_insertion_alphabet,
+        )
 
-    encodings = encode(split_X=all_sequences, hyper_params=model_card.hyper_parameters)
-    predictions = model.predict(encodings)
+        # flattened per-position features only line up if every instance has
+        # the same length - let the embedder's instance validation enforce it
+        if pooling is None:
+            embedder.requires_fixed_length = True
 
-    if len(predictions.shape) > 1:
-        predictions = predictions.flatten()
+        super().__init__(
+            predictor=PLSRegression(
+                n_components=n_components,
+                scale=scale,
+                max_iter=max_iter,
+                tol=tol,
+            ),
+            embedder=embedder,
+            scorer=None,
+            use_embeddings=True,
+            use_scores=False,
+            target_name=None,
+            pooling=pooling,
+            batch_size=batch_size,
+        )
 
-    predictions_df = pl.DataFrame(
-        {
-            "sequence": all_sequences,
-            target: predictions.tolist(),
-        }
-    )
+        self.n_components = n_components
+        self.scale = scale
+        self.max_iter = max_iter
+        self.tol = tol
+        self.independent_insertion_alphabet = independent_insertion_alphabet
 
-    predictions_dataset = dataset.predictions_delta(
-        predictions_df, target=target, allow_extra_predictions=True
-    )
+    def build(
+        self,
+        system: System,
+        data: LabeledInstanceDataset,
+        status_callback: StatusCallback | None = None,
+    ) -> Self:
+        # the embedder holds no learned state, so it is built here on the same
+        # system rather than outside as evedesign's convention expects
+        self.embedder.build(system)
 
-    logger.info("Finished the scoring.")
-
-    return predictions_dataset
+        return super().build(system, data=data, status_callback=status_callback)
