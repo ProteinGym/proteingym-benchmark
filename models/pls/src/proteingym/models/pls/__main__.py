@@ -242,6 +242,14 @@ def train(
     # Score the test dataset (the whole dataset in the zero-shot case).
     instances, values, _, _ = test_dataset.select(name=target, drop_missing=False)
 
+    # In the supervised case also score the training folds: the benchmark's
+    # train_available/per_fold score modes need a prediction for every sequence
+    if training_dataset is not None:
+        train_instances, _, _, _ = training_dataset.select(
+            name=target, drop_missing=False
+        )
+        instances = list(instances) + list(train_instances)
+
     # score() returns scored instance copies (order preserved)
     scored_instances = model.score(instances)
 
