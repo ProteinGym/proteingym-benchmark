@@ -1,0 +1,1 @@
+import{R as r}from"../chunks/BUApaBEI.js";import{b as t}from"../chunks/DXWCLrCK.js";function n(e,o){throw new r(e,o.toString())}const a=()=>n(308,`${t}/benchmark/zero-shot/`),s=Object.freeze(Object.defineProperty({__proto__:null,load:a},Symbol.toStringTag,{value:"Module"}));export{s as universal};
