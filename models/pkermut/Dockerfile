@@ -16,6 +16,7 @@ ENV PROTEINMPNN_DIR=software/ProteinMPNN-main
 # Copy and install dependencies
 COPY README.md README.md
 COPY pyproject.toml pyproject.toml
+COPY uv.lock uv.lock
 COPY src/ src/
 RUN uv sync --no-cache
 
