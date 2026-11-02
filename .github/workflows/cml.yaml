@@ -214,15 +214,11 @@ jobs:
               .agg(pl.len().alias("n_datasets"), *[pl.col(c).mean().round(3) for c in metrics])
               .sort(keys)
           )
-          with pl.Config(
-              tbl_formatting="MARKDOWN",
-              tbl_hide_column_data_types=True,
-              tbl_hide_dataframe_shape=True,
-              tbl_rows=-1,
-              tbl_cols=-1,
-              fmt_str_lengths=100,
-          ):
-              print(summary)
+          # Build the markdown by hand: polars' table printer wraps long headers across lines.
+          print("| " + " | ".join(summary.columns) + " |")
+          print("|" + "---|" * len(summary.columns))
+          for row in summary.iter_rows():
+              print("| " + " | ".join(str(v) for v in row) + " |")
           PY
           )
 
