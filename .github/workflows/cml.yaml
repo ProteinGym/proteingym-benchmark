@@ -186,8 +186,14 @@ jobs:
       - name: Run benchmarking
         if: steps.check_changes.outputs.build_images == 'true'
         run: |
-          dvc repro benchmark/supervised/dvc.yaml --single-item
-          dvc repro benchmark/zero_shot/dvc.yaml --single-item
+          # Skip a game whose models.json was filtered down to no changed models.
+          for game in supervised zero_shot; do
+            if [ "$(jq '.models | length' benchmark/$game/models.json)" -gt 0 ]; then
+              dvc repro benchmark/$game/dvc.yaml --single-item
+            else
+              echo "Skipping $game: no changed models"
+            fi
+          done
 
       - name: Create PR report
         if: steps.check_changes.outputs.build_images == 'true'
