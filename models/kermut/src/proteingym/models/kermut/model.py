@@ -315,11 +315,13 @@ class kermut(SupervisedBaseModel, Scorer):
         instances, values, _, _ = data.select(self.target_name, drop_missing=True)
         self._validate_instances(instances)
 
-        # kermut drops duplicate sequences before fitting, keeping the first
+        # kermut drops duplicate sequences before fitting, keeping the first.
+        # This is done after the reference is swapped for its pseudo variant (as
+        # in kermut_run), since the pseudo variant can coincide with a real variant
         seen = set()
         keep = []
         for i, inst in enumerate(instances):
-            seq = "".join(inst[0].rep)
+            seq = self._pseudo_if_reference("".join(inst[0].rep))
             if seq not in seen:
                 seen.add(seq)
                 keep.append(i)
