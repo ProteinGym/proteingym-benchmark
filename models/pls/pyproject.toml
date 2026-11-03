@@ -11,6 +11,8 @@ dependencies = [
     "proteingym-base",
     "polars[pyarrow]~=1.31.0",
     "requests",
+    "evedesign>=0.0.6",
+    "dill~=0.3.8",
 ]
 
 [project.scripts]
