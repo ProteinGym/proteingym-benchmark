@@ -1,4 +1,4 @@
-import{aL as D}from"./BY_Gjdpk.js";import{b as G}from"./DXWCLrCK.js";/*!
+import{aL as D}from"./BY_Gjdpk.js";import{b as G}from"./LRNZ8Dy5.js";/*!
  * Copyright (c) Squirrel Chat et al., All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  *
