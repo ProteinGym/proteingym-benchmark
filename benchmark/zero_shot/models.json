@@ -17,8 +17,8 @@
       "image": "evmutation2:latest"
     },
     {
-      "name": "structuredca",
-      "image": "structuredca:latest"
+      "name": "eve",
+      "image": "eve:latest"
     }
   ]
 }
