@@ -1,0 +1,30 @@
+Bootstrap: docker
+From: python:3.12-slim-bookworm
+
+%setup
+    mkdir -p ${SINGULARITY_ROOTFS}/opt/program
+    cp -r software/ src/ pyproject.toml uv.lock README.md ${SINGULARITY_ROOTFS}/opt/program/
+
+%post
+    apt-get update && apt-get install -y git curl ca-certificates && rm -rf /var/lib/apt/lists/*
+
+    # install uv (defaults to /root/.local/bin)
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    # move binaries to a globally accessible system path
+    mv /root/.local/bin/uv /root/.local/bin/uvx /usr/local/bin/
+
+    # unpack ProteinMPNN (used for the structure kernel's conditional probabilities)
+    cd /opt/program
+    python3 -m zipfile -e software/ProteinMPNN-main.zip software
+
+    # sync dependencies
+    uv sync --no-cache
+
+%environment
+    export PATH="/opt/program/.venv/bin:$PATH"
+    export PROTEINMPNN_DIR=/opt/program/software/ProteinMPNN-main
+
+%runscript
+    cd /opt/program
+    exec uv run --no-sync kermut "$@"
