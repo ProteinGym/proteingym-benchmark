@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import { base } from "$app/paths";
   import { modelsStore } from "$lib/stores/models";
   import { marked } from "marked";
@@ -37,10 +36,6 @@
       currentPage = 1;
     }
   });
-
-  function navigateToModel(slug: string) {
-    goto(`${base}/model/${slug}`);
-  }
 </script>
 
 <!-- Search Bar -->
@@ -64,7 +59,7 @@
   </div>
   <input
     bind:value={searchQuery}
-    class="w-full text-base text-gray-700 pl-8 rounded-md border border-gray-100 h-9 pr-8 shadow-sm focus:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-100 focus:border-gray-100"
+    class="w-full bg-white text-base text-gray-700 pl-8 rounded-md border border-gray-200 h-9 pr-8 shadow-sm focus:outline-none focus:ring-2 focus:ring-accent-600/30 focus:border-accent-600"
     type="text"
     placeholder="Filter by model name or tags"
   />
@@ -76,22 +71,19 @@
   class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6 max-w-7xl mx-auto auto-rows-fr"
 >
   {#each paginatedModels as model (model.slug)}
-    <div
-      class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 flex flex-col cursor-pointer"
-      onclick={() => navigateToModel(model.slug)}
-      onkeydown={(e) => e.key === "Enter" && navigateToModel(model.slug)}
-      role="button"
-      tabindex="0"
+    <a
+      href="{base}/model/{model.slug}"
+      class="group bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:border-accent-600 hover:bg-accent-50 active:bg-accent-100 active:scale-[0.98] motion-reduce:active:scale-100 transition-[background-color,border-color,box-shadow,scale] duration-150 p-6 flex flex-col"
     >
       <div class="mb-4">
-        <h2 class="text-xl font-semibold text-gray-900 mb-2">
+        <h2 class="text-xl font-semibold text-gray-900 group-hover:text-accent-800 transition-colors duration-150 mb-2">
           {model.frontmatter.name}
         </h2>
         {#if model.frontmatter.tags}
           <div class="flex flex-wrap gap-2 mb-3">
             {#each model.frontmatter.tags as tag (tag)}
               <span
-                class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full"
+                class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"
                 >{tag}</span
               >
             {/each}
@@ -103,10 +95,15 @@
       >
         <div class="line-clamp-6">
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-          {@html marked(model.overview)}
+          <!-- the whole card is a link, so drop links inside the preview (no nested <a>) -->
+          {@html (marked(model.overview) as string).replace(/<\/?a\b[^>]*>/g, "")}
         </div>
       </div>
-    </div>
+    </a>
+  {:else}
+    <p class="col-span-full py-10 text-center text-sm text-gray-500">
+      {models.length ? `No models match “${searchQuery}”.` : "Loading models…"}
+    </p>
   {/each}
 </main>
 

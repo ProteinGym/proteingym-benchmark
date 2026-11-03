@@ -115,7 +115,14 @@ jobs:
               if [ "$CAN_USE_CACHE" = "true" ]; then
                 echo "Pushing image to cache: ${remote}"
                 docker tag "$local" "$remote"
-                docker push "$remote"
+                for attempt in 1 2 3; do
+                  docker push "$remote" && break
+                  if [ "$attempt" = 3 ]; then
+                    echo "::warning::Could not push ${remote} to cache; continuing with local image"
+                  else
+                    sleep $((attempt * 15))
+                  fi
+                done
               fi
             fi
 
@@ -175,24 +182,51 @@ jobs:
           cp .github/workflows/ci_datasets.json benchmark/supervised/datasets.json
           cp .github/workflows/ci_datasets.json benchmark/zero_shot/datasets.json
           cp .github/workflows/Dummy_test_P0DX94.splits.pgdata datasets/
+          # Start from an empty metrics.csv so the report only covers this run, not the committed results.
+          rm -f benchmark/metrics.csv
 
       - name: Run benchmarking
         if: steps.check_changes.outputs.build_images == 'true'
         run: |
-          dvc repro benchmark/supervised/dvc.yaml --single-item
-          dvc repro benchmark/zero_shot/dvc.yaml --single-item
+          # Skip a game whose models.json was filtered down to no changed models.
+          for game in supervised zero_shot; do
+            if [ "$(jq '.models | length' benchmark/$game/models.json)" -gt 0 ]; then
+              dvc repro benchmark/$game/dvc.yaml --single-item
+            else
+              echo "Skipping $game: no changed models"
+            fi
+          done
 
       - name: Create PR report
         if: steps.check_changes.outputs.build_images == 'true'
         env:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Average every numeric metric per model across datasets.
+          summary=$(python - <<'PY'
+          import polars as pl
+
+          df = pl.read_csv("benchmark/metrics.csv")
+          keys = ["game", "model", "split"]
+          metrics = [c for c, t in df.schema.items() if c not in keys and t.is_numeric()]
+          summary = (
+              df.group_by(keys)
+              .agg(pl.len().alias("n_datasets"), *[pl.col(c).mean().round(3) for c in metrics])
+              .sort(keys)
+          )
+          # Build the markdown by hand: polars' table printer wraps long headers across lines.
+          print("| " + " | ".join(summary.columns) + " |")
+          print("|" + "---|" * len(summary.columns))
+          for row in summary.iter_rows():
+              print("| " + " | ".join(str(v) for v in row) + " |")
+          PY
+          )
+
           cat <<EOF > report.md
           ✅ The benchmark has been finished successfully.
-          📈 The result is as below:
-          \`\`\`csv
-          $(cat ./benchmark/metrics.csv)
-          \`\`\`
+          📈 Metrics averaged per model across datasets:
+
+          ${summary}
           EOF
 
           # Send comment to PR

@@ -1,0 +1,40 @@
+Bootstrap: docker
+From: python:3.12-slim-bookworm
+
+%setup
+    mkdir -p ${SINGULARITY_ROOTFS}/opt/program
+    cp -r src/ pyproject.toml uv.lock README.md ${SINGULARITY_ROOTFS}/opt/program/
+
+%post
+    apt-get update && apt-get install -y git curl ca-certificates && rm -rf /var/lib/apt/lists/*
+
+    # install uv (defaults to /root/.local/bin)
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    # move binaries to a globally accessible system path
+    mv /root/.local/bin/uv /root/.local/bin/uvx /usr/local/bin/
+
+    # sync dependencies
+    cd /opt/program
+    uv sync --no-cache
+
+    # all six released checkpoints (~20MB each), selected via checkpoint_path;
+    # pinned to the upstream commit the wrapper vendors
+    POTTSMPNN_URL=https://github.com/KeatingLab/PottsMPNN/raw/1716f99605ac6c2b916a64f40abfe66ee2468fe3
+    mkdir -p /opt/program/data/vanilla_model_weights /opt/program/data/soluble_model_weights
+    for f in pottsmpnn_20 pottsmpnn_30 pottsmpnn_msa_20; do
+        curl -fL ${POTTSMPNN_URL}/vanilla_model_weights/$f.pt -o /opt/program/data/vanilla_model_weights/$f.pt
+    done
+    for f in sol_pottsmpnn_20 sol_pottsmpnn_30 sol_pottsmpnn_msa_20; do
+        curl -fL ${POTTSMPNN_URL}/soluble_model_weights/$f.pt -o /opt/program/data/soluble_model_weights/$f.pt
+    done
+
+%environment
+    export PATH="/opt/program/.venv/bin:$PATH"
+    export POTTSMPNN_DATA_DIR=/opt/program/data
+    # matplotlib (imported by the vendored run_utils) needs a writable config dir
+    export MPLCONFIGDIR=/tmp/mplconfig
+
+%runscript
+    cd /opt/program
+    exec uv run --no-sync pottsmpnn "$@"

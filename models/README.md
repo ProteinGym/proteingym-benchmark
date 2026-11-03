@@ -1,272 +1,155 @@
-# Model
+# Models
 
-This document details the requirements and suggestions for implementing a model.
+This document describes how a model is structured so the benchmark can run it.
 
-## Entrypoint
-
-A model requires at minimum an entrypoint for training: `train`.  The benchmark
-framework accesses models via the `train` entrypoint, for example:
-- [models/esm/src/proteingym/models/esm/__main__.py]
-- [models/pls/src/proteingym/models/pls/__main__.py]
-
-The `train` entrypoint expects a reference to a dataset archive, e.g., loaded by
-`proteingym.base.Subsets`:
-
-```python
-from proteingym.base import Subsets
-subsets = Subsets.from_path(dataset_path)
-```
-
-Additionally, the `train` entrypoint expects a reference to a model card, e.g., 
-loaded by `proteingym.base.model.ModelCard`:
-
-```python
-from proteingym.benchmark.model import ModelCard
-model_card = ModelCard.from_path(model_card_path)
-```
-
-Finally, common logic in the `train` method:
-
-- For a **zero-shot** model, like [esm](models/esm/), it calls `load` and `infer` in order: 
-  - `load` uses `model_card` as input, and returns a model object as output.  
-  - `infer` uses `dataset`, `model_card` and the model object as input, and returns a Dataset with predictions as output.
-
-- For a **supervised** model, like [pls](models/pls/), it calls `train` and `infer` in order:
-    - `train` uses `dataset` and `model_card` as input, and returns a model object as output.
-    - `infer` uses `dataset`, `model_card` and the model object as input, and returns a Dataset with predictions as output.
-
-For reference, below an example Python implementation with `typer`:
-
-``` python
-# In `__main__.py`
-import typer
-from proteingym.base import Subsets
-from proteingym.base.model import ModelCard
-
-
-app = typer.Typer(
-    help="My ProteinGym model",
-    add_completion=True,
-)
-
-
-@app.command()
-def train(
-    dataset_file: Annotated[
-        Path,
-        typer.Option(
-            help="Path to the archived dataset",
-        ),
-    ],
-    model_card_file: Annotated[
-        Path,
-        typer.Option(
-            help="Path to the model card file",
-        ),
-    ],
-) -> Path:
-
-    dataset = Subsets.from_path(dataset_file)
-    model_card = ModelCard.from_path(model_card_file)
-
-    # For a supervised model
-    model = load(model_card)
-    predictions_dataset = infer(dataset, model_card, model)
-    predictions_dataset.dump(output_path)
-
-    # For a zero-shot model
-    model = train(dataset, model_card)
-    predictions_dataset = infer(dataset, model_card, model)
-    predictions_dataset.dump(output_path)
-
-
-if __name__ == "__main__":
-    app()
-
-```
-
-## Output
-
-The framework runs ephemeral containers for each model-dataset pair. Therefore,
-the resulting predictions dataset (`.pgdata` file) is persisted on disk in the local 
-environment or stored in AWS S3 bucket in the cloud environment, so that the 
-predictions can be later used for metric calculation.
-
-## Suggested code structure
+Models are run through [evedesign](https://github.com/evedesignbio/evedesign),
+which we use as the framework to standardize model building and scoring. Every
+model ships the same generic runner (`__main__.py`); what differs between models
+is the evedesign model class named in the model card and its hyperparameters.
 
 > [!NOTE]
-> Python examples below translates to other languages.
+> All models will use the evedesign runner. The supervised models `pls`,
+> `kermut`, `pkermut` and `huggingface-regressor` still have their own custom
+> entrypoints and have not been migrated yet, so do not use them as a template.
+> Use one of the zero-shot models (e.g. [blosum62](blosum62/),
+> [esm2](esm2/), [esmc](esmc/)) instead.
 
-In addition to the [**required** entrypoints](#entrypoints), we suggest the
-following code structure:
+## Layout
 
-``` tree
-├── __main__.py
-├── model.py
-├── preprocess.py
-└── utils.py
+```tree
+models/<model-folder>/
+├── README.md            # model card: YAML front matter + description
+├── Dockerfile           # image the benchmark runs
+├── Singularity.def      # optional, for HPC clusters without Docker
+├── pyproject.toml       # pinned dependencies + console script
+├── uv.lock
+├── src/proteingym/models/<package>/
+│   ├── __main__.py      # the shared evedesign runner (copy it unchanged)
+│   └── model.py         # only if you write your own evedesign model class
+└── tests/
 ```
 
-### `__main__.py` 
+## Model card
 
-The `__main__.py` contains the `train` entrypoint as shown above.
-The code loads the dataset and model (card) before passing it to the `load`, `train`
-or `infer` methods.
+The `README.md` is the model card. Its YAML front matter is read by the runner
+(via `proteingym.base.model.ModelCard`), by the benchmark tooling and by the
+website; the Markdown body is shown on the website's model page.
 
-### `preprocess.py`
+```yaml
+---
+# Model identifier used in the benchmark and on the website
+name: blosum62
 
-`preprocess.py` contains the data preprocessing code, functions like:
+# Import string for the evedesign model class, either
+# "package.module:ClassName" or "package.module.ClassName"
+model_class: "proteingym.models.blosum62.model:SubstitutionMatrixScorer"
 
-``` python
-def encode(data: np.ndarray) -> np.ndarray:
-    """Encode the data."""
-    return encoded_data
+# "zero-shot" or "supervised" (which benchmark it runs in);
+# add "embeddable" if the model can produce embeddings (see `embed` below)
+tags: ["zero-shot"]
+
+# Multi-target support flag
+multi_y: false
+
+# Forwarded verbatim as keyword arguments to the model class constructor
+hyper_parameters:
+    matrix_name: "BLOSUM62"
+    gap_penalty: -4.0
+---
 ```
 
-``` python
-def train_test_split(data: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Split the data."""
-    return train_data, test_data
-```
+| Field              | Required | Description |
+|--------------------|----------|-------------|
+| `name`             | Yes      | Model identifier. Usually the folder name, but it may differ (e.g. `huggingface-regressor` is named `ritaregressor`). |
+| `model_class`      | Yes      | evedesign model class the runner imports, instantiates and scores with. |
+| `tags`             | Yes      | `zero-shot` or `supervised`; optionally `embeddable`. |
+| `multi_y`          | No       | Whether the model supports multiple targets. |
+| `hyper_parameters` | No       | Constructor keyword arguments for `model_class`. |
 
-### `model.py`
+Extra fields are allowed. The Markdown body should describe the architecture,
+training data and hyperparameters, credit the original paper/code, and state
+licences and build-time network access (see [CONTRIBUTING.md](../CONTRIBUTING.md#model-submission-policy)).
 
-`model.py` contains the code related with model:
+## The evedesign runner
 
-``` python
-def train(dataset: Dataset, model_card: ModelCard) -> Any
-    """Train the model."""
-    X, y = load_x_and_y(
-        dataset=dataset,
-        split="train",
-    )
+`__main__.py` is identical across evedesign models; copy it from an existing
+model (e.g. [blosum62](blosum62/src/proteingym/models/blosum62/__main__.py)).
+It exposes three commands:
 
-    model = Model(model_card)
-    model.fit(X, y)
+- **`train`** – what the benchmark calls. It:
+  1. loads the dataset (`proteingym.base.Subsets`) and model card,
+  2. converts them with `evedesign.proteingym.dataset_to_evedesign` into an
+     evedesign `System` plus training/test datasets (for `zero-shot` models the
+     whole dataset is scored and `--split`/`--test-fold` are ignored),
+  3. instantiates `model_class(**hyper_parameters)`, calls `build(system, data=...)`
+     and then `score(...)` on the test instances,
+  4. writes `/opt/program/output/<dataset>_predictions.pgdata`.
 
-    return model
-```
+  Options: `--dataset-file`, `--target`, `--split`, `--test-fold`,
+  `--model-card-file` (defaults to `/opt/program/README.md`, i.e. the card baked
+  into the image), `--model-file` (load a dill-pickled built model, or save one
+  there), `--precomputed-instances-file` (use embeddings produced by `embed`).
+- **`embed`** – for `embeddable` models: runs `transform()` (or `score()`) over
+  the whole dataset and pickles the instances to `/opt/program/output/embeddings.pkl`
+  so a downstream model can consume them.
+- **`ping`** – health check.
 
-``` python
-def load(model_card: ModelCard) -> Any:
-    """Load the model."""
-    model = Model(model_card)
-    return model
-```
+### Choosing the model class
 
-``` python
-def infer(dataset: Dataset, model_card: ModelCard, model: Any) -> Dataset:
-    """Infer predictions on the data."""
-    X, y = load_x_and_y(
-        dataset=dataset,
-        split="test",
-    )
-
-    predictions = model.predict(model_card, X)
-
-    predictions_dataset = dataset.predictions_delta(predictions, target=target)
-
-    return predictions_dataset
-```
-
-### `utils.py`
-
-It contains the supporting methods from the original models' code to facilitate
-the `model.py`.
+- If evedesign already wraps the model (e.g. `evedesign.models.esm2:ESM2`),
+  point `model_class` at it and set its constructor arguments in
+  `hyper_parameters`. See [esm2](esm2/), [evmutation](evmutation/),
+  [evmutation2](evmutation2/).
+- Otherwise, write a class in `model.py` that subclasses evedesign's `BaseModel`
+  (or `SupervisedBaseModel`) and the interfaces it supports, such as `Scorer`
+  and `Transformer`, and point `model_class` at it. See
+  [blosum62](blosum62/src/proteingym/models/blosum62/model.py) for a minimal
+  example, or [esmc](esmc/), [gemme](gemme/), [rsalor](rsalor/).
 
 ## Containerization
 
-Models in the ProteinGym benchmark are containerized using Docker to ensure
-reproducibility, portability, and compatibility with different execution
-environments (local and cloud-based like AWS SageMaker).
-
-### Dockerfile Structure
-
-Each model should include a `Dockerfile` in its root directory. The Dockerfile
-follows a standard structure:
+The benchmark runs one ephemeral container per dataset/model (and fold), so the
+image must contain everything needed to run.
 
 ```dockerfile
 FROM python:3.12-slim-bookworm
 
-# Copy uv package manager from official image
+RUN apt-get update && apt-get install -y git curl ca-certificates && rm -rf /var/lib/apt/lists/*
+
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /opt/program
 
-# Copy ProteinGym dependencies (required until packages are public)
-COPY dist/proteingym*.whl dist/
-
-# Copy model files and install dependencies
+# README.md is the model card the runner reads by default
 COPY README.md README.md
 COPY pyproject.toml pyproject.toml
+COPY uv.lock uv.lock
 COPY src/ src/
 RUN uv sync --no-cache
 
-# Set the entrypoint to your model's CLI command
-ENTRYPOINT ["uv", "run", "<model-name>"]
+# Bake weights into the image at build time; containers may run without network.
+# See models/esmc/Dockerfile for a pinned Hugging Face download.
+
+ENTRYPOINT ["uv", "run", "<console-script>"]
 ```
 
-### Key Components
+The `<console-script>` is the `[project.scripts]` entry in `pyproject.toml`,
+e.g. `blosum62 = "proteingym.models.blosum62.__main__:app"`.
 
-1. **Base Image**: Uses `python:3.12-slim-bookworm` for a minimal Python
-   environment.
+### Build and run
 
-2. **Package Manager**: Integrates [uv](https://docs.astral.sh/uv/) for fast,
-   reliable dependency management.
+The benchmark expects the image to be tagged `<model-folder>:latest`:
 
-3. **Working Directory**: Sets `/opt/program` as the working directory, which is
-   the standard location for SageMaker training containers.
+```shell
+docker build -t blosum62:latest models/blosum62
 
-4. **Dependencies**:
-   - Copies pre-built `proteingym` wheel files from the `dist/` directory
-   - Copies `pyproject.toml` to define model-specific dependencies
-   - Runs `uv sync --no-cache` to install all dependencies
-
-5. **Entrypoint**: Configures the container to run your model's CLI command
-   (e.g., `esm`, `pls`, etc.) using `uv run`.
-
-### Building a Docker Image
-
-To build a Docker image for your model, navigate to the model directory and run:
-
-```bash
-docker build -t proteingym-<model-name>:latest .
-```
-
-For example:
-```bash
-cd models/esm
-docker build -t proteingym-esm:latest .
-```
-
-### Running a Containerized Model
-
-Run the container with the required volume mounts for datasets and model cards:
-
-```bash
 docker run --rm \
-  -v /path/to/dataset:/opt/ml/input/data/training \
-  -v /path/to/model-card:/opt/ml/input/data/model_card \
-  -v /path/to/output:/opt/ml/model \
-  proteingym-<model-name>:latest \
-  train \
-  --dataset-file /opt/ml/input/data/training/dataset.pgdata \
-  --model-card-file /opt/ml/input/data/model_card/README.md
+  -v $(pwd)/datasets/splits/Dummy_test_P0DX94.splits.pgdata:/data.pgdata \
+  -v $(pwd)/output:/opt/program/output \
+  blosum62:latest train \
+  --dataset-file /data.pgdata --target charge --split random --test-fold 0
 ```
 
-### Best Practices
+### Test
 
-- **Layer Caching**: Structure your Dockerfile to maximize Docker layer caching.
-  Copy dependency files (like `pyproject.toml`) before source code.
-
-- **Minimal Images**: Use slim base images and avoid installing unnecessary
-  dependencies to keep image sizes small.
-
-- **No Cache**: Use `--no-cache` with `uv sync` to prevent caching issues in
-  containerized environments.
-
-- **Testing**: Always test your containerized model locally before deploying to
-  cloud environments.
-
-- **Validation**: Use `proteingym-base validate_model your-model-root-folder` to
-  verify your model structure and configuration before containerization.
+Run the model's unit tests with `uv run pytest` from its folder.

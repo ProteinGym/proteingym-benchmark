@@ -1,0 +1,32 @@
+Bootstrap: docker
+From: python:3.12-slim-bookworm
+
+%setup
+    mkdir -p ${SINGULARITY_ROOTFS}/opt/program
+    cp -r src/ pyproject.toml uv.lock README.md ${SINGULARITY_ROOTFS}/opt/program/
+
+%post
+    apt-get update && apt-get install -y git curl ca-certificates build-essential && rm -rf /var/lib/apt/lists/*
+
+    # install uv (defaults to /root/.local/bin)
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    # move binaries to a globally accessible system path
+    mv /root/.local/bin/uv /root/.local/bin/uvx /usr/local/bin/
+
+    # sync dependencies
+    cd /opt/program
+    uv sync --no-cache
+
+    # native transformers checkpoint, revision pinned
+    mkdir -p /opt/program/data
+    uv run --no-sync hf download biohub/ESMC-300M --revision e4bac860f0c502cd80f3aeac3d0ce6524c6627cb \
+        --local-dir /opt/program/data/esmc-300m
+    rm -rf /opt/program/data/esmc-300m/.cache /root/.cache/huggingface
+
+%environment
+    export PATH="/opt/program/.venv/bin:$PATH"
+
+%runscript
+    cd /opt/program
+    exec uv run --no-sync esmc "$@"

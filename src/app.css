@@ -1,2 +1,92 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+
+/* Site accent: #27A3CC (600) with lighter/darker steps for hovers and tints */
+@theme {
+  --color-accent-50: #eef8fb;
+  --color-accent-100: #dcf0f7;
+  --color-accent-200: #bae2ef;
+  --color-accent-300: #88cce3;
+  --color-accent-400: #52b5d6;
+  --color-accent-500: #38aad0;
+  --color-accent-600: #27a3cc;
+  --color-accent-700: #1f82a3;
+  --color-accent-800: #196883;
+  --color-accent-900: #145266;
+}
+
+@layer base {
+  :root {
+    interpolate-size: allow-keywords; /* lets <details> animate to height: auto */
+  }
+  body {
+    background: var(--color-gray-50);
+    color: var(--color-gray-900);
+  }
+  /* Size-specific tracking/leading: tighten large type, leave body text at 0 */
+  h1 {
+    letter-spacing: -0.022em;
+    line-height: 1.1;
+  }
+  h2,
+  h3 {
+    letter-spacing: -0.011em;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent-600);
+    outline-offset: 2px;
+  }
+}
+
+/* Feedback on pointer-down, not on release */
+button:not(:disabled):active,
+[role="button"]:active {
+  transform: scale(0.97);
+  transform-box: fill-box; /* SVG headers scale around themselves, not the svg origin */
+  transform-origin: center;
+  transition: transform 100ms ease-out;
+}
+
+/* Translucent chrome: content scrolls under it */
+.material {
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* Dropdowns grow down out of their header and collapse back along the same path */
+details::details-content {
+  block-size: 0;
+  overflow: clip;
+  opacity: 0;
+  transition:
+    block-size 250ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 200ms ease,
+    content-visibility 250ms allow-discrete;
+}
+details[open]::details-content {
+  block-size: auto;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  details::details-content {
+    transition: opacity 150ms ease, content-visibility 150ms allow-discrete;
+  }
+  button:not(:disabled):active,
+  [role="button"]:active {
+    transform: none;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .material {
+    background: white;
+    backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .material {
+    background: white;
+    backdrop-filter: none;
+    border-color: var(--color-gray-500);
+  }
+}

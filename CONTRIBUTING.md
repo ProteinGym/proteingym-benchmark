@@ -8,11 +8,16 @@ After cloning the repository, you can start developing locally for both the benc
 
 We welcome public PRs adding new models to the benchmark. The goal of the
 benchmark is to advance the field, not to accumulate leaderboard entries, so
-submissions are evaluated on usability and and novelty, not on score alone.
+submissions are evaluated on usability and novelty, not on score alone.
 
 To keep the benchmark useful, every model submission must satisfy the
 criteria below. If you are in doubt, please open an issue to confirm
-suitability before working on your pull-request.
+suitability before working on your pull-request. These criteria apply to new
+submissions; some existing models do not fully meet them yet and are being
+brought into line.
+
+New models use the [evedesign](https://github.com/evedesignbio/evedesign)
+runner described in [models/README.md](models/README.md).
 
 ### 1. Contribute something the field can learn from
 
@@ -45,7 +50,8 @@ Concretely:
 
 - All weights, tokenizers, and other assets must be fetched and baked into
   the Docker image at **build time** (e.g. in the `Dockerfile`, via `RUN`
-  steps), never at `train`/`infer` runtime.
+  steps, as in [models/esmc/Dockerfile](models/esmc/Dockerfile)), never at
+  `train`/`embed` runtime.
 - No calls to external APIs, model hubs, license servers, telemetry/analytics
   endpoints, or any other network resource once the container is running.
 - In your model card, list every URL your Dockerfile or code touches during
@@ -70,25 +76,20 @@ Concretely:
 - **No malicious or obfuscated code:** the entrypoint and its dependencies
   are read as part of review; anything that tries to execute arbitrary
   commands, exfiltrate data, or otherwise behave outside the documented
-  `train`/`infer` contract will be rejected.
+  `train`/`embed` contract will be rejected.
 - **Complete model card:** see [models/README.md](models/README.md) for the
-  required entrypoints and structure. The card should describe the
+  required structure and model card fields. The card should describe the
   architecture, training data, and hyperparameters, not just report a score.
 - **One model per PR**, following the [PR checklist](.github/pull_request_template.md).
 
 ## Benchmarking
 
-The benchmarking system evaluates protein machine learning models using [DVC (Data Version Control)](https://dvc.org/) to orchestrate reproducible machine learning pipelines. It tests models on different datasets for supervised and zero-shot games by containerizing each model with Docker, running predictions, and calculating performance metrics. The system supports two environments: local development and CI/CD (GitHub Actions).
-
-### Key workflows
-1. **Local testing** - Fast iteration with Docker containers on your machine
-2. **CI validation** - Automated testing on pull requests to validate model changes
-
-The system uses DVC's matrix feature to automatically create pipeline stages for all dataset-model combinations, ensuring comprehensive testing across configurations.
+The benchmark uses [DVC](https://dvc.org/) to orchestrate reproducible pipelines.
+Each model is a Docker image, and DVC runs it on every dataset of the supervised
+or zero-shot game, then calculates metrics. The same pipelines run locally and in
+CI (GitHub Actions).
 
 ### Installation
-
-To install the local environment for the benchmarking system, you can do the following:
 
 ```shell
 $ python -m venv .venv
@@ -96,198 +97,92 @@ $ source .venv/bin/activate
 $ pip install -r requirements.txt
 ```
 
-### DVC Pipeline Configuration
+This installs DVC and [proteingym-base](https://github.com/ProteinGym/proteingym-base),
+which provides the dataset format and the `proteingym-base` CLI used for metrics.
 
-The benchmarking system uses DVC to manage reproducible pipelines. Each benchmark game (supervised/zero-shot) has separate configurations for different environments.
+Relative paths are resolved from the game folder.
 
-#### dvc.yaml Structure
+**models.json** – the model `name` and the local Docker `image`, tagged
+`<model-folder>:latest`:
 
-Each [dvc.yaml](benchmark/supervised/local/dvc.yaml) file defines a pipeline with multiple stages:
-
-1. **vars** - Declares configuration files to load:
-   - `default.yaml` - Environment-specific parameters
-   - `datasets.json` - List of datasets to test
-   - `models.json` - List of models to evaluate
-
-2. **stages** - Pipeline steps executed in order:
-   - **setup** - Creates output directories
-   - **create_training_job** - Builds Docker images and runs model training
-   - **calculate_metric** - Computes performance metrics from predictions
-
-The `matrix` feature allows DVC to automatically generate stages for all dataset-model combinations:
-
-```yaml
-create_training_job:
-  matrix:
-    dataset: ${datasets}
-    model: ${models}
-  cmd: ...
-  deps:
-    - ${item.dataset.input_filename}
-    - ${item.model.input_filename}
-```
-
-#### Dataset and Model Configuration
-
-**datasets.json** - Specifies which datasets to test:
-```json
-{
-  "datasets": [
-    {
-      "name": "charge_ladder",
-      "input_filename": "datasets/charge_ladder.pgdata"
-    }
-  ]
-}
-```
-
-**models.json** - Specifies which models to evaluate:
 ```json
 {
   "models": [
     {
       "name": "pls",
-      "input_filename": "models/pls/README.md"
+      "image": "pls:latest"
     }
   ]
 }
 ```
 
-You can generate your datasets and models JSON files by using the `proteingym-base` command as below:
-
-* `proteingym-base list-datasets datasets` will list all datasets under the folder `datasets`.
-* `proteingym-base list-models models` will list all models under the folder `models`. Pay attention that in order for a model to be listed, it needs to define its model card as `README.md` with YAML front matter in its root folder.
-* `jq` is used to filter the datasets and models.
+### Running locally
 
 ```shell
-proteingym-base list-datasets datasets | jq ... > benchmark/supervised/local/datasets.json
-proteingym-base list-models models | jq ... > benchmark/supervised/local/models.json
+docker build -t <model-folder>:latest models/<model-folder>
+dvc repro benchmark/zero_shot/dvc.yaml --single-item
 ```
 
-### Environment Comparison
+### CI
 
-The benchmarking system supports three execution environments, each with different purposes and configurations:
+The [cml.yaml](.github/workflows/cml.yaml) workflow runs on pull requests to `main`
+that touch `models/`. It:
 
-#### Local Environment
+1. works out which models changed (all models if `models.json`, a `dvc.yaml` or
+   `scripts/` changed),
+2. builds their images, or pulls them from the GitHub Container Registry cache
+   when the model folder's content hash is unchanged (fork PRs always build),
+3. narrows `models.json` to those models and replaces `datasets.json` with the
+   dummy dataset in [ci_datasets.json](.github/workflows/ci_datasets.json),
+4. runs `dvc repro` for both games and posts `benchmark/metrics.csv` as a PR comment.
 
-<ins>Purpose:</ins> Fast iteration and debugging during development
+A model only runs in CI if it is listed in `models.json`.
 
-<ins>Location:</ins> `benchmark/{supervised,zero_shot}/local/`
+### How to pass CI
 
-<ins>Configuration files:</ins>
-- `dvc.yaml`- Pipeline definition
-- `default.yaml` - Output directories and metrics
-- `datasets.json` - Datasets to test
-- `models.json` - Models to evaluate
-
-<ins>Pipeline stages:</ins>
-1. `setup` - Creates local directories
-2. `create_training_job` - Builds Docker images and runs containers locally
-3. `calculate_metric` - Computes metrics from predictions
-
-**How to run:**
-```shell
-# Generate dataset and model configurations
-proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder")) | map({name: .name, input_filename: .input_filename}) | {datasets: .}' > benchmark/supervised/local/datasets.json
-proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/supervised/local/models.json
-
-# Run the pipeline
-dvc repro benchmark/supervised/local/dvc.yaml --single-item
-```
-
-<ins>Advantages:</ins>
-- Quick feedback loop
-- No cloud costs
-- Easy debugging with local logs
-- Full control over execution
-
-#### CI Environment (GitHub Actions)
-
-<ins>Purpose:</ins> Automated validation on pull requests
-
-<ins>Location:</ins> [.github/workflows/cml.yaml](.github/workflows/cml.yaml)
-
-<ins>How it works:</ins>
-The CI environment closely mirrors the local environment, making local testing a reliable way to predict CI results. The workflow:
-
-1. **Setup** - Installs Python and CML (Continuous Machine Learning)
-2. **Generate configurations** - Creates minimal dataset/model lists for fast validation:
-   - Supervised: `charge_ladder`, `NEIME_2019` datasets
-   - Zero-shot: `ranganathan` dataset
-3. **Run DVC pipelines** - Executes both supervised and zero-shot benchmarks using `dvc repro`
-4. **Report results** - Posts metrics to PR as a comment using CML
-
-<ins>Key similarities to local:</ins>
-- Uses identical [dvc.yaml](benchmark/supervised/local/dvc.yaml) files
-- Runs Docker containers the same way
-- Produces the same metric outputs
-
-<ins>Key differences from local:</ins>
-- Automated trigger on PR creation/updates
-- Limited dataset/model selection for speed
-- Posts results as PR comments
-- Runs in Ubuntu environment (vs. your local OS)
-
-### How to Pass CI Validation
-
-The CI system validates that models work correctly before merging code. Follow these steps to ensure your changes pass:
-
-#### 1. Test Locally First
-
-Always run the same pipeline that CI uses before pushing:
+Reproduce the CI run locally before pushing:
 
 ```shell
-# For supervised models
-proteingym-base list-datasets datasets | jq 'map(select(.name == "charge_ladder" or .name == "NEIME_2019")) | map({name: .name, input_filename: .input_filename}) | {datasets: .}' > benchmark/supervised/local/datasets.json
-proteingym-base list-models models | jq '[.[] | select(.tags | contains(["supervised"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/supervised/local/models.json
-dvc repro benchmark/supervised/local/dvc.yaml --single-item
+docker build -t <model-folder>:latest models/<model-folder>
 
-# For zero-shot models
-proteingym-base list-datasets datasets | jq 'map(select(.name == "ranganathan")) | map({name: .name, input_filename: .input_filename}) | {datasets: .}' > benchmark/zero_shot/local/datasets.json
-proteingym-base list-models models | jq '[.[] | select(.tags | contains(["zero-shot"]))] | map({name: .name, input_filename: .input_filename}) | {models: .}' > benchmark/zero_shot/local/models.json
-dvc repro benchmark/zero_shot/local/dvc.yaml --single-item
+# limit models.json to your model, then use the CI dataset
+cp .github/workflows/ci_datasets.json benchmark/zero_shot/datasets.json
+cp datasets/splits/Dummy_test_P0DX94.splits.pgdata datasets/
+dvc repro benchmark/zero_shot/dvc.yaml --single-item
 ```
 
-#### 2. Common Failure Scenarios
+Use `benchmark/supervised/` for a supervised model. Don't commit the modified
+`datasets.json`/`models.json` (`git checkout benchmark/` restores them).
 
-**Docker build failures:**
-- **Cause:** Missing dependencies, syntax errors in Dockerfile
-- **Fix:** Test `docker build` manually with the same command from [dvc.yaml](benchmark/supervised/local/dvc.yaml)
-- **Check:** Ensure base images are accessible and all COPY/ADD paths exist
+#### Common failure scenarios
 
-**Model execution failures:**
-- **Cause:** Runtime errors, missing files, incorrect file paths
-- **Fix:** Run the Docker container manually and check logs:
+**Docker build failures**
+- Run `docker build -t <model-folder>:latest models/<model-folder>` directly.
+- Check that every `COPY` path exists and that dependencies are pinned in `pyproject.toml`/`uv.lock`.
+
+**Model execution failures**
+- Run the container by hand:
   ```shell
   docker run --rm \
-  -v $(pwd)/datasets/charge_ladder.pgdata:/charge_ladder.pgdata \
-  -v $(pwd)/models/your-model/README.md:/README.md \
-  -v $(pwd)/output/prediction:/opt/ml/model \
-  your-model:latest train --dataset-file /charge_ladder.pgdata --model-card-file /README.md
+    -v $(pwd)/datasets/splits/Dummy_test_P0DX94.splits.pgdata:/data.pgdata \
+    -v $(pwd)/output:/opt/program/output \
+    <model-folder>:latest train \
+    --dataset-file /data.pgdata --target charge --split random --test-fold 0
   ```
-- **Check:** Verify output CSV has required columns (`test`, `pred`)
+- Check that `output/Dummy_test_P0DX94_predictions.pgdata` was written.
 
-> [!TIP]
-> For `--dataset-file /charge_ladder.pgdata` and `--model-card-file /README.md`, you provide the paths inside the containers, which you mount in the previous `-v`.
+**Metric calculation failures**
+- Inspect the predictions under `benchmark/<game>/prediction/` and check that the
+  model scored every variant of the requested target.
 
-**Metric calculation failures:**
-- **Cause:** Missing columns in prediction CSV, incorrect data format
-- **Fix:** Inspect the prediction CSV file in `benchmark/*/local/prediction/`
-- **Check:** Ensure columns match `--actual-vector-col` and `--predict-vector-col` parameters
-
-**Permission errors:**
-- **Cause:** Docker volume mount issues, file permissions
-- **Fix:** Ensure output directories exist and are writable
-- **Check:** The `setup` stage should create all necessary directories
-
-#### 3. Quick Validation Checklist
+#### Checklist
 
 Before pushing:
-- [ ] Local pipeline completes: `dvc repro benchmark/*/local/dvc.yaml --single-item`
-- [ ] Metric files exist: `ls benchmark/*/local/metric/*.json`
-- [ ] Docker images build: `docker build -f models/your-model/Dockerfile .`
-- [ ] Model runs successfully: `docker run ... your-model:latest train ...`
-- [ ] Required tags are set in model README (e.g., `tags: ["supervised"]` or `tags: ["zero-shot"]`)
+- [ ] The image builds: `docker build -t <model-folder>:latest models/<model-folder>`
+- [ ] The local pipeline completes: `dvc repro benchmark/<game>/dvc.yaml --single-item`
+- [ ] Metric files exist: `ls benchmark/<game>/metric/`
+- [ ] The model card has `name`, `model_class` and the right `tags` (`zero-shot` or `supervised`)
+- [ ] The model is listed in `benchmark/<game>/models.json`
 
 ## Static website
 
@@ -357,17 +252,29 @@ $ npm run lint
 
 ```
 src/
-├── routes/             # SvelteKit routes (pages)
-│   ├── +page.svelte    # Homepage
-│   ├── +layout.svelte  # Root layout
-│   └── [slug]/         # Dynamic routes for model cards
-├── lib/                # Shared utilities and components
-│   ├── stores/         # Svelte stores for state management
-│   ├── types/          # TypeScript type definitions
-│   └── assets/         # Favicon and log
-├── app.html            # HTML template
-└── app.css             # Global styles
+├── routes/                      # SvelteKit routes (pages)
+│   ├── +page.svelte             # Homepage
+│   ├── +layout.svelte           # Root layout
+│   ├── model/                   # Model list and model card pages (model/[slug])
+│   ├── datasets/                # Dataset list and dataset pages (datasets/[slug])
+│   └── benchmark/[setting]/     # Leaderboard per setting, with plots/
+├── lib/                         # Shared code: components, stores, types, stats
+│   ├── components/
+│   ├── stores/                  # Svelte stores (models, datasets, benchmark)
+│   ├── types/
+│   └── assets/                  # Favicon and logo
+├── app.html                     # HTML template
+└── app.css                      # Global styles
 ```
+
+The site reads:
+- `models/*/README.md` – model cards (front matter + Markdown),
+- `benchmark/metrics.csv` – benchmark results,
+- `static/manifests.json` and `static/histograms.json` – dataset metadata, synced
+  from Hugging Face by [sync-datasets.yml](.github/workflows/sync-datasets.yml).
+
+Unit tests for the statistics code live in `scripts/*.test.ts` and run with
+`node scripts/<name>.test.ts`.
 
 ### Technology Stack
 
@@ -376,4 +283,4 @@ src/
 - **Styling:** Tailwind CSS 4.x with Typography plugin
 - **Build Tool:** Vite 7.x
 - **Markdown:** [Marked](https://github.com/markedjs/marked) for parsing model card content
-- **Code Quality:** ESLint, Prettier, svelte-check 
+- **Code Quality:** ESLint, Prettier, svelte-check

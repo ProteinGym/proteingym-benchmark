@@ -1,0 +1,39 @@
+[project]
+name = "proteingym-models-esmc"
+version = "0.1.0"
+description = "esmc model (evedesign-wrapped) submitted to ProteinGym"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "typer~=0.16.0",
+    "proteingym-base",
+    # model.py subclasses evedesign.models.esm2.ESM2; the [esm2] extra pulls in
+    # torch + transformers
+    "evedesign[esm2]",
+    "polars[pyarrow]~=1.31.0",
+    "dill~=0.3.8",
+    # first release with native ESMC support
+    "transformers>=5.19.0",
+    "torch",
+]
+
+[project.scripts]
+esmc = "proteingym.models.esmc.__main__:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+proteingym-base = { git = "https://github.com/ProteinGym/proteingym-base.git" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/proteingym"]
+
+[tool.ruff]
+line-length = 88
+
+[dependency-groups]
+dev = [
+    "pytest~=8.4.1",
+]

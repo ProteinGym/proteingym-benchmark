@@ -10,6 +10,9 @@ dependencies = [
     "loguru>=0.7.3",
     "numpy>=2.4.2",
     "proteingym-base",
+    "polars[pyarrow]",
+    "evedesign>=0.0.6",
+    "dill~=0.3.8",
 ]
 
 [project.scripts]
