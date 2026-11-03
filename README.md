@@ -1,87 +1,87 @@
 # ProteinGym2 Benchmark
 
+This repository holds the ProteinGym2 model zoo, the DVC pipelines that benchmark
+those models, and the website that shows model cards, datasets and results.
+
 ## Models
 
-The models are included in the [models](models/) folder, where each model occupies a subfolder as its repo.
+The models are in the [models](models/) folder. Each
+model is a small Python package with a Dockerfile, run through
+[evedesign](https://github.com/evedesignbio/evedesign), which we use
+to standardize model building and scoring.
 
-A model repo contains its README.md as a model card, which comes in two parts:
-- Metadata, which is a YAML section at the top, i.e., front matter.
-- Text descriptions, which is a Markdown file, including summary and descriptions of the model.
+A model's `README.md` (modelcard) contains:
+- Metadata: a YAML front matter section at the top (name, evedesign model class, tags, hyper parameters)
+- A Markdown description of the model
 
-For more information, you can reference Hugging Face's [model cards](https://huggingface.co/docs/hub/en/model-cards).
+See [models/README.md](models/README.md) for the full structure, and
+[CONTRIBUTING.md](CONTRIBUTING.md) for the submission policy.
 
 ## Datasets
 
-The datasets are included in the [dataset](datasets/) folder, where each dataset is an archived file with suffix `pgdata`.
+Datasets are `.pgdata` archives built with
+[proteingym-base](https://github.com/ProteinGym/proteingym-base) (see its
+[archive guide](https://github.com/ProteinGym/proteingym-base?tab=readme-ov-file#archive-data)).
+The full collection is published on Hugging Face at
+[ProteinGym](https://huggingface.co/datasets/ProteinGym/ProteinGym2.0).
 
-In order to build the archived file for each dataset, [proteingym-base](https://github.com/ProteinGym/proteingym-base) is used.
-
-You can reference [this guide](https://github.com/ProteinGym/proteingym-base?tab=readme-ov-file#archive-data) to build the archived dataset.
+The [datasets](datasets/) folder holds a few local archives: `original/` contains
+plain datasets and `splits/` contains datasets with cross-validation splits
+(`*.splits.pgdata`), which the benchmark consumes.
 
 ## Benchmark
 
-The benchmark is defined in the [benchmark](benchmark/) folder, where there exist two games: supervised and zero-shot. Each game has its selected list of models and datasets defined in `dvc.yaml`.
+The benchmark is defined in the [benchmark](benchmark/) folder, with two regimes:
 
-- Supervised game is defined in this [dvc.yaml](benchmark/supervised/dvc.yaml).
-- Zero-shot game is defined in this [dvc.yaml](benchmark/zero_shot/dvc.yaml).
+- Supervised: [benchmark/supervised/dvc.yaml](benchmark/supervised/dvc.yaml)
+- Zero-shot: [benchmark/zero_shot/dvc.yaml](benchmark/zero_shot/dvc.yaml)
 
-The models and datasets are defined in `vars` at the top, and DVC translates `vars` into a matrix, which is namely a loop defined as the following pseudo-code:
+Each folder has a `default.yaml` (output folders, metrics, folds),
+a `datasets.json` and a `models.json`. DVC expands them into a matrix, roughly:
 
 ```python
 for dataset in datasets:
     for model in models:
-        predict()
+        for fold in folds:              # supervised only
+            create_training_job()       # docker run <image> train ...
+            calculate_metric()          # proteingym-base evaluate-subset / evaluate-zero-shot
+        aggregate_metrics()             # scripts/utils.py aggregate
 
-for dataset in datasets:
-    for model in models:
-        calculate_metric()
+generate_metrics_csv()                  # scripts/utils.py generate-csv -> benchmark/metrics.csv
 ```
 
 ### Prerequisites
 
-In order to benchmark a selected list of models and datasets, it depends on the following criteria:
-1. Generate your own `datasets.json`.
-2. Have Docker model images locally.
-3. Create your own `models.json`.
+1. Install the Python environment (see [CONTRIBUTING.md](CONTRIBUTING.md#installation)).
+2. Generate `datasets.json`.
+3. Have the model Docker images locally.
+4. List the models in `models.json`.
 
-#### Step 1: Generate `datasets.json`
-
-To generate the `datasets.json` , you need to use the `generate_datasets_list.py` script:
-
-* This will create the datasets.json in `benchmark/supervised` and in `benchmark/zero_shot`
-* This will also create the dataset-list.json and manifest.toml in `static` and `static/datasets`. We use these files to parse the datasets on the web-page.
-* `jq` can be used to filter the dataset for specific splits or targets:
+#### Generate `datasets.json`
 
 ```shell
 python scripts/generate_datasets_list.py
+```
+
+This writes `datasets.json` in both `benchmark/supervised` and `benchmark/zero_shot`,
+with one entry per dataset, split and target in `datasets/splits/`. Use `jq` to
+filter it, for example to the `random` split:
+
+```shell
 jq '{datasets: [.datasets[] | select(.split == "random")]}' benchmark/supervised/datasets.json
 ```
 
-For more information, you can check out [CONTRIBUTING.md](CONTRIBUTING.md).
+#### Build a Docker model image
 
-#### Step 2: Build a Docker model image
-
-The DVC pipelines run based on the local Docker images of models. The local images can be either built from Dockerfile or pulled from a remote Docker registry.
-
-To build an image from Dockerfile:
+The pipelines run local Docker images, tagged `<model-folder>:latest`:
 
 ```shell
-docker build \
-  -f models/pls/Dockerfile \
-  -t pls:latest \
-  models/pls
+docker build -t pls:latest models/pls
 ```
 
-To pull an image from a remote Docker registry:
+#### Create `models.json`
 
-```shell
-docker pull <repo>/pls:latest
-docker tag <repo>/pls:latest pls:latest
-```
-
-#### Step 3: Create `models.json`
-
-The example `models.json` looks like below, with a list of models defined by its `name` and local `image` name:
+Each entry has the model `name` and its local `image`:
 
 ```json
 {
@@ -94,47 +94,46 @@ The example `models.json` looks like below, with a list of models defined by its
 }
 ```
 
-### Getting started
+### Running
 
-With `datasets.json` and `models.json` present in each game's folder: namely [supervised](benchmark/supervised/) and [zero_shot](benchmark/zero_shot/), and Docker is running with the local model images, you can start to benchmark.
+With `datasets.json` and `models.json` in the game folder and Docker running:
 
-#### Supervised
-
-You can benchmark a group of supervised models:
 ```shell
-dvc repro benchmark/supervised/dvc.yaml -s
-```
-
-#### Zero-shot
-
-You can benchmark a group of zero-shot models:
-```shell
-dvc repro benchmark/zero_shot/dvc.yaml -s
+dvc repro benchmark/supervised/dvc.yaml --single-item
+dvc repro benchmark/zero_shot/dvc.yaml --single-item
 ```
 
 > [!NOTE]
-> By default, all pipelines configured by `dvc.yaml` will be recursively checked when executing `dvc repro`. As a result, if either `datasets.json` or `models.json` are missing in any pipelines, an error will be thrown. So the command option `--single-item` (`-s`) is used to restrict what gets checked by turning off the recursive search for changed dependencies of all pipelines.
->
-> For example, if you run `dvc repro ... -s` in `supervised` folder, only `datasets.json` and `models.json` in `supervised` folder are checked for its `dvc.yaml` dependencies, excluding the `zero_shot` folders.
+> By default `dvc repro` checks every `dvc.yaml` in the repository, so a missing
+> `datasets.json` or `models.json` in the other game would raise an error.
+> `--single-item` (`-s`) restricts it to the given pipeline.
 
 > [!TIP]
-> To run specific parts of the pipeline with DVC, you can run `dvc repro --downstream <stage_name>`. For example, `dvc repro --downstream calculate_metric`.
+> - Run part of a pipeline: `dvc repro --downstream <stage_name>`, e.g. `dvc repro --downstream calculate_metric`.
+> - Ignore the cache and rerun: `dvc repro --force`.
+> - Keep going when one dataset/model pair fails: `dvc repro --keep-going`.
 
-> [!TIP]
-> To ignore cache and run anew, you can run `dvc repro --force`.
+## CI
 
-> [!TIP]
-> By default, DVC will stop execution when any stage fails. If one dataset-model pair's metric calculation fails (e.g., due to a missing prediction file, script error, or invalid data), DVC will halt the entire pipeline run. In order to prevent this blocking behavior, you can use: `dvc repro --keep-going`. This flag tells DVC to continue executing other stages even if some fail.
-
-## CML pipeline
-
-The CML (Continuous Machine Learning) pipeline is configured in [cml.yaml](.github/workflows/cml.yaml), which will be triggered every time there is a PR submitted.
+The [cml.yaml](.github/workflows/cml.yaml) workflow runs on every pull request to
+`main` that changes something under `models/`. It builds (or reuses from the
+GitHub Container Registry) the images of the models changed in the PR, or of all
+models if `models.json`, a `dvc.yaml` or `scripts/` changed, runs both games
+on a small dummy dataset ([ci_datasets.json](.github/workflows/ci_datasets.json)),
+and posts the resulting metrics as a PR comment.
 
 > [!IMPORTANT]
-> If you add a new dataset in [datasets](datasets/) or add a new model in [models](models/), please also update the `datasets.json` and `models.json` respectively in either [supervised](benchmark/supervised/) folder or [zero_shot](benchmark/zero_shot/) folder.
->
-> * For datasets, keep the folder name `/home/runner/work/proteingym-benchmark/proteingym-benchmark/datasets/` (as this is the path where it is located in the runner) and only change your file name.
-> * For models, it is in the format `<model_folder_name>:latest`, where `model_folder_name` is the root folder name of each model in [models](models).
+> When you add a model, also add it to `models.json` in the
+> [supervised](benchmark/supervised/models.json) or [zero_shot](benchmark/zero_shot/models.json)
+> folder, with `image` set to `<model-folder>:latest`. CI only runs models listed there.
 
+[benchmark/metrics.csv](benchmark/metrics.csv) holds the benchmark results shown on the website.
 
-You can find the latest metrics result in [metrics.csv](benchmark/metrics.csv) as the single source of truth, as the latest CML pipeline will commit the metrics back in the main branch, once it is merged.
+## Website
+
+The SvelteKit website in [src/](src/) is deployed to GitHub Pages on every push to
+`main` ([deploy.yml](.github/workflows/deploy.yml)). It reads the model cards in
+`models/*/README.md`, `benchmark/metrics.csv`, and the dataset metadata in
+`static/manifests.json` and `static/histograms.json`, which
+[sync-datasets.yml](.github/workflows/sync-datasets.yml) pulls from Hugging Face
+every six hours. See [CONTRIBUTING.md](CONTRIBUTING.md#static-website) for local development.
