@@ -19,6 +19,10 @@
     {
       "name": "eve",
       "image": "eve:latest"
+    },
+    {
+      "name": "onexi_genesis",
+      "image": "onexi_genesis:latest"
     }
   ]
 }
