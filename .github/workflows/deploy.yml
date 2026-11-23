@@ -24,6 +24,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # The website globs /models/*/README.md at build time, and the model
+          # cards live in the proteingym-models submodule. Without this the site
+          # builds with no models at all.
+          submodules: recursive
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

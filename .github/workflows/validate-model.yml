@@ -1,0 +1,276 @@
+name: validate-model
+
+# Validates models through the real DVC pipelines on the dummy CI dataset.
+#
+# Runs in two situations:
+#
+#   * a pull request in ProteinGym/proteingym-models (which calls this workflow
+#     as a reusable one). The benchmark is checked out at main and the pull
+#     request head is overlaid at models/, so a model submission needs no edit
+#     in this repository at all.
+#   * a pull request here, which validates the pipelines against the models/
+#     submodule.
+#
+# models.json is never edited by a contributor: it is synthesised from the model
+# cards by scripts/generate_models_list.py, so a new model folder is picked up
+# automatically. The committed lists stay the published set.
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  pull_request:
+    branches: main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      packages: write
+      contents: read
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      REGISTRY: ghcr.io
+      # false when a model submission in proteingym-models called us
+      OWN_PR: ${{ github.repository == 'ProteinGym/proteingym-benchmark' }}
+
+    steps:
+      # ---------------------------------------------------------------- checkout
+      - name: Check out the benchmark (own pull request)
+        if: env.OWN_PR == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+          submodules: recursive
+
+      - name: Check out the benchmark (model submission)
+        if: env.OWN_PR != 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ProteinGym/proteingym-benchmark
+          ref: main
+          fetch-depth: 0
+          lfs: true
+
+      - name: Overlay the submitted models at the pull request head
+        if: env.OWN_PR != 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: models
+          fetch-depth: 0
+
+      # ------------------------------------------------------------ environment
+      - name: Install system dependencies for CML
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev \
+                                  libjpeg-dev libgif-dev librsvg2-dev
+
+      - uses: iterative/setup-cml@v2
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install requirements
+        run: pip install -r requirements.txt
+
+      # --------------------------------------------------------- which models?
+      - name: Work out which models to validate
+        id: scope
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+
+          if [ "$OWN_PR" != "true" ]; then
+            # A model submission: compare the overlaid checkout against its
+            # base. FETCH_HEAD is used because a ref-pinned checkout does not
+            # reliably create origin/<branch>.
+            git -C models fetch --no-tags origin "$BASE_REF"
+            changed_files=$(git -C models diff --name-only FETCH_HEAD...HEAD)
+            # Keep only top-level directories that are really model folders, so
+            # a pull request touching .github/ or docs/ does not look like one.
+            changed=$(echo "$changed_files" | grep -oE '^[^/]+/' | sed 's#/$##' \
+                      | sort -u \
+                      | while read -r d; do
+                          [ -f "models/$d/Dockerfile" ] && echo "$d"
+                        done | paste -sd, -)
+            # A change to shared docs/config touches no model folder.
+            [ -z "$changed" ] && changed=NONE
+          else
+            # Our own pull request: anything touching the pipelines, the scripts
+            # or the models pin means revalidate everything.
+            git fetch --no-tags origin "$BASE_REF"
+            changed_files=$(git diff --name-only FETCH_HEAD...HEAD)
+            if echo "$changed_files" | grep -qE '^(benchmark/|scripts/|models$|requirements.txt)'; then
+              changed=ALL
+            else
+              changed=NONE
+            fi
+          fi
+
+          echo "changed_models=$changed" >> $GITHUB_OUTPUT
+          echo "Models to validate: $changed"
+
+      - name: Nothing to validate
+        if: steps.scope.outputs.changed_models == 'NONE'
+        run: echo "No model folder changed; skipping the pipeline."
+
+      # ------------------------------------------------------------ build images
+      - name: Log in to GitHub Container Registry
+        if: steps.scope.outputs.changed_models != 'NONE'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Build or reuse model images (content-hash tagged)
+        if: steps.scope.outputs.changed_models != 'NONE'
+        env:
+          # Only a pull request from this repository can push to the private
+          # GHCR cache; a submission from a fork always builds locally.
+          CAN_USE_CACHE: ${{ github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch' }}
+          CHANGED_MODELS: ${{ steps.scope.outputs.changed_models }}
+        run: |
+          set -uo pipefail
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          : > image_map.txt
+
+          for model_folder in models/*/; do
+            [ -f "${model_folder}Dockerfile" ] || continue
+            model_name=$(basename "$model_folder")
+
+            if [ "$CHANGED_MODELS" != "ALL" ]; then
+              case ",${CHANGED_MODELS}," in
+                *",${model_name},"*) ;;
+                *) continue ;;
+              esac
+            fi
+
+            hash=$(git -C models ls-files -s "$model_name" | git hash-object --stdin)
+            hash=${hash:0:12}
+            remote="${REGISTRY}/${OWNER}/${model_name}:${hash}"
+            local="${model_name}:${hash}"
+
+            if [ "$CAN_USE_CACHE" = "true" ] && docker manifest inspect "$remote" > /dev/null 2>&1; then
+              echo "Reusing cached image for ${model_name}"
+              docker pull -q "$remote"
+              image="$remote"
+            else
+              echo "Building image for ${model_name}"
+              docker build -f "${model_folder}Dockerfile" -t "$local" "$model_folder"
+              image="$local"
+              if [ "$CAN_USE_CACHE" = "true" ]; then
+                docker tag "$local" "$remote"
+                for attempt in 1 2 3; do
+                  docker push -q "$remote" && break
+                  [ "$attempt" = 3 ] && echo "::warning::could not cache ${remote}"
+                  sleep $((attempt * 15))
+                done
+              fi
+            fi
+
+            echo "${model_name}:latest=${image}" >> image_map.txt
+          done
+
+          echo "Images:"; cat image_map.txt
+
+      # --------------------------------------------- synthesise the model lists
+      - name: Synthesise models.json from the model cards
+        if: steps.scope.outputs.changed_models != 'NONE'
+        env:
+          CHANGED_MODELS: ${{ steps.scope.outputs.changed_models }}
+        run: |
+          set -euo pipefail
+          # The model card is the source of truth; nobody edits models.json to
+          # get a model validated.
+          if [ "$CHANGED_MODELS" = "ALL" ]; then
+            python -m scripts.generate_models_list
+          else
+            python -m scripts.generate_models_list --only "$CHANGED_MODELS"
+          fi
+
+          # Repoint each entry at the image actually built or pulled above.
+          python - <<'PY'
+          import json, pathlib
+          resolved = dict(
+              line.split("=", 1)
+              for line in pathlib.Path("image_map.txt").read_text().split()
+              if "=" in line
+          )
+          for game in ("supervised", "zero_shot"):
+              p = pathlib.Path("benchmark") / game / "models.json"
+              data = json.loads(p.read_text())
+              kept = []
+              for model in data["models"]:
+                  if model["image"] in resolved:
+                      model["image"] = resolved[model["image"]]
+                      kept.append(model)
+                  else:
+                      print(f"{game}: no image for {model['image']}, dropping")
+              data["models"] = kept
+              p.write_text(json.dumps(data, indent=2) + "\n")
+              print(f"{game}: {len(kept)} model(s) to run")
+          PY
+
+      - name: Set up CI datasets
+        if: steps.scope.outputs.changed_models != 'NONE'
+        run: |
+          cp .github/workflows/ci_datasets.json benchmark/supervised/datasets.json
+          cp .github/workflows/ci_datasets.json benchmark/zero_shot/datasets.json
+          cp .github/workflows/Dummy_test_P0DX94.splits.pgdata datasets/
+          # Start from an empty metrics.csv so the report covers only this run.
+          rm -f benchmark/metrics.csv
+
+      - name: Run benchmarking
+        if: steps.scope.outputs.changed_models != 'NONE'
+        run: |
+          for game in supervised zero_shot; do
+            if [ "$(jq '.models | length' benchmark/$game/models.json)" -gt 0 ]; then
+              dvc repro benchmark/$game/dvc.yaml --single-item
+            else
+              echo "Skipping $game: no models to validate"
+            fi
+          done
+
+      - name: Create PR report
+        if: steps.scope.outputs.changed_models != 'NONE'
+        env:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          summary=$(python - <<'PY'
+          import polars as pl
+
+          df = pl.read_csv("benchmark/metrics.csv")
+          keys = ["game", "model", "split"]
+          metrics = [c for c, t in df.schema.items() if c not in keys and t.is_numeric()]
+          summary = (
+              df.group_by(keys)
+              .agg(pl.len().alias("n_datasets"), *[pl.col(c).mean().round(3) for c in metrics])
+              .sort(keys)
+          )
+          # Build the markdown by hand: polars' table printer wraps long headers.
+          print("| " + " | ".join(summary.columns) + " |")
+          print("|" + "---|" * len(summary.columns))
+          for row in summary.iter_rows():
+              print("| " + " | ".join(str(v) for v in row) + " |")
+          PY
+          )
+
+          cat <<EOF > report.md
+          ✅ The benchmark has been finished successfully.
+          📈 Metrics averaged per model across datasets:
+
+          ${summary}
+
+          <sub>Scores on the dummy CI dataset are meaningless; this only checks
+          that each model builds, runs and produces a scorable prediction set.</sub>
+          EOF
+
+          cml comment create report.md

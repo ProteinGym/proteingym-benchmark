@@ -7,6 +7,30 @@ from the repository root first:
 pip install -r requirements.txt
 ```
 
+## generate_models_list.py
+
+Builds `benchmark/supervised/models.json` and `benchmark/zero_shot/models.json`
+from the model cards in `models/`. The card is the single source of truth: its
+`name` is the model id used in results, its `tags` decide the game (`zero-shot`
+or `supervised`), and the image is always `<model-folder>:latest`.
+
+```shell
+python -m scripts.generate_models_list                   # both games, every model
+python -m scripts.generate_models_list --only esm2,pls   # restrict to these folders
+python -m scripts.generate_models_list --check           # non-zero if lists have drifted
+```
+
+Regenerate after bumping the `models` submodule. `--only` is what
+[validate-model.yml](../.github/workflows/validate-model.yml) uses to synthesise
+an ephemeral list covering just the models a pull request touched -- which is why
+submitting a model to
+[proteingym-models](https://github.com/ProteinGym/proteingym-models) needs no
+change in this repository.
+
+Requires the `models` submodule to be checked out
+(`git submodule update --init models`); use `--models-dir` to point at a model
+tree somewhere else.
+
 ## generate_datasets_list.py
 
 Builds `benchmark/supervised/datasets.json` and `benchmark/zero_shot/datasets.json`

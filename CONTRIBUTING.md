@@ -6,6 +6,12 @@ After cloning the repository, you can start developing locally for both the benc
 
 ## Model Submission Policy
 
+> [!IMPORTANT]
+> Models are submitted to [proteingym-models](https://github.com/ProteinGym/proteingym-models), which this
+> repository mounts as a git submodule at `models/`. Open your pull request
+> there; nothing in this repository needs to change for your model to be
+> validated by CI.
+
 We welcome public PRs adding new models to the benchmark. The goal of the
 benchmark is to advance the field, not to accumulate leaderboard entries, so
 submissions are evaluated on usability and novelty, not on score alone.
@@ -16,8 +22,10 @@ suitability before working on your pull-request. These criteria apply to new
 submissions; some existing models do not fully meet them yet and are being
 brought into line.
 
-New models use the [evedesign](https://github.com/evedesignbio/evedesign)
-runner described in [models/README.md](models/README.md).
+New models use the shared `evedesign-proteingym` entrypoint from
+[evedesign](https://github.com/evedesignbio/evedesign), described in the
+[proteingym-models README](https://github.com/ProteinGym/proteingym-models#readme). The runner is not vendored
+into model folders.
 
 ### 1. Contribute something the field can learn from
 
@@ -50,7 +58,7 @@ Concretely:
 
 - All weights, tokenizers, and other assets must be fetched and baked into
   the Docker image at **build time** (e.g. in the `Dockerfile`, via `RUN`
-  steps, as in [models/esmc/Dockerfile](models/esmc/Dockerfile)), never at
+  steps, as in [esmc/Dockerfile](https://github.com/ProteinGym/proteingym-models/blob/main/esmc/Dockerfile)), never at
   `train`/`embed` runtime.
 - No calls to external APIs, model hubs, license servers, telemetry/analytics
   endpoints, or any other network resource once the container is running.
@@ -77,7 +85,7 @@ Concretely:
   are read as part of review; anything that tries to execute arbitrary
   commands, exfiltrate data, or otherwise behave outside the documented
   `train`/`embed` contract will be rejected.
-- **Complete model card:** see [models/README.md](models/README.md) for the
+- **Complete model card:** see the [proteingym-models README](https://github.com/ProteinGym/proteingym-models#readme) for the
   required structure and model card fields. The card should describe the
   architecture, training data, and hyperparameters, not just report a score.
 - **One model per PR**, following the [PR checklist](.github/pull_request_template.md).
@@ -116,36 +124,63 @@ Relative paths are resolved from the game folder.
 }
 ```
 
+You never write this by hand: it is generated from the model cards.
+
+```shell
+python -m scripts.generate_models_list              # every model, both games
+python -m scripts.generate_models_list --only pls   # restrict to one folder
+```
+
 ### Running locally
 
 ```shell
+git submodule update --init models
 docker build -t <model-folder>:latest models/<model-folder>
+python -m scripts.generate_models_list --only <model-folder>
 dvc repro benchmark/zero_shot/dvc.yaml --single-item
 ```
 
 ### CI
 
-The [cml.yaml](.github/workflows/cml.yaml) workflow runs on pull requests to `main`
-that touch `models/`. It:
+The [validate-model.yml](.github/workflows/validate-model.yml) workflow is a
+reusable workflow. A pull request in
+[proteingym-models](https://github.com/ProteinGym/proteingym-models) calls it;
+it also runs on pull requests here. It:
 
-1. works out which models changed (all models if `models.json`, a `dvc.yaml` or
-   `scripts/` changed),
-2. builds their images, or pulls them from the GitHub Container Registry cache
+1. checks this repository out at `main` and overlays the submitted models at
+   `models/` (for a pull request here, it uses the `models` submodule instead),
+2. works out which model folders the pull request changed (every model, when a
+   pull request here touches `benchmark/`, `scripts/`, `requirements.txt` or the
+   submodule pin),
+3. builds their images, or pulls them from the GitHub Container Registry cache
    when the model folder's content hash is unchanged (fork PRs always build),
-3. narrows `models.json` to those models and replaces `datasets.json` with the
-   dummy dataset in [ci_datasets.json](.github/workflows/ci_datasets.json),
-4. runs `dvc repro` for both games and posts `benchmark/metrics.csv` as a PR comment.
+4. **synthesises `models.json` from those models' cards** with
+   [scripts/generate_models_list.py](scripts/generate_models_list.py), and
+   replaces `datasets.json` with the dummy dataset in
+   [ci_datasets.json](.github/workflows/ci_datasets.json),
+5. runs `dvc repro` for both games and posts `benchmark/metrics.csv` as a PR comment.
 
-A model only runs in CI if it is listed in `models.json`.
+Because step 4 reads the card rather than a checked-in list, a new model is
+picked up automatically — you do not add it to `models.json` anywhere. The card
+must carry a `name` and a `zero-shot` or `supervised` tag; CI fails loudly if it
+does not.
+
+Scores on the dummy dataset are meaningless. CI only proves the model builds,
+runs and produces a prediction set the metric step can score.
 
 ### How to pass CI
 
-Reproduce the CI run locally before pushing:
+Reproduce the CI run locally before pushing. Clone this repository alongside
+your model work and point the submodule at your branch, or just copy your model
+folder into `models/`.
 
 ```shell
+git submodule update --init models
+
 docker build -t <model-folder>:latest models/<model-folder>
 
-# limit models.json to your model, then use the CI dataset
+# generate models.json for just your model, then use the CI dataset
+python -m scripts.generate_models_list --only <model-folder>
 cp .github/workflows/ci_datasets.json benchmark/zero_shot/datasets.json
 cp datasets/splits/Dummy_test_P0DX94.splits.pgdata datasets/
 dvc repro benchmark/zero_shot/dvc.yaml --single-item
@@ -182,7 +217,11 @@ Before pushing:
 - [ ] The local pipeline completes: `dvc repro benchmark/<game>/dvc.yaml --single-item`
 - [ ] Metric files exist: `ls benchmark/<game>/metric/`
 - [ ] The model card has `name`, `model_class` and the right `tags` (`zero-shot` or `supervised`)
-- [ ] The model is listed in `benchmark/<game>/models.json`
+- [ ] The model card sets `device: "cpu"` — CI has no GPU
+- [ ] `ENTRYPOINT` is `["uv", "run", "evedesign-proteingym"]`; no `__main__.py` is vendored
+
+You do **not** need to touch `benchmark/<game>/models.json`; CI derives it from
+your model card.
 
 ## Static website
 

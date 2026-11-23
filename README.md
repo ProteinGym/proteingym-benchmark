@@ -1,21 +1,35 @@
-# ProteinGym2 Benchmark
+# ProteinGym Benchmark
 
-This repository holds the ProteinGym2 model zoo, the DVC pipelines that benchmark
-those models, and the website that shows model cards, datasets and results.
+This repository holds the DVC pipelines that benchmark the ProteinGym model zoo
+and the website that shows model cards, datasets and results.
 
 ## Models
 
-The models are in the [models](models/) folder. Each
-model is a small Python package with a Dockerfile, run through
-[evedesign](https://github.com/evedesignbio/evedesign), which we use
-to standardize model building and scoring.
+The model zoo lives in its own repository,
+[proteingym-models](https://github.com/ProteinGym/proteingym-models), mounted
+here as a git submodule at [models](models/):
+
+```shell
+git submodule update --init models      # after cloning
+```
+
+Each model is a model card, a container recipe and pinned dependencies, run
+through the shared `evedesign-proteingym` entrypoint from
+[evedesign](https://github.com/evedesignbio/evedesign), which we use to
+standardize model building and scoring.
 
 A model's `README.md` (modelcard) contains:
 - Metadata: a YAML front matter section at the top (name, evedesign model class, tags, hyper parameters)
 - A Markdown description of the model
 
-See [models/README.md](models/README.md) for the full structure, and
-[CONTRIBUTING.md](CONTRIBUTING.md) for the submission policy.
+See the [proteingym-models README](https://github.com/ProteinGym/proteingym-models#readme)
+for the full structure, and [CONTRIBUTING.md](CONTRIBUTING.md) for the
+submission policy.
+
+> [!IMPORTANT]
+> Submit models to [proteingym-models](https://github.com/ProteinGym/proteingym-models),
+> not here. A model submission needs no change in this repository: CI reads the
+> model card to work out how to run it.
 
 ## Datasets
 
@@ -79,20 +93,19 @@ The pipelines run local Docker images, tagged `<model-folder>:latest`:
 docker build -t pls:latest models/pls
 ```
 
-#### Create `models.json`
+#### Generate `models.json`
 
-Each entry has the model `name` and its local `image`:
+`models.json` is derived from the model cards, never hand-edited:
 
-```json
-{
-  "models": [
-    {
-      "name": "pls",
-      "image": "pls:latest"
-    }
-  ]
-}
+```shell
+python -m scripts.generate_models_list              # both games, every model
+python -m scripts.generate_models_list --only pls   # just one, for a quick run
 ```
+
+Each card's `name` becomes the model id and its `tags` (`zero-shot` /
+`supervised`) decide which game it lands in; the image is always
+`<model-folder>:latest`. Regenerate after bumping the `models` submodule;
+`--check` exits non-zero when the committed lists have drifted from the cards.
 
 ### Running
 
@@ -115,17 +128,31 @@ dvc repro benchmark/zero_shot/dvc.yaml --single-item
 
 ## CI
 
-The [cml.yaml](.github/workflows/cml.yaml) workflow runs on every pull request to
-`main` that changes something under `models/`. It builds (or reuses from the
-GitHub Container Registry) the images of the models changed in the PR, or of all
-models if `models.json`, a `dvc.yaml` or `scripts/` changed, runs both games
-on a small dummy dataset ([ci_datasets.json](.github/workflows/ci_datasets.json)),
-and posts the resulting metrics as a PR comment.
+The [validate-model.yml](.github/workflows/validate-model.yml) workflow validates
+models through the real pipelines on a small dummy dataset
+([ci_datasets.json](.github/workflows/ci_datasets.json)) and posts the resulting
+metrics as a PR comment. It runs in two situations:
 
-> [!IMPORTANT]
-> When you add a model, also add it to `models.json` in the
-> [supervised](benchmark/supervised/models.json) or [zero_shot](benchmark/zero_shot/models.json)
-> folder, with `image` set to `<model-folder>:latest`. CI only runs models listed there.
+- **a pull request in [proteingym-models](https://github.com/ProteinGym/proteingym-models)**,
+  which calls it as a reusable workflow. This repository is checked out at `main`
+  and the PR head is overlaid at `models/`, so only the models that PR touched
+  are built and run.
+- **a pull request here**, which revalidates every model whenever `benchmark/`,
+  `scripts/`, `requirements.txt` or the `models` submodule pin changes.
+
+Images are built, or reused from the GitHub Container Registry when the model
+folder's content hash is unchanged (fork PRs always build).
+
+> [!NOTE]
+> Submitting a model requires no change in this repository. CI synthesises
+> `models.json` from the model cards with
+> [scripts/generate_models_list.py](scripts/generate_models_list.py), so a new
+> model folder is picked up automatically. The committed `models.json` files are
+> the published set and are regenerated from the cards after the submodule is
+> bumped.
+
+Scores on the dummy dataset are meaningless; CI only checks that each model
+builds, runs and produces a scorable prediction set.
 
 [benchmark/metrics.csv](benchmark/metrics.csv) holds the benchmark results shown on the website.
 

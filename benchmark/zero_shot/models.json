@@ -1,12 +1,28 @@
 {
   "models": [
     {
+      "name": "aido-rag-16b",
+      "image": "aido-rag-16b:latest"
+    },
+    {
+      "name": "blosum62",
+      "image": "blosum62:latest"
+    },
+    {
+      "name": "esm-if1",
+      "image": "esm-if1:latest"
+    },
+    {
       "name": "esm2",
       "image": "esm2:latest"
     },
     {
-      "name": "rsalor",
-      "image": "rsalor:latest"
+      "name": "esmc",
+      "image": "esmc:latest"
+    },
+    {
+      "name": "eve",
+      "image": "eve:latest"
     },
     {
       "name": "evmutation",
@@ -17,8 +33,52 @@
       "image": "evmutation2:latest"
     },
     {
-      "name": "eve",
-      "image": "eve:latest"
+      "name": "gemme",
+      "image": "gemme:latest"
+    },
+    {
+      "name": "msa-pairformer",
+      "image": "msa-pairformer:latest"
+    },
+    {
+      "name": "poet",
+      "image": "poet:latest"
+    },
+    {
+      "name": "pottsmpnn",
+      "image": "pottsmpnn:latest"
+    },
+    {
+      "name": "progen3",
+      "image": "progen3:latest"
+    },
+    {
+      "name": "prosst",
+      "image": "prosst:latest"
+    },
+    {
+      "name": "proteinmpnn",
+      "image": "proteinmpnn:latest"
+    },
+    {
+      "name": "rsalor",
+      "image": "rsalor:latest"
+    },
+    {
+      "name": "s3f",
+      "image": "s3f:latest"
+    },
+    {
+      "name": "saprot",
+      "image": "saprot:latest"
+    },
+    {
+      "name": "structuredca",
+      "image": "structuredca:latest"
+    },
+    {
+      "name": "tranception",
+      "image": "tranception:latest"
     }
   ]
 }
