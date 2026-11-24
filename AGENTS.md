@@ -30,11 +30,15 @@ ProteinGym2 benchmark: DVC pipelines that benchmark the model zoo, and a website
   synthesises an ephemeral list limited to the models a pull request touched, which is why
   a model submission needs no change here.
 - CI is `.github/workflows/validate-model.yml`, a reusable workflow. proteingym-models
-  calls it on its own pull requests; it also runs on pull requests here.
+  calls it on its own pull requests (scoped to the model folders that PR changed); on
+  pull requests here it validates a representative pair (`blosum62` + `pls`) unless the
+  `validate-all-models` label is set. It builds, runs and prunes one model at a time —
+  all 24 images at once exhaust a runner's disk.
 - Images are tagged `<model-folder>:latest`; the model card is baked into the image at
   `/opt/program/README.md` and predictions are written to `/opt/program/output`.
 - Models must run offline: weights are downloaded at Docker build time.
-- Model cards ship `device: "cpu"`: CI has no GPU.
+- Model cards ship `device: "cpu"`: CI has no GPU. `poet` and `progen3` are the
+  exceptions — both are GPU-only by construction and cannot pass CPU-only CI.
 
 ## Commands
 

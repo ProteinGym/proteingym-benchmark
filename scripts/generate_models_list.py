@@ -1,96 +1,62 @@
 """Derive `benchmark/<game>/models.json` from the model cards in `models/`.
 
-The model card is the single source of truth: its `name` is the model id used in
-results, and its `tags` decide which game it runs in (`zero-shot` or
-`supervised`). The image tag is always `<model-folder>:latest`, which is what
-the DVC pipelines and CI expect.
-
-Two uses:
-
-1. Regenerating the committed lists after the `models/` submodule is bumped::
-
-       python -m scripts.generate_models_list
-
-2. CI synthesising an ephemeral list limited to the models a pull request
-   touched, so submitting a model needs no edit in this repository::
-
-       python -m scripts.generate_models_list --only esm2,blosum62
-
-   With `--only`, a game whose models are all filtered out gets an empty list,
-   and the caller is expected to skip that game.
-
-`--check` exits non-zero if the committed lists disagree with the cards, which
-is what the drift check in CI uses.
+The card is the single source of truth: its `name` is the model id used in
+results, its `tags` pick the game, and the image is always `<folder>:latest`.
+Submitting a model therefore needs no edit in this repository — CI runs this
+with `--only` to synthesise a list covering just the models a pull request
+touched. `--check` exits non-zero when the committed lists have drifted.
 """
-
-from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
 
 import frontmatter
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-# card tag -> benchmark directory under benchmark/
+MODELS_DIR = REPO_ROOT / "models"
+# card tag -> directory under benchmark/
 GAMES = {"zero-shot": "zero_shot", "supervised": "supervised"}
 
 
-def discover(models_dir: Path) -> list[dict]:
-    """Read every model card under models_dir.
+def collect(only: set[str] | None, models_dir: Path = MODELS_DIR) -> dict[str, list[dict]]:
+    """Map each game to its models.json entries, read from the model cards."""
+    lists: dict[str, list[dict]] = {game: [] for game in GAMES.values()}
+    folders = set()
 
-    Returns one record per model folder, in folder order, with the card's
-    model id, the image tag the pipelines use, and the games it belongs to.
-    """
-    found = []
     for card in sorted(models_dir.glob("*/README.md")):
         folder = card.parent.name
+        folders.add(folder)
+        if only is not None and folder not in only:
+            continue
         post = frontmatter.load(card)
-        name = post.get("name")
-        tags = post.get("tags") or []
+        name, tags = post.get("name"), post.get("tags") or []
         if not name:
             raise SystemExit(f"{card}: model card has no 'name'")
-        games = [g for tag, g in GAMES.items() if tag in tags]
+        games = [game for tag, game in GAMES.items() if tag in tags]
         if not games:
             raise SystemExit(
-                f"{card}: model card has no 'zero-shot' or 'supervised' tag "
-                f"(tags: {tags})"
+                f"{card}: no 'zero-shot' or 'supervised' tag (tags: {tags})"
             )
-        found.append(
-            {"folder": folder, "name": name, "image": f"{folder}:latest", "games": games}
-        )
-    if not found:
+        for game in games:
+            lists[game].append({"name": name, "image": f"{folder}:latest"})
+
+    if not folders:
         raise SystemExit(
-            f"no model cards found under {models_dir} -- is the models/ "
-            "submodule checked out? (git submodule update --init)"
+            f"no model cards under {models_dir}; run: "
+            "git submodule update --init models"
         )
-    return found
-
-
-def build(models: list[dict], game: str) -> dict:
-    """Shape the models.json payload for one game."""
-    return {
-        "models": [
-            {"name": m["name"], "image": m["image"]}
-            for m in models
-            if game in m["games"]
-        ]
-    }
+    if only and only - folders:
+        raise SystemExit(
+            f"--only names folders with no model card: {sorted(only - folders)}"
+        )
+    return lists
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
-        "--models-dir",
-        type=Path,
-        default=REPO_ROOT / "models",
-        help="directory holding the model folders (default: ./models)",
-    )
-    ap.add_argument(
-        "--only",
-        default="",
-        help="comma-separated model FOLDER names to restrict the output to",
+        "--only", help="comma-separated model FOLDER names to restrict the output to"
     )
     ap.add_argument(
         "--check",
@@ -99,33 +65,23 @@ def main() -> int:
     )
     args = ap.parse_args()
 
-    models = discover(args.models_dir)
+    only = {s.strip() for s in args.only.split(",") if s.strip()} if args.only else None
 
-    if args.only:
-        wanted = {s.strip() for s in args.only.split(",") if s.strip()}
-        unknown = wanted - {m["folder"] for m in models}
-        if unknown:
-            raise SystemExit(
-                f"--only names folders with no model card: {sorted(unknown)}"
-            )
-        models = [m for m in models if m["folder"] in wanted]
-
-    failed = False
-    for game in GAMES.values():
-        payload = build(models, game)
+    stale = False
+    for game, models in collect(only).items():
         target = REPO_ROOT / "benchmark" / game / "models.json"
-        rendered = json.dumps(payload, indent=2) + "\n"
+        rendered = json.dumps({"models": models}, indent=2) + "\n"
         if args.check:
-            current = target.read_text() if target.exists() else ""
-            if current != rendered:
+            # a missing file counts as drifted, not a crash
+            if (target.read_text() if target.exists() else "") != rendered:
                 print(f"{target} is out of date; run scripts/generate_models_list.py")
-                failed = True
+                stale = True
         else:
             target.write_text(rendered)
-            print(f"wrote {target} ({len(payload['models'])} model(s))")
+            print(f"wrote {target} ({len(models)} model(s))")
 
-    return 1 if failed else 0
+    return 1 if stale else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

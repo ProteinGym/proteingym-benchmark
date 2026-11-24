@@ -28,8 +28,8 @@ submitting a model to
 change in this repository.
 
 Requires the `models` submodule to be checked out
-(`git submodule update --init models`); use `--models-dir` to point at a model
-tree somewhere else.
+(`git submodule update --init models`). `scripts/test_generate_models_list.py`
+covers the derivation.
 
 ## generate_datasets_list.py
 

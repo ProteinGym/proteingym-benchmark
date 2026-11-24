@@ -67,9 +67,10 @@ generate_metrics_csv()                  # scripts/utils.py generate-csv -> bench
 ### Prerequisites
 
 1. Install the Python environment (see [CONTRIBUTING.md](CONTRIBUTING.md#installation)).
-2. Generate `datasets.json`.
-3. Have the model Docker images locally.
-4. List the models in `models.json`.
+2. Check out the models submodule: `git submodule update --init models`.
+3. Generate `datasets.json`.
+4. Generate `models.json` from the model cards.
+5. Have the model Docker images locally.
 
 #### Generate `datasets.json`
 
@@ -137,11 +138,23 @@ metrics as a PR comment. It runs in two situations:
   which calls it as a reusable workflow. This repository is checked out at `main`
   and the PR head is overlaid at `models/`, so only the models that PR touched
   are built and run.
-- **a pull request here**, which revalidates every model whenever `benchmark/`,
-  `scripts/`, `requirements.txt` or the `models` submodule pin changes.
+- **a pull request here**, which validates a small representative pair
+  (`blosum62` + `pls`, one per game) whenever `benchmark/`, `scripts/`,
+  `requirements.txt` or the `models` submodule pin changes. Add the
+  `validate-all-models` label, or run the workflow manually with
+  `all_models=true`, to sweep every model instead.
 
-Images are built, or reused from the GitHub Container Registry when the model
+Each model is built, run and then **pruned before the next one**: a runner has
+roughly 14 GB free and these images run to several GB each, so building them all
+up front exhausts the disk. The job also reclaims ~30 GB of unused toolchains
+first. Images are reused from the GitHub Container Registry when the model
 folder's content hash is unchanged (fork PRs always build).
+
+> [!WARNING]
+> A full sweep builds every model sequentially and will exceed a GitHub runner's
+> 6-hour job limit (several models take over an hour to build on their own). Use
+> it deliberately, and expect sweeping changes to need self-hosted runners or
+> validation in batches.
 
 > [!NOTE]
 > Submitting a model requires no change in this repository. CI synthesises

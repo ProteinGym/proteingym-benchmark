@@ -149,16 +149,19 @@ it also runs on pull requests here. It:
 
 1. checks this repository out at `main` and overlays the submitted models at
    `models/` (for a pull request here, it uses the `models` submodule instead),
-2. works out which model folders the pull request changed (every model, when a
-   pull request here touches `benchmark/`, `scripts/`, `requirements.txt` or the
-   submodule pin),
-3. builds their images, or pulls them from the GitHub Container Registry cache
-   when the model folder's content hash is unchanged (fork PRs always build),
-4. **synthesises `models.json` from those models' cards** with
-   [scripts/generate_models_list.py](scripts/generate_models_list.py), and
-   replaces `datasets.json` with the dummy dataset in
+2. works out which model folders the pull request changed. A pull request here
+   that touches `benchmark/`, `scripts/`, `requirements.txt` or the submodule pin
+   validates a representative pair (`blosum62` + `pls`) instead; the
+   `validate-all-models` label forces the full sweep,
+3. replaces `datasets.json` with the dummy dataset in
    [ci_datasets.json](.github/workflows/ci_datasets.json),
-5. runs `dvc repro` for both games and posts `benchmark/metrics.csv` as a PR comment.
+4. then, **for one model at a time**: builds its image (or pulls it from the
+   GitHub Container Registry cache when the folder's content hash is unchanged;
+   fork PRs always build), **synthesises a single-model `models.json` from its
+   card** with [scripts/generate_models_list.py](scripts/generate_models_list.py),
+   runs `dvc repro`, and deletes the image before the next model. Building every
+   image before running anything exhausts the runner's disk,
+5. posts `benchmark/metrics.csv` as a PR comment, failing if any model failed.
 
 Because step 4 reads the card rather than a checked-in list, a new model is
 picked up automatically — you do not add it to `models.json` anywhere. The card

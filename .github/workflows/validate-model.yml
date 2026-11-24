@@ -18,6 +18,11 @@ name: validate-model
 on:
   workflow_call:
   workflow_dispatch:
+    inputs:
+      all_models:
+        description: "Validate every model instead of the representative pair"
+        type: boolean
+        default: false
   pull_request:
     branches: main
 
@@ -83,6 +88,8 @@ jobs:
         id: scope
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
+          REPRESENTATIVE: blosum62,pls
+          FULL_SWEEP: ${{ contains(github.event.pull_request.labels.*.name, 'validate-all-models') || github.event.inputs.all_models == 'true' }}
         run: |
           set -euo pipefail
 
@@ -102,25 +109,53 @@ jobs:
             # A change to shared docs/config touches no model folder.
             [ -z "$changed" ] && changed=NONE
           else
-            # Our own pull request: anything touching the pipelines, the scripts
-            # or the models pin means revalidate everything.
+            # Our own pull request: a change to the pipelines, the scripts or the
+            # models pin is validated against a small representative pair -- one
+            # zero-shot and one supervised model, both fast and dependency-light.
+            # Building all of them on one runner exhausts its disk, so the full
+            # sweep is opt-in: add the 'validate-all-models' label, or run the
+            # workflow manually with all_models=true.
             git fetch --no-tags origin "$BASE_REF"
             changed_files=$(git diff --name-only FETCH_HEAD...HEAD)
             if echo "$changed_files" | grep -qE '^(benchmark/|scripts/|models$|requirements.txt)'; then
-              changed=ALL
+              if [ "$FULL_SWEEP" = "true" ]; then
+                changed=ALL
+              else
+                changed="$REPRESENTATIVE"
+                echo "::notice::validating the representative pair ($REPRESENTATIVE). Add the 'validate-all-models' label for the full sweep."
+              fi
             else
               changed=NONE
             fi
           fi
 
           echo "changed_models=$changed" >> $GITHUB_OUTPUT
-          echo "Models to validate: $changed"
+          if [ "$changed" = NONE ]; then
+            echo "::notice::no model folder changed; nothing to validate"
+          else
+            echo "Models to validate: $changed"
+          fi
 
-      - name: Nothing to validate
-        if: steps.scope.outputs.changed_models == 'NONE'
-        run: echo "No model folder changed; skipping the pipeline."
+      # ---------------------------------------------------- disk and datasets
+      - name: Reclaim runner disk
+        if: steps.scope.outputs.changed_models != 'NONE'
+        run: |
+          # A runner has ~14 GB free and these images reach several GB. Dropping
+          # toolchains we never use reclaims about 30 GB.
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/share/boost /usr/local/share/powershell \
+                      /usr/local/lib/node_modules "${AGENT_TOOLSDIRECTORY:-}" || true
+          df -h / | tail -1
 
-      # ------------------------------------------------------------ build images
+      - name: Set up CI datasets
+        if: steps.scope.outputs.changed_models != 'NONE'
+        run: |
+          cp .github/workflows/ci_datasets.json benchmark/supervised/datasets.json
+          cp .github/workflows/ci_datasets.json benchmark/zero_shot/datasets.json
+          cp .github/workflows/Dummy_test_P0DX94.splits.pgdata datasets/
+          # Start from an empty metrics.csv so the report covers only this run.
+          rm -f benchmark/metrics.csv
+
       - name: Log in to GitHub Container Registry
         if: steps.scope.outputs.changed_models != 'NONE'
         uses: docker/login-action@v3
@@ -130,7 +165,8 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      - name: Build or reuse model images (content-hash tagged)
+      # -------------------------------------------------- build, run, then prune
+      - name: Build, validate and prune each model in turn
         if: steps.scope.outputs.changed_models != 'NONE'
         env:
           # Only a pull request from this repository can push to the private
@@ -140,8 +176,11 @@ jobs:
         run: |
           set -uo pipefail
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          : > image_map.txt
+          failed=""
 
+          # One model at a time: build (or pull) it, run the pipeline, then
+          # delete the image before moving on. Building every image up front and
+          # only then running dvc exhausts the runner's disk.
           for model_folder in models/*/; do
             [ -f "${model_folder}Dockerfile" ] || continue
             model_name=$(basename "$model_folder")
@@ -153,91 +192,58 @@ jobs:
               esac
             fi
 
+            echo "::group::${model_name}"
             hash=$(git -C models ls-files -s "$model_name" | git hash-object --stdin)
             hash=${hash:0:12}
             remote="${REGISTRY}/${OWNER}/${model_name}:${hash}"
-            local="${model_name}:${hash}"
 
-            if [ "$CAN_USE_CACHE" = "true" ] && docker manifest inspect "$remote" > /dev/null 2>&1; then
-              echo "Reusing cached image for ${model_name}"
-              docker pull -q "$remote"
-              image="$remote"
-            else
-              echo "Building image for ${model_name}"
-              docker build -f "${model_folder}Dockerfile" -t "$local" "$model_folder"
-              image="$local"
+            # The generated models.json always names <folder>:latest, so tag
+            # whatever we end up with as that and no JSON rewriting is needed.
+            if [ "$CAN_USE_CACHE" = "true" ] && docker manifest inspect "$remote" > /dev/null 2>&1 \
+                 && docker pull -q "$remote" && docker tag "$remote" "${model_name}:latest"; then
+              echo "Reused the cached image for ${model_name}"
+            elif docker build -f "${model_folder}Dockerfile" -t "${model_name}:latest" "$model_folder"; then
               if [ "$CAN_USE_CACHE" = "true" ]; then
-                docker tag "$local" "$remote"
-                for attempt in 1 2 3; do
-                  docker push -q "$remote" && break
-                  [ "$attempt" = 3 ] && echo "::warning::could not cache ${remote}"
-                  sleep $((attempt * 15))
-                done
+                docker tag "${model_name}:latest" "$remote"
+                docker push -q "$remote" || echo "::warning::could not cache ${remote}"
               fi
+            else
+              echo "::error title=${model_name}::image failed to build"
+              failed="${failed} ${model_name}(build)"
+              echo "::endgroup::"
+              continue
             fi
 
-            echo "${model_name}:latest=${image}" >> image_map.txt
+            # models.json limited to this one model, derived from its card.
+            # Must not be skipped on failure: the previous iteration's file is
+            # still on disk, and dvc would silently revalidate that model.
+            if ! python -m scripts.generate_models_list --only "$model_name"; then
+              echo "::error title=${model_name}::model card is not usable"
+              failed="${failed} ${model_name}(card)"
+              echo "::endgroup::"
+              continue
+            fi
+
+            for game in supervised zero_shot; do
+              if [ "$(jq '.models | length' benchmark/$game/models.json)" -gt 0 ]; then
+                if ! dvc repro benchmark/$game/dvc.yaml --single-item; then
+                  echo "::error title=${model_name}::failed the ${game} pipeline"
+                  failed="${failed} ${model_name}(${game})"
+                fi
+              fi
+            done
+
+            # Reclaim before the next model: 24 of these images do not fit.
+            docker system prune -af --volumes > /dev/null 2>&1 || true
+            df -h / | tail -1
+            echo "::endgroup::"
           done
 
-          echo "Images:"; cat image_map.txt
-
-      # --------------------------------------------- synthesise the model lists
-      - name: Synthesise models.json from the model cards
-        if: steps.scope.outputs.changed_models != 'NONE'
-        env:
-          CHANGED_MODELS: ${{ steps.scope.outputs.changed_models }}
-        run: |
-          set -euo pipefail
-          # The model card is the source of truth; nobody edits models.json to
-          # get a model validated.
-          if [ "$CHANGED_MODELS" = "ALL" ]; then
-            python -m scripts.generate_models_list
-          else
-            python -m scripts.generate_models_list --only "$CHANGED_MODELS"
+          if [ -n "$failed" ]; then
+            echo "::error::failed:${failed}"
+            exit 1
           fi
 
-          # Repoint each entry at the image actually built or pulled above.
-          python - <<'PY'
-          import json, pathlib
-          resolved = dict(
-              line.split("=", 1)
-              for line in pathlib.Path("image_map.txt").read_text().split()
-              if "=" in line
-          )
-          for game in ("supervised", "zero_shot"):
-              p = pathlib.Path("benchmark") / game / "models.json"
-              data = json.loads(p.read_text())
-              kept = []
-              for model in data["models"]:
-                  if model["image"] in resolved:
-                      model["image"] = resolved[model["image"]]
-                      kept.append(model)
-                  else:
-                      print(f"{game}: no image for {model['image']}, dropping")
-              data["models"] = kept
-              p.write_text(json.dumps(data, indent=2) + "\n")
-              print(f"{game}: {len(kept)} model(s) to run")
-          PY
-
-      - name: Set up CI datasets
-        if: steps.scope.outputs.changed_models != 'NONE'
-        run: |
-          cp .github/workflows/ci_datasets.json benchmark/supervised/datasets.json
-          cp .github/workflows/ci_datasets.json benchmark/zero_shot/datasets.json
-          cp .github/workflows/Dummy_test_P0DX94.splits.pgdata datasets/
-          # Start from an empty metrics.csv so the report covers only this run.
-          rm -f benchmark/metrics.csv
-
-      - name: Run benchmarking
-        if: steps.scope.outputs.changed_models != 'NONE'
-        run: |
-          for game in supervised zero_shot; do
-            if [ "$(jq '.models | length' benchmark/$game/models.json)" -gt 0 ]; then
-              dvc repro benchmark/$game/dvc.yaml --single-item
-            else
-              echo "Skipping $game: no models to validate"
-            fi
-          done
 
       - name: Create PR report
         if: steps.scope.outputs.changed_models != 'NONE'
