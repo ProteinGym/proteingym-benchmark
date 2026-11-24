@@ -3,4 +3,15 @@ dvc>=3.59.2
 scipy>=1.16.2
 pre-commit>=4.2.0
 pytest
-proteingym-base @ git+https://github.com/ProteinGym/proteingym-base@main
+# model cards (scripts/generate_models_list.py reads them through
+# proteingym.base.model.ModelCard), dataset format and metrics;
+# same release the models pin
+proteingym-base==0.2.0
+# Two workarounds for proteingym-base 0.2.0, whose CLI (used by the
+# calculate_metric stage as `proteingym-base evaluate-zero-shot`) fails at
+# import without them. Remove both once a fixed proteingym-base is released:
+#   - proteingym/base/__main__.py imports click but 0.2.0 does not declare it
+#   - it calls typer.Option(click_type=...), which typer 0.29.0 removed
+#     (0.28.0 is the last version that accepts it), and 0.2.0 allows typer<1.0
+click
+typer>=0.16.0,<0.29

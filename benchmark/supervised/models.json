@@ -1,10 +1,6 @@
 {
   "models": [
     {
-      "name": "pls",
-      "image": "pls:latest"
-    },
-    {
       "name": "ritaregressor",
       "image": "huggingface-regressor:latest"
     },
@@ -15,6 +11,10 @@
     {
       "name": "pkermut",
       "image": "pkermut:latest"
+    },
+    {
+      "name": "pls",
+      "image": "pls:latest"
     }
   ]
 }
