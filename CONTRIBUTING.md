@@ -171,6 +171,70 @@ does not.
 Scores on the dummy dataset are meaningless. CI only proves the model builds,
 runs and produces a prediction set the metric step can score.
 
+### Keeping the models pin up to date
+
+`models/` is a git submodule, so it records one **exact commit** of
+proteingym-models — a submodule cannot point at a branch. A merge there
+therefore never reaches this repository on its own.
+
+[bump-models-pin.yml](.github/workflows/bump-models-pin.yml) closes that gap. It
+fast-forwards the pin to proteingym-models' `main`, regenerates
+`benchmark/*/models.json` from the new cards, and opens (or updates) a single
+pull request on `chore/bump-models-pin`. It deliberately does **not** push to
+`main`: as a pull request the bump touches the submodule path, which makes
+`validate-model.yml` build and run the representative pair against the new zoo
+before it lands — and before [deploy.yml](.github/workflows/deploy.yml)
+republishes the website from it. A card the bump would break (no `name`, no game
+tag, an id another card already uses) fails the workflow instead of the pin.
+
+It runs daily at 07:00 UTC, on `workflow_dispatch`, and on a
+`models-main-updated` [`repository_dispatch`](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#repository_dispatch)
+event. Only the schedule works out of the box; the other two need setting up:
+
+| What | Where | Why |
+| --- | --- | --- |
+| `MODELS_BUMP_TOKEN` secret | this repository | A pull request opened with the default `GITHUB_TOKEN` cannot trigger other workflows — GitHub blocks that to stop workflows looping — so the bump would arrive with no CI. A PAT gets around it. Without the secret the workflow still opens the pull request; it just sits unvalidated. |
+| *Allow GitHub Actions to create and approve pull requests* | this repository, Settings → Actions → General | Only needed on the `GITHUB_TOKEN` fallback. A `MODELS_BUMP_TOKEN` makes it unnecessary. |
+| `BENCHMARK_DISPATCH_TOKEN` secret + a notify workflow | proteingym-models | Turns the daily poll into a bump within seconds of a merge there. |
+
+Both tokens need **Contents: read and write** and **Pull requests: read and
+write** on `proteingym-benchmark`; one fine-grained PAT can serve as both.
+
+The proteingym-models side is this, as `.github/workflows/notify-benchmark.yml`:
+
+```yaml
+name: notify-benchmark
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask the benchmark to bump its models pin
+        env:
+          GH_TOKEN: ${{ secrets.BENCHMARK_DISPATCH_TOKEN }}
+        run: |
+          gh api --method POST \
+            repos/ProteinGym/proteingym-benchmark/dispatches \
+            -f event_type=models-main-updated
+```
+
+To bump by hand instead, from a checkout of this repository:
+
+```shell
+git submodule update --remote models      # follows submodule.models.branch
+python -m scripts.generate_models_list    # the lists come from the new cards
+git add models benchmark/*/models.json
+```
+
+> [!NOTE]
+> A plain `git pull` does not move submodule work trees. After a merge that
+> bumped the pin, run `git submodule update --init models`, or pull with
+> `git pull --recurse-submodules`.
+
 ### How to pass CI
 
 Reproduce the CI run locally before pushing. Clone this repository alongside

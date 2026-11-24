@@ -1,0 +1,144 @@
+name: bump-models-pin
+
+# Keeps the `models` submodule pin in step with proteingym-models' main.
+#
+# A submodule records one exact commit, so a merge in proteingym-models never
+# reaches this repository on its own. This workflow fast-forwards the pin to
+# that repository's main, regenerates the lists derived from the model cards,
+# and opens a pull request -- it deliberately does not push to main, so that
+# validate-model.yml gets to build and run the new zoo before it lands and
+# deploy.yml republishes the website from it.
+#
+# Three triggers, same job:
+#
+#   * schedule -- works today with no setup in either repository; the pin lags
+#     by up to a day.
+#   * repository_dispatch -- fires within seconds of a merge in
+#     proteingym-models, once that repository sends the event. It needs a small
+#     workflow and a token there; see CONTRIBUTING.md, "Keeping the models pin
+#     up to date".
+#   * workflow_dispatch -- bump it now.
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  repository_dispatch:
+    types: [models-main-updated]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Never race two bumps onto the same branch.
+concurrency:
+  group: bump-models-pin
+  cancel-in-progress: false
+
+env:
+  BUMP_BRANCH: chore/bump-models-pin
+  # A pull request opened with the default GITHUB_TOKEN cannot trigger other
+  # workflows -- GitHub refuses, to stop workflows from looping -- so the bump
+  # would arrive with no CI at all. MODELS_BUMP_TOKEN is a PAT that gets around
+  # that. Without it this workflow still works; the pull request just sits
+  # unvalidated until someone pushes to it.
+  GH_TOKEN: ${{ secrets.MODELS_BUMP_TOKEN || secrets.GITHUB_TOKEN }}
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history in both repositories: the pull request body lists the
+          # submodule commits being pulled in, which a shallow clone cannot do.
+          fetch-depth: 0
+          submodules: true
+          token: ${{ secrets.MODELS_BUMP_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Fast-forward the pin to proteingym-models' main
+        id: bump
+        run: |
+          set -euo pipefail
+
+          before=$(git rev-parse HEAD:models)
+          # Follows submodule.models.branch from .gitmodules, i.e. main.
+          git submodule update --init --remote models
+          after=$(git -C models rev-parse HEAD)
+
+          {
+            echo "before=$before"
+            echo "after=$after"
+            echo "short=${after:0:7}"
+          } >> "$GITHUB_OUTPUT"
+
+          if [ "$before" = "$after" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::the pin is already at ${after:0:7}; nothing to do"
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "${before:0:7} -> ${after:0:7}"
+
+          # The pull request body. Written to the runner's temp dir, never into
+          # the work tree, so it cannot end up in the commit.
+          {
+            echo "Fast-forwards the \`models\` submodule to the current tip of"
+            echo "[proteingym-models](https://github.com/ProteinGym/proteingym-models)'s"
+            echo "\`main\`, and regenerates the model lists derived from the cards."
+            echo
+            echo "\`\`\`"
+            echo "models  ${before:0:7} -> ${after:0:7}"
+            echo "\`\`\`"
+            echo
+            echo "### Model-zoo commits pulled in"
+            echo
+            # -n 50 rather than `| head -50`: head closing the pipe early
+            # kills git with SIGPIPE, which pipefail would turn into a failure.
+            git -C models log --oneline --no-decorate -n 50 "$before..$after" \
+              | sed 's/^/- /' \
+              || echo "- (history unavailable in this checkout)"
+            echo
+            echo "---"
+            echo
+            echo "Opened by [bump-models-pin.yml](.github/workflows/bump-models-pin.yml)."
+            echo "The pin change makes \`validate-model.yml\` build and run the"
+            echo "representative pair (\`blosum62\` + \`pls\`) against the new zoo."
+            echo "Add the \`validate-all-models\` label for a full sweep."
+          } > "$RUNNER_TEMP/pr-body.md"
+
+      - uses: actions/setup-python@v4
+        if: steps.bump.outputs.changed == 'true'
+        with:
+          python-version: '3.12'
+
+      - name: Regenerate the model lists
+        if: steps.bump.outputs.changed == 'true'
+        run: |
+          pip install -r requirements.txt
+          # Fails loudly, and so blocks the bump, if the new zoo brought a card
+          # with no name, no game tag, or an id another card already uses.
+          python -m scripts.generate_models_list
+
+      - name: Open or update the pull request
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          SHORT: ${{ steps.bump.outputs.short }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -B "$BUMP_BRANCH"
+          git add models benchmark/*/models.json
+          git commit -m "chore: bump the models submodule to ${SHORT}"
+          # Force: the branch is this workflow's alone, and an older bump that
+          # nobody merged is superseded rather than merged into.
+          git push -f origin "$BUMP_BRANCH"
+
+          title="chore: bump the models submodule to ${SHORT}"
+          gh pr create --base main --head "$BUMP_BRANCH" \
+              --title "$title" --body-file "$RUNNER_TEMP/pr-body.md" \
+            || gh pr edit "$BUMP_BRANCH" \
+              --title "$title" --body-file "$RUNNER_TEMP/pr-body.md"

@@ -156,6 +156,15 @@ folder's content hash is unchanged (fork PRs always build).
 > it deliberately, and expect sweeping changes to need self-hosted runners or
 > validation in batches.
 
+The [bump-models-pin.yml](.github/workflows/bump-models-pin.yml) workflow keeps
+the `models` submodule pin in step with proteingym-models' `main`. A submodule
+records an exact commit, so a merge there does not reach this repository on its
+own; the workflow fast-forwards the pin, regenerates `models.json`, and opens a
+pull request so the bump is validated before it lands on `main` and reaches the
+website. It polls daily and can be triggered from proteingym-models instead —
+see [CONTRIBUTING.md](CONTRIBUTING.md#keeping-the-models-pin-up-to-date) for the
+two secrets that needs.
+
 > [!NOTE]
 > Submitting a model requires no change in this repository. CI synthesises
 > `models.json` from the model cards with

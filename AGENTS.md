@@ -34,6 +34,11 @@ ProteinGym2 benchmark: DVC pipelines that benchmark the model zoo, and a website
   pull requests here it validates a representative pair (`blosum62` + `pls`) unless the
   `validate-all-models` label is set. It builds, runs and prunes one model at a time —
   all 24 images at once exhaust a runner's disk.
+- The `models` pin is an exact commit (a submodule cannot hold a branch).
+  `.github/workflows/bump-models-pin.yml` fast-forwards it to proteingym-models' `main`,
+  regenerates `models.json` and opens a pull request — never a push to `main`, so the new
+  zoo is validated before the website is rebuilt from it. `.gitmodules` carries
+  `branch = main` for `git submodule update --remote`.
 - Images are tagged `<model-folder>:latest`; the model card is baked into the image at
   `/opt/program/README.md` and predictions are written to `/opt/program/output`.
 - Models must run offline: weights are downloaded at Docker build time.
