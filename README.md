@@ -174,6 +174,8 @@ builds, runs and produces a scorable prediction set.
 The SvelteKit website in [src/](src/) is deployed to GitHub Pages on every push to
 `main` ([deploy.yml](.github/workflows/deploy.yml)). It reads the model cards in
 `models/*/README.md`, `benchmark/metrics.csv`, and the dataset metadata in
-`static/manifests.json` and `static/histograms.json`, which
+`static/manifests.json`, which
 [sync-datasets.yml](.github/workflows/sync-datasets.yml) pulls from Hugging Face
-every six hours. See [CONTRIBUTING.md](CONTRIBUTING.md#static-website) for local development.
+every six hours. Dataset pages also read `static/histograms.json`, which nothing
+generates yet. See [CONTRIBUTING.md](CONTRIBUTING.md#static-website) for both and
+for local development.
