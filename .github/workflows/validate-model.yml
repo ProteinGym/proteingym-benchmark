@@ -101,11 +101,21 @@ jobs:
             changed_files=$(git -C models diff --name-only FETCH_HEAD...HEAD)
             # Keep only top-level directories that are really model folders, so
             # a pull request touching .github/ or docs/ does not look like one.
+            # A model folder is a model card plus a Dockerfile: the card is what
+            # generate_models_list reads, the Dockerfile what we build. Anything
+            # with only one of the two cannot be validated, so skip it here
+            #
+            # `|| true`: grep exits 1 for a pull request that touches only
+            # root-level files, and the filter exits 1 when its last candidate
+            # is not a model folder. Under `set -e -o pipefail` either would
+            # kill this step instead of yielding empty list
             changed=$(echo "$changed_files" | grep -oE '^[^/]+/' | sed 's#/$##' \
                       | sort -u \
                       | while read -r d; do
-                          [ -f "models/$d/Dockerfile" ] && echo "$d"
-                        done | paste -sd, -)
+                          if [ -f "models/$d/Dockerfile" ] && [ -f "models/$d/README.md" ]; then
+                            echo "$d"
+                          fi
+                        done | paste -sd, - || true)
             # A change to shared docs/config touches no model folder.
             [ -z "$changed" ] && changed=NONE
           else
@@ -153,7 +163,7 @@ jobs:
 
           # Fail here, not 20 minutes into a docker build, if the above took out
           # something we depend on.
-          python -c "import frontmatter, dvc, polars" && command -v cml > /dev/null
+          python -c "import dvc, polars, proteingym.base" && command -v cml > /dev/null
 
       - name: Set up CI datasets
         if: steps.scope.outputs.changed_models != 'NONE'
@@ -190,7 +200,9 @@ jobs:
           # delete the image before moving on. Building every image up front and
           # only then running dvc exhausts the runner's disk.
           for model_folder in models/*/; do
-            [ -f "${model_folder}Dockerfile" ] || continue
+            # Same pair as the scope step above: card + Dockerfile.
+            [ -f "${model_folder}Dockerfile" ] && [ -f "${model_folder}README.md" ] \
+              || continue
             model_name=$(basename "$model_folder")
 
             if [ "$CHANGED_MODELS" != "ALL" ]; then

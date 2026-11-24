@@ -3,10 +3,10 @@ dvc>=3.59.2
 scipy>=1.16.2
 pre-commit>=4.2.0
 pytest
-# model cards, dataset format and metrics; same release the models pin
+# model cards (scripts/generate_models_list.py reads them through
+# proteingym.base.model.ModelCard), dataset format and metrics;
+# same release the models pin
 proteingym-base==0.2.0
-# scripts/generate_models_list.py reads model card front matter
-python-frontmatter>=1.1.0
 # Two workarounds for proteingym-base 0.2.0, whose CLI (used by the
 # calculate_metric stage as `proteingym-base evaluate-zero-shot`) fails at
 # import without them. Remove both once a fixed proteingym-base is released:
