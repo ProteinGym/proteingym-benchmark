@@ -141,11 +141,19 @@ jobs:
         if: steps.scope.outputs.changed_models != 'NONE'
         run: |
           # A runner has ~14 GB free and these images reach several GB. Dropping
-          # toolchains we never use reclaims about 30 GB.
+          # toolchains we never use reclaims about 40 GB.
+          #
+          # Do NOT add $AGENT_TOOLSDIRECTORY (/opt/hostedtoolcache) or
+          # /usr/local/lib/node_modules here, however often the snippets online
+          # do: the first holds the Python actions/setup-python installed (and
+          # everything pip put in it), the second the Node that cml needs.
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
-                      /usr/local/share/boost /usr/local/share/powershell \
-                      /usr/local/lib/node_modules "${AGENT_TOOLSDIRECTORY:-}" || true
+                      /usr/local/share/boost /usr/local/share/powershell || true
           df -h / | tail -1
+
+          # Fail here, not 20 minutes into a docker build, if the above took out
+          # something we depend on.
+          python -c "import frontmatter, dvc, polars" && command -v cml > /dev/null
 
       - name: Set up CI datasets
         if: steps.scope.outputs.changed_models != 'NONE'
