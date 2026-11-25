@@ -68,14 +68,6 @@ jobs:
           fetch-depth: 0
 
       # ------------------------------------------------------------ environment
-      - name: Install system dependencies for CML
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libpixman-1-dev libcairo2-dev libpango1.0-dev \
-                                  libjpeg-dev libgif-dev librsvg2-dev
-
-      - uses: iterative/setup-cml@v2
-
       - uses: actions/setup-python@v4
         with:
           python-version: '3.12'
@@ -153,17 +145,16 @@ jobs:
           # A runner has ~14 GB free and these images reach several GB. Dropping
           # toolchains we never use reclaims about 40 GB.
           #
-          # Do NOT add $AGENT_TOOLSDIRECTORY (/opt/hostedtoolcache) or
-          # /usr/local/lib/node_modules here, however often the snippets online
-          # do: the first holds the Python actions/setup-python installed (and
-          # everything pip put in it), the second the Node that cml needs.
+          # Do NOT add $AGENT_TOOLSDIRECTORY (/opt/hostedtoolcache) here,
+          # however often the snippets online do: it holds the Python
+          # actions/setup-python installed, and everything pip put in it.
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
                       /usr/local/share/boost /usr/local/share/powershell || true
           df -h / | tail -1
 
           # Fail here, not 20 minutes into a docker build, if the above took out
           # something we depend on.
-          python -c "import dvc, polars, proteingym.base" && command -v cml > /dev/null
+          python -c "import dvc, polars, proteingym.base"
 
       - name: Set up CI datasets
         if: steps.scope.outputs.changed_models != 'NONE'
@@ -266,9 +257,9 @@ jobs:
 
 
       - name: Create PR report
-        if: steps.scope.outputs.changed_models != 'NONE'
+        if: steps.scope.outputs.changed_models != 'NONE' && github.event_name == 'pull_request'
         env:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           summary=$(python - <<'PY'
           import polars as pl
@@ -299,4 +290,11 @@ jobs:
           that each model builds, runs and produces a scorable prediction set.</sub>
           EOF
 
-          cml comment create report.md
+          # Post to the calling repository's pull request. CML inferred the
+          # repo from the git remote instead, which for a model submission is
+          # the benchmark checkout - so it combined that remote with the event's
+          # PR number and posted to proteingym-benchmark#<models PR>, which this
+          # token cannot write to (403 Resource not accessible by integration).
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --body-file report.md
