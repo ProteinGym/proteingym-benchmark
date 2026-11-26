@@ -43,9 +43,17 @@ python scripts/generate_datasets_list.py
 
 > [!NOTE]
 > It also writes `static/datasets-list.json` and `static/datasets/*.lock`. The
-> website no longer reads those files; dataset pages use `static/manifests.json`
-> and `static/histograms.json`, which the
-> [sync-datasets](../.github/workflows/sync-datasets.yml) workflow pulls from Hugging Face.
+> website no longer reads those files; dataset pages use `static/manifests.json`,
+> which the [sync-datasets](../.github/workflows/sync-datasets.yml) workflow
+> pulls from Hugging Face, and `static/histograms.json`, which nothing generates
+> yet (see [CONTRIBUTING.md](../CONTRIBUTING.md#static-website)).
+
+## histograms.py
+
+`dataset_histogram(inner_zip, toml.loads(manifest_text))` — the score histograms
+the website's dataset pages want in `static/histograms.json`. Nothing generates
+that file yet; see [CONTRIBUTING.md](../CONTRIBUTING.md#static-website) for where
+this belongs and why it is here. `scripts/test_histograms.py` covers it.
 
 ## utils.py
 
