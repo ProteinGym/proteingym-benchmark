@@ -23,6 +23,8 @@ jobs:
         with:
           # --check below reads the model cards
           submodules: true
+          # test_histograms.py opens datasets/splits/*.pgdata, which is LFS
+          lfs: true
 
       - uses: actions/setup-python@v4
         with:
