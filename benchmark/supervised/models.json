@@ -15,6 +15,14 @@
     {
       "name": "pls",
       "image": "pls:latest"
+    },
+    {
+      "name": "proteinnpt",
+      "image": "proteinnpt:latest"
+    },
+    {
+      "name": "prott5",
+      "image": "prott5:latest"
     }
   ]
 }
