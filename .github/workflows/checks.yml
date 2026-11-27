@@ -1,0 +1,60 @@
+name: checks
+
+on:
+  pull_request:
+    branches: main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # --check below reads the model cards
+          submodules: true
+          # test_histograms.py opens datasets/splits/*.pgdata, which is LFS
+          lfs: true
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - run: pip install -r requirements.txt
+
+      # scripts/ only: a bare pytest also collects the submodule's model tests.
+      - name: Tests
+        run: pytest scripts/
+
+      - name: models.json still matches the model cards
+        run: python -m scripts.generate_models_list --check
+
+  website:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Type check
+        run: npm run check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Statistics unit tests
+        run: |
+          node scripts/normalize.test.ts
+          node scripts/stats.test.ts

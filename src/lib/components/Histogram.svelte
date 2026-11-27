@@ -2,12 +2,19 @@
   import { tooltip } from "$lib/tooltip";
   import { niceTicks as ticks } from "$lib/ticks";
 
-  let { target, n, edges, counts }: { target: string; n: number; edges: number[]; counts: number[] } =
+  let {
+    target,
+    n,
+    edges,
+    counts,
+  }: { target: string; n: number; edges: number[]; counts: number[] } =
     $props();
 
-  const W = 640, H = 300;
+  const W = 640,
+    H = 300;
   const m = { top: 16, right: 16, bottom: 48, left: 60 };
-  const pw = W - m.left - m.right, ph = H - m.top - m.bottom;
+  const pw = W - m.left - m.right,
+    ph = H - m.top - m.bottom;
 
   const x0 = $derived(edges[0]);
   const x1 = $derived(edges[edges.length - 1]);
@@ -15,7 +22,9 @@
   const pad = $derived((x1 - x0) * 0.05);
   const xTicks = $derived(ticks(x0 - pad, x1 + pad, 7));
   const yTicks = $derived(ticks(0, Math.max(...counts), 5));
-  const yMax = $derived(Math.max(Math.max(...counts) * 1.05, yTicks[yTicks.length - 1]));
+  const yMax = $derived(
+    Math.max(Math.max(...counts) * 1.05, yTicks[yTicks.length - 1]),
+  );
 
   const sx = (v: number) => ((v - (x0 - pad)) / (x1 - x0 + 2 * pad)) * pw;
   const sy = (v: number) => ph - (v / yMax) * ph;
@@ -29,11 +38,11 @@
   aria-label="Histogram of {target}, n = {n.toLocaleString()}"
 >
   <g transform="translate({m.left},{m.top})">
-    {#each yTicks as t}
+    {#each yTicks as t (t)}
       <line x1="0" x2={pw} y1={sy(t)} y2={sy(t)} stroke="#e5e5e5" />
     {/each}
 
-    {#each counts as c, i}
+    {#each counts as c, i (i)}
       <rect
         x={sx(edges[i])}
         y={sy(c)}
@@ -49,24 +58,55 @@
     <line x1="0" x2="0" y1="0" y2={ph} stroke="#262626" stroke-width="1" />
     <line x1="0" x2={pw} y1={ph} y2={ph} stroke="#262626" stroke-width="1" />
 
-    {#each yTicks as t}
+    {#each yTicks as t (t)}
       <line x1="-5" x2="0" y1={sy(t)} y2={sy(t)} stroke="#262626" />
-      <text x="-9" y={sy(t)} text-anchor="end" dominant-baseline="middle" font-size="12" fill="#262626">
+      <text
+        x="-9"
+        y={sy(t)}
+        text-anchor="end"
+        dominant-baseline="middle"
+        font-size="12"
+        fill="#262626"
+      >
         {t.toLocaleString()}
       </text>
     {/each}
-    {#each xTicks as t}
+    {#each xTicks as t (t)}
       <line x1={sx(t)} x2={sx(t)} y1={ph} y2={ph + 5} stroke="#262626" />
-      <text x={sx(t)} y={ph + 19} text-anchor="middle" font-size="12" fill="#262626">
+      <text
+        x={sx(t)}
+        y={ph + 19}
+        text-anchor="middle"
+        font-size="12"
+        fill="#262626"
+      >
         {t.toLocaleString()}
       </text>
     {/each}
 
-    <text x={pw / 2} y={ph + 42} text-anchor="middle" font-size="13" fill="#262626">{target}</text>
-    <text transform="translate({-46},{ph / 2}) rotate(-90)" text-anchor="middle" font-size="13" fill="#262626">
+    <text
+      x={pw / 2}
+      y={ph + 42}
+      text-anchor="middle"
+      font-size="13"
+      fill="#262626">{target}</text
+    >
+    <text
+      transform="translate({-46},{ph / 2}) rotate(-90)"
+      text-anchor="middle"
+      font-size="13"
+      fill="#262626"
+    >
       Count
     </text>
-    <text x={pw - 6} y="6" text-anchor="end" dominant-baseline="hanging" font-size="13" fill="#262626">
+    <text
+      x={pw - 6}
+      y="6"
+      text-anchor="end"
+      dominant-baseline="hanging"
+      font-size="13"
+      fill="#262626"
+    >
       n = {n.toLocaleString()}
     </text>
   </g>

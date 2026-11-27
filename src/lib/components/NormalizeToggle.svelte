@@ -1,33 +1,36 @@
 <script lang="ts">
-  let { byProtein = $bindable(false), byPaper = $bindable(false) }: { byProtein?: boolean; byPaper?: boolean } =
-    $props();
+  let {
+    byProtein = $bindable(false),
+    byPaper = $bindable(false),
+  }: { byProtein?: boolean; byPaper?: boolean } = $props();
 
   const NORMALIZE = [
     {
-      key: 'protein',
-      label: 'Protein',
-      help: 'Datasets of the same protein (same UniProt ID) are averaged first, so each protein counts once in the mean ρ and the CD test. E.g. 3 datasets of one protein each get weight 1/3.'
+      key: "protein",
+      label: "Protein",
+      help: "Datasets of the same protein (same UniProt ID) are averaged first, so each protein counts once in the mean ρ and the CD test. E.g. 3 datasets of one protein each get weight 1/3.",
     },
     {
-      key: 'paper',
-      label: 'Publication',
-      help: 'Datasets from the same publication (same DOI) are averaged first, so a publication with many datasets counts as much as a publication with one.'
-    }
+      key: "paper",
+      label: "Publication",
+      help: "Datasets from the same publication (same DOI) are averaged first, so a publication with many datasets counts as much as a publication with one.",
+    },
   ] as const;
   const BOTH_HELP =
-    'With both on: datasets that share a protein or a publication form one group. Repeat proteins are averaged within each publication, then the publications are averaged, and each group counts once.';
+    "With both on: datasets that share a protein or a publication form one group. Repeat proteins are averaged within each publication, then the publications are averaged, and each group counts once.";
 </script>
 
 <div class="flex items-center gap-2" role="group" aria-label="Normalize by">
   <span class="font-semibold text-gray-700">Normalize by</span>
   {#each NORMALIZE as n (n.key)}
-    {@const on = n.key === 'protein' ? byProtein : byPaper}
+    {@const on = n.key === "protein" ? byProtein : byPaper}
     <span class="relative group">
       <button
         type="button"
         aria-pressed={on}
         aria-describedby="normalize-help-{n.key}"
-        onclick={() => (n.key === 'protein' ? (byProtein = !byProtein) : (byPaper = !byPaper))}
+        onclick={() =>
+          n.key === "protein" ? (byProtein = !byProtein) : (byPaper = !byPaper)}
         class="px-2.5 py-0.5 text-xs font-medium rounded-full border transition-colors {on
           ? 'bg-accent-600 text-white border-accent-600 hover:bg-accent-700'
           : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'}"

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { base } from "$app/paths";
   import { datasetsStore, datasetsCommitHash } from "$lib/stores/datasets";
-  import Pagination from '$lib/components/Pagination.svelte';
+  import Pagination from "$lib/components/Pagination.svelte";
   import type { Dataset } from "$lib/types/dataset";
   import { onMount } from "svelte";
 
@@ -13,23 +13,36 @@
   const datasets = $derived($datasetsStore);
 
   // target_phenotype and readout of the dataset's assay, each with its bubble colour
-  function assayTags(data: Record<string, unknown>): { label: string; cls: string }[] {
+  function assayTags(
+    data: Record<string, unknown>,
+  ): { label: string; cls: string }[] {
     const assay = (data.assays as Record<string, unknown>[] | undefined)?.[0];
     return [
       { value: assay?.target_phenotype, cls: "bg-green-100 text-green-800" },
       { value: assay?.readout, cls: "bg-amber-100 text-amber-800" },
     ]
       .filter((t) => typeof t.value === "string")
-      .map((t) => ({ label: (t.value as string).replace(/_/g, " "), cls: t.cls }));
+      .map((t) => ({
+        label: (t.value as string).replace(/_/g, " "),
+        cls: t.cls,
+      }));
   }
 
   let filteredDatasets = $derived(
     searchQuery
       ? datasets.filter((dataset) => {
           const query = searchQuery.toLowerCase();
-          const name = ((dataset.data.name as string) || dataset.slug).toLowerCase();
+          const name = (
+            (dataset.data.name as string) || dataset.slug
+          ).toLowerCase();
           const tags = Object.entries(dataset.data)
-            .filter(([k, v]) => k !== "name" && k !== "description" && !Array.isArray(v) && typeof v !== "object")
+            .filter(
+              ([k, v]) =>
+                k !== "name" &&
+                k !== "description" &&
+                !Array.isArray(v) &&
+                typeof v !== "object",
+            )
             .map(([k, v]) => `${k} ${v}`.toLowerCase())
             .join(" ");
           const { title, author } = publication(dataset);
@@ -44,11 +57,13 @@
   );
 
   function variantCount(data: Record<string, unknown>): number | undefined {
-    const n = (data.assays as Record<string, unknown>[] | undefined)?.[0]?.number_of_variants;
+    const n = (data.assays as Record<string, unknown>[] | undefined)?.[0]
+      ?.number_of_variants;
     return typeof n === "number" ? n : undefined;
   }
   const datasetName = (d: Dataset) => String(d.data.name || d.slug);
-  const publication = (d: Dataset) => (d.data.publication ?? {}) as Record<string, string | undefined>;
+  const publication = (d: Dataset) =>
+    (d.data.publication ?? {}) as Record<string, string | undefined>;
 
   // "datasets" (count per publication) only exists in group-by-publication mode
   type SortKey = "name" | "variants" | "datasets";
@@ -77,12 +92,27 @@
   let openGroups = $state<string[]>([]);
   let headers = $derived<[SortKey, string][]>(
     groupByPaper
-      ? [["name", "Publication"], ["variants", "Variants"], ["datasets", "Datasets"]]
-      : [["name", "Dataset"], ["variants", "Variants"]],
+      ? [
+          ["name", "Publication"],
+          ["variants", "Variants"],
+          ["datasets", "Datasets"],
+        ]
+      : [
+          ["name", "Dataset"],
+          ["variants", "Variants"],
+        ],
   );
 
-  type Group = { key: string; title: string; byline: string; datasets: Dataset[]; variants: number };
+  type Group = {
+    key: string;
+    title: string;
+    byline: string;
+    datasets: Dataset[];
+    variants: number;
+  };
   let groups = $derived.by((): Group[] => {
+    // byKey never leaves this derived, so there is nothing for a SvelteMap to track
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity
     const byKey = new Map<string, Dataset[]>();
     for (const d of sortedDatasets) {
       const key = publication(d).doi || d.slug;
@@ -95,11 +125,19 @@
       return {
         key,
         title: title || datasetName(members[0]),
-        byline: [firstAuthor && (authors.length > 1 ? `${firstAuthor} et al.` : firstAuthor), journal, year]
+        byline: [
+          firstAuthor &&
+            (authors.length > 1 ? `${firstAuthor} et al.` : firstAuthor),
+          journal,
+          year,
+        ]
           .filter((part) => part && part !== "none") // some manifests spell a missing journal "none"
           .join(" · "),
         datasets: members,
-        variants: members.reduce((sum, d) => sum + (variantCount(d.data) ?? 0), 0),
+        variants: members.reduce(
+          (sum, d) => sum + (variantCount(d.data) ?? 0),
+          0,
+        ),
       };
     });
     return out.sort((a, b) => {
@@ -114,14 +152,23 @@
     });
   });
   const toggleGroup = (key: string, open: boolean) =>
-    (openGroups = open ? [...new Set([...openGroups, key])] : openGroups.filter((k) => k !== key));
+    (openGroups = open
+      ? [...new Set([...openGroups, key])]
+      : openGroups.filter((k) => k !== key));
 
-  const pageSlice = <T,>(rows: T[]) => rows.slice((currentPage - 1) * datasetsPerPage, currentPage * datasetsPerPage);
+  const pageSlice = <T,>(rows: T[]) =>
+    rows.slice(
+      (currentPage - 1) * datasetsPerPage,
+      currentPage * datasetsPerPage,
+    );
   let paginatedDatasets = $derived(pageSlice(sortedDatasets));
   let paginatedGroups = $derived(pageSlice(groups));
 
   let totalPages = $derived(
-    Math.ceil((groupByPaper ? groups.length : filteredDatasets.length) / datasetsPerPage),
+    Math.ceil(
+      (groupByPaper ? groups.length : filteredDatasets.length) /
+        datasetsPerPage,
+    ),
   );
 
   // keep search/sort/page across visits to a dataset and back (per tab)
@@ -142,7 +189,14 @@
     restored = true;
   });
   $effect(() => {
-    const state = { searchQuery, sortKey, sortAsc, currentPage, groupByPaper, openGroups };
+    const state = {
+      searchQuery,
+      sortKey,
+      sortAsc,
+      currentPage,
+      groupByPaper,
+      openGroups,
+    };
     if (!restored) return;
     try {
       sessionStorage.setItem(STATE_KEY, JSON.stringify(state));
@@ -194,7 +248,10 @@
     onclick={() => {
       groupByPaper = !groupByPaper;
       currentPage = 1;
-      if (!groupByPaper && sortKey === "datasets") (sortKey = "name"), (sortAsc = true);
+      if (!groupByPaper && sortKey === "datasets") {
+        sortKey = "name";
+        sortAsc = true;
+      }
     }}
     class="px-3 py-1 text-sm font-medium rounded-full border transition-colors {groupByPaper
       ? 'bg-accent-600 text-white border-accent-600 hover:bg-accent-700'
@@ -205,17 +262,30 @@
 </div>
 
 <main class="p-6 max-w-7xl mx-auto">
-  <div class="bg-white border border-gray-200 rounded-lg shadow-sm divide-y divide-gray-200">
-    <div class="grid grid-cols-[1fr_auto] md:grid-cols-[22rem_7rem_1fr] gap-6 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+  <div
+    class="bg-white border border-gray-200 rounded-lg shadow-sm divide-y divide-gray-200"
+  >
+    <div
+      class="grid grid-cols-[1fr_auto] md:grid-cols-[22rem_7rem_1fr] gap-6 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500"
+    >
       {#each headers as [key, label] (key)}
         <button
           type="button"
           onclick={() => sortBy(key)}
-          aria-label="Sort by {label.toLowerCase()}{sortKey === key ? (sortAsc ? ', currently ascending' : ', currently descending') : ''}"
-          class="flex items-center gap-1 uppercase tracking-wide hover:text-gray-900 {key === 'variants' ? 'md:justify-end' : ''} {sortKey === key ? 'text-gray-900' : ''}"
+          aria-label="Sort by {label.toLowerCase()}{sortKey === key
+            ? sortAsc
+              ? ', currently ascending'
+              : ', currently descending'
+            : ''}"
+          class="flex items-center gap-1 uppercase tracking-wide hover:text-gray-900 {key ===
+          'variants'
+            ? 'md:justify-end'
+            : ''} {sortKey === key ? 'text-gray-900' : ''}"
         >
           {label}
-          <span aria-hidden="true" class={sortKey === key ? "" : "invisible"}>{sortAsc ? "▲" : "▼"}</span>
+          <span aria-hidden="true" class={sortKey === key ? "" : "invisible"}
+            >{sortAsc ? "▲" : "▼"}</span
+          >
         </button>
       {/each}
       {#if !groupByPaper}<span class="hidden md:block">Description</span>{/if}
@@ -231,22 +301,42 @@
             class="grid grid-cols-1 md:grid-cols-[22rem_7rem_1fr] gap-x-6 gap-y-1 px-6 py-3 cursor-pointer list-none hover:bg-gray-50 active:bg-gray-100 transition-colors [&::-webkit-details-marker]:hidden"
           >
             <div class="min-w-0 flex gap-2">
-              <svg class="mt-1 h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200 motion-reduce:transition-none group-open/pub:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7" />
+              <svg
+                class="mt-1 h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200 motion-reduce:transition-none group-open/pub:rotate-90"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="m9 5 7 7-7 7"
+                />
               </svg>
               <div class="min-w-0">
-                <h2 class="text-base font-semibold text-gray-900">{group.title}</h2>
-                {#if group.byline}<p class="text-sm text-gray-500">{group.byline}</p>{/if}
+                <h2 class="text-base font-semibold text-gray-900">
+                  {group.title}
+                </h2>
+                {#if group.byline}<p class="text-sm text-gray-500">
+                    {group.byline}
+                  </p>{/if}
               </div>
             </div>
             <span class="text-sm text-gray-700 tabular-nums md:text-right">
-              {group.variants.toLocaleString()}<span class="md:hidden"> variants</span>
+              {group.variants.toLocaleString()}<span class="md:hidden">
+                variants</span
+              >
             </span>
             <span class="text-sm text-gray-600">
-              {group.datasets.length} {group.datasets.length === 1 ? "dataset" : "datasets"}
+              {group.datasets.length}
+              {group.datasets.length === 1 ? "dataset" : "datasets"}
             </span>
           </summary>
-          <div class="border-t border-gray-100 bg-gray-50/60 divide-y divide-gray-100">
+          <div
+            class="border-t border-gray-100 bg-gray-50/60 divide-y divide-gray-100"
+          >
             {#each group.datasets as dataset (dataset.slug)}
               {@render datasetRow(dataset)}
             {/each}
@@ -254,7 +344,9 @@
         </details>
       {:else}
         <p class="px-6 py-10 text-center text-sm text-gray-500">
-          {datasets.length ? `No datasets match “${searchQuery}”.` : "Loading datasets…"}
+          {datasets.length
+            ? `No datasets match “${searchQuery}”.`
+            : "Loading datasets…"}
         </p>
       {/each}
     {:else}
@@ -262,7 +354,9 @@
         {@render datasetRow(dataset)}
       {:else}
         <p class="px-6 py-10 text-center text-sm text-gray-500">
-          {datasets.length ? `No datasets match “${searchQuery}”.` : "Loading datasets…"}
+          {datasets.length
+            ? `No datasets match “${searchQuery}”.`
+            : "Loading datasets…"}
         </p>
       {/each}
     {/if}
@@ -274,24 +368,36 @@
     href="{base}/datasets/{dataset.slug}"
     class="grid grid-cols-1 md:grid-cols-[22rem_7rem_1fr] gap-x-6 gap-y-1 group px-6 py-3 hover:bg-accent-50 active:bg-accent-100 transition-colors"
   >
-    <h2 class="text-base font-semibold text-gray-900 group-hover:text-accent-700 truncate min-w-0">
+    <h2
+      class="text-base font-semibold text-gray-900 group-hover:text-accent-700 truncate min-w-0"
+    >
       {dataset.data.name || dataset.slug}
     </h2>
-    <span class="text-sm text-gray-700 tabular-nums md:text-right md:row-span-2">
-      {variantCount(dataset.data)?.toLocaleString() ?? "—"}<span class="md:hidden"> variants</span>
+    <span
+      class="text-sm text-gray-700 tabular-nums md:text-right md:row-span-2"
+    >
+      {variantCount(dataset.data)?.toLocaleString() ?? "—"}<span
+        class="md:hidden"
+      >
+        variants</span
+      >
     </span>
-    <p class="text-sm text-gray-600 line-clamp-2">{dataset.data.description ?? ""}</p>
+    <p class="text-sm text-gray-600 line-clamp-2">
+      {dataset.data.description ?? ""}
+    </p>
     <div class="flex flex-wrap gap-2">
-      {#each Object.entries(dataset.data) as [key, value]}
+      {#each Object.entries(dataset.data) as [key, value] (key)}
         {#if key !== "name" && key !== "description" && key !== "_archive_filename" && !Array.isArray(value) && typeof value !== "object"}
-          <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
+          <span
+            class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"
+          >
             {key}: {value}
           </span>
         {/if}
       {/each}
     </div>
     <div class="flex flex-wrap gap-2">
-      {#each assayTags(dataset.data) as tag}
+      {#each assayTags(dataset.data) as tag (tag.label)}
         <span class="px-2 py-0.5 text-xs font-medium rounded-full {tag.cls}">
           {tag.label}
         </span>
@@ -300,7 +406,7 @@
   </a>
 {/snippet}
 
-<Pagination bind:currentPage {totalPages}/>
+<Pagination bind:currentPage {totalPages} />
 
 <div class="text-center py-6">
   <p class="text-sm text-gray-500">Datasets commit: {$datasetsCommitHash}</p>

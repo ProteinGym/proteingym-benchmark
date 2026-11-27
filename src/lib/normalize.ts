@@ -37,14 +37,18 @@ export function normalizationWeights(
   const out = new Map<string, { unit: string; weight: number }>();
   for (const [d, p] of paths) {
     let weight = 1;
-    for (let i = 1; i < p.length; i++) weight /= children.get(JSON.stringify(p.slice(0, i)))!.size;
+    for (let i = 1; i < p.length; i++)
+      weight /= children.get(JSON.stringify(p.slice(0, i)))!.size;
     out.set(d, { unit: p[0], weight });
   }
   return out;
 }
 
 // Union-find over datasets joined by a shared protein or paper; returns dataset -> cluster root.
-function linkedClusters(datasets: string[], keys: (dataset: string) => DatasetKeys): Map<string, string> {
+function linkedClusters(
+  datasets: string[],
+  keys: (dataset: string) => DatasetKeys,
+): Map<string, string> {
   const parent = new Map<string, string>();
   const find = (x: string): string => {
     if (!parent.has(x)) parent.set(x, x);

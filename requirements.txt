@@ -1,6 +1,9 @@
 polars[pyarrow]>=1.30.0,<2.0.0
 dvc>=3.59.2
 scipy>=1.16.2
+# imported directly by scripts/utils.py and the dvc.yaml metric stages
+numpy
+pyyaml
 pre-commit>=4.2.0
 pytest
 # model cards (scripts/generate_models_list.py reads them through

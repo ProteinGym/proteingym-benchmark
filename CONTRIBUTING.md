@@ -250,7 +250,8 @@ This serves the built static files so you can test the production build before d
 
 ### Code Quality
 
-Before committing changes, ensure your code passes all quality checks:
+Before committing changes, ensure your code passes all quality checks.
+[checks.yml](.github/workflows/checks.yml) gates all of these.
 
 ```shell
 # Type check with TypeScript and Svelte

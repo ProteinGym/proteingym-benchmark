@@ -8,45 +8,77 @@
   <!-- Hero Section -->
   <div class="max-w-7xl mx-auto px-6 py-16 md:py-24">
     <div class="text-center">
-      <h1 class="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 mb-6">
+      <h1
+        class="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 mb-6"
+      >
         ProteinGym
       </h1>
       <p class="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto mb-12">
-        Advancing protein engineering and computational biology through structured datasets, reproducible benchmarking, and open-source tools.
+        Advancing protein engineering and computational biology through
+        structured datasets, reproducible benchmarking, and open-source tools.
       </p>
     </div>
 
     <!-- Mission Cards -->
     <div class="grid md:grid-cols-3 gap-6 md:gap-8 mt-16">
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div class="h-12 w-12 bg-accent-100 rounded-full flex items-center justify-center mb-4">
+        <div
+          class="h-12 w-12 bg-accent-100 rounded-full flex items-center justify-center mb-4"
+        >
           <NavIcon name="datasets" outline class="h-6 w-6 text-accent-600" />
         </div>
-        <h2 class="text-lg font-semibold text-gray-900 mb-2">Structured datasets</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-2">
+          Structured datasets
+        </h2>
         <p class="text-gray-600">
-          Structured, standardized datasets for protein variant effect prediction that replace undocumented CSVs with formal schemas and TOML configurations.
+          Structured, standardized datasets for protein variant effect
+          prediction that replace undocumented CSVs with formal schemas and TOML
+          configurations.
         </p>
       </div>
 
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div class="h-12 w-12 bg-accent-100 rounded-full flex items-center justify-center mb-4">
+        <div
+          class="h-12 w-12 bg-accent-100 rounded-full flex items-center justify-center mb-4"
+        >
           <NavIcon name="zero-shot" outline class="h-6 w-6 text-accent-600" />
         </div>
-        <h2 class="text-lg font-semibold text-gray-900 mb-2">Reproducible benchmarking</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-2">
+          Reproducible benchmarking
+        </h2>
         <p class="text-gray-600">
-          Reproducible benchmarking frameworks for model evaluation with containerized workflows through Docker for consistent, comparable results.
+          Reproducible benchmarking frameworks for model evaluation with
+          containerized workflows through Docker for consistent, comparable
+          results.
         </p>
       </div>
 
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div class="h-12 w-12 bg-accent-100 rounded-full flex items-center justify-center mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-6 w-6 text-accent-600">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />
+        <div
+          class="h-12 w-12 bg-accent-100 rounded-full flex items-center justify-center mb-4"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+            class="h-6 w-6 text-accent-600"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"
+            />
           </svg>
         </div>
-        <h2 class="text-lg font-semibold text-gray-900 mb-2">Open-source tools</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-2">
+          Open-source tools
+        </h2>
         <p class="text-gray-600">
-          Open-source tools that facilitate research and development in protein science, enabling researchers and ML practitioners to collaborate effectively.
+          Open-source tools that facilitate research and development in protein
+          science, enabling researchers and ML practitioners to collaborate
+          effectively.
         </p>
       </div>
     </div>
@@ -54,16 +86,36 @@
     <!-- CTA Section -->
     <div class="mt-16 text-center">
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <a href="{basePath}/benchmark/zero-shot" class="group inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-accent-600 hover:bg-accent-700 active:bg-accent-800 transition-[background-color,border-color,color,scale] duration-150 active:scale-[0.97] motion-reduce:active:scale-100">
+        <a
+          href="{basePath}/benchmark/zero-shot"
+          class="group inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-accent-600 hover:bg-accent-700 active:bg-accent-800 transition-[background-color,border-color,color,scale] duration-150 active:scale-[0.97] motion-reduce:active:scale-100"
+        >
           View benchmarks
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="ml-2 h-5 w-5 transition-transform duration-150 group-hover:translate-x-0.5 motion-reduce:transition-none">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="ml-2 h-5 w-5 transition-transform duration-150 group-hover:translate-x-0.5 motion-reduce:transition-none"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
+            />
           </svg>
         </a>
-        <a href="{basePath}/model" class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:border-accent-600 hover:bg-accent-50 hover:text-accent-800 active:bg-accent-100 transition-[background-color,border-color,color,scale] duration-150 active:scale-[0.97] motion-reduce:active:scale-100">
+        <a
+          href="{basePath}/model"
+          class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:border-accent-600 hover:bg-accent-50 hover:text-accent-800 active:bg-accent-100 transition-[background-color,border-color,color,scale] duration-150 active:scale-[0.97] motion-reduce:active:scale-100"
+        >
           Explore models
         </a>
-        <a href="{basePath}/datasets" class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:border-accent-600 hover:bg-accent-50 hover:text-accent-800 active:bg-accent-100 transition-[background-color,border-color,color,scale] duration-150 active:scale-[0.97] motion-reduce:active:scale-100">
+        <a
+          href="{basePath}/datasets"
+          class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:border-accent-600 hover:bg-accent-50 hover:text-accent-800 active:bg-accent-100 transition-[background-color,border-color,color,scale] duration-150 active:scale-[0.97] motion-reduce:active:scale-100"
+        >
           Explore datasets
         </a>
       </div>

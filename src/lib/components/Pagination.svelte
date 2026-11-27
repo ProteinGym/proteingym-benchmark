@@ -1,5 +1,5 @@
 <script>
-    let { currentPage = $bindable(1), totalPages } = $props();
+  let { currentPage = $bindable(1), totalPages } = $props();
 </script>
 
 <nav>
@@ -30,7 +30,9 @@
       </button>
     </li>
     <li>
-      <span class="text-gray-500 tabular-nums">Page {currentPage} of {Math.max(totalPages, 1)}</span>
+      <span class="text-gray-500 tabular-nums"
+        >Page {currentPage} of {Math.max(totalPages, 1)}</span
+      >
     </li>
     <li>
       <button
