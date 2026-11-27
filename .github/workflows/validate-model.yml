@@ -2,7 +2,7 @@ name: validate-model
 
 # Validates models through the real DVC pipelines on the dummy CI dataset.
 #
-# Runs in two situations:
+# Runs in three situations:
 #
 #   * a pull request in ProteinGym/proteingym-models (which calls this workflow
 #     as a reusable one). The benchmark is checked out at main and the pull
@@ -10,6 +10,7 @@ name: validate-model
 #     in this repository at all.
 #   * a pull request here, which validates the pipelines against the models/
 #     submodule.
+#   * by hand, with a list of model folders to validate.
 #
 # models.json is never edited by a contributor: it is synthesised from the model
 # cards by scripts/generate_models_list.py, so a new model folder is picked up
@@ -19,10 +20,10 @@ on:
   workflow_call:
   workflow_dispatch:
     inputs:
-      all_models:
-        description: "Validate every model instead of the representative pair"
-        type: boolean
-        default: false
+      models:
+        description: "Comma-separated model folders to validate"
+        type: string
+        default: "blosum62,pls"
   pull_request:
     branches: main
 
@@ -66,6 +67,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           path: models
           fetch-depth: 0
+          # A model vendoring weights through LFS would build from pointers.
+          lfs: true
 
       # ------------------------------------------------------------ environment
       - uses: actions/setup-python@v4
@@ -75,17 +78,26 @@ jobs:
       - name: Install requirements
         run: pip install -r requirements.txt
 
+      # `--only` reads one card, so a clashing name or a missing game tag hides
+      # from it and surfaces in bump-models-pin.yml, where it stops the pin.
+      - name: Check every model card
+        run: python -m scripts.generate_models_list --validate
+
       # --------------------------------------------------------- which models?
       - name: Work out which models to validate
         id: scope
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           REPRESENTATIVE: blosum62,pls
-          FULL_SWEEP: ${{ contains(github.event.pull_request.labels.*.name, 'validate-all-models') || github.event.inputs.all_models == 'true' }}
+          DISPATCH_MODELS: ${{ github.event.inputs.models }}
         run: |
           set -euo pipefail
 
-          if [ "$OWN_PR" != "true" ]; then
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            # No "validate everything" switch: the whole zoo exceeds a runner's
+            # disk and 6-hour limit, and poet/progen3 need a GPU.
+            changed="${DISPATCH_MODELS:-$REPRESENTATIVE}"
+          elif [ "$OWN_PR" != "true" ]; then
             # A model submission: compare the overlaid checkout against its
             # base. FETCH_HEAD is used because a ref-pinned checkout does not
             # reliably create origin/<branch>.
@@ -114,21 +126,27 @@ jobs:
             # Our own pull request: a change to the pipelines, the scripts or the
             # models pin is validated against a small representative pair -- one
             # zero-shot and one supervised model, both fast and dependency-light.
-            # Building all of them on one runner exhausts its disk, so the full
-            # sweep is opt-in: add the 'validate-all-models' label, or run the
-            # workflow manually with all_models=true.
+            # Building more of them on one runner exhausts its disk, so a wider
+            # run is opt-in: dispatch the workflow by hand with a models list.
             git fetch --no-tags origin "$BASE_REF"
             changed_files=$(git diff --name-only FETCH_HEAD...HEAD)
-            if echo "$changed_files" | grep -qE '^(benchmark/|scripts/|models$|requirements.txt)'; then
-              if [ "$FULL_SWEEP" = "true" ]; then
-                changed=ALL
-              else
-                changed="$REPRESENTATIVE"
-                echo "::notice::validating the representative pair ($REPRESENTATIVE). Add the 'validate-all-models' label for the full sweep."
-              fi
+            if echo "$changed_files" | grep -qE '^(benchmark/|scripts/|models$|requirements\.txt$)'; then
+              changed="$REPRESENTATIVE"
+              echo "::notice::validating the representative pair ($REPRESENTATIVE). Run this workflow by hand with a models list to validate others."
             else
               changed=NONE
             fi
+          fi
+
+          # The build loop skips an unknown name, leaving a green job that
+          # validated nothing.
+          if [ "$changed" != NONE ]; then
+            for model_name in ${changed//,/ }; do
+              if [ ! -f "models/$model_name/Dockerfile" ] || [ ! -f "models/$model_name/README.md" ]; then
+                echo "::error::'$model_name' is not a model folder: models/$model_name needs a Dockerfile and a README.md"
+                exit 1
+              fi
+            done
           fi
 
           echo "changed_models=$changed" >> $GITHUB_OUTPUT
@@ -161,7 +179,6 @@ jobs:
         run: |
           cp .github/workflows/ci_datasets.json benchmark/supervised/datasets.json
           cp .github/workflows/ci_datasets.json benchmark/zero_shot/datasets.json
-          cp .github/workflows/Dummy_test_P0DX94.splits.pgdata datasets/
           # Start from an empty metrics.csv so the report covers only this run.
           rm -f benchmark/metrics.csv
 
@@ -176,6 +193,7 @@ jobs:
 
       # -------------------------------------------------- build, run, then prune
       - name: Build, validate and prune each model in turn
+        id: validate_models
         if: steps.scope.outputs.changed_models != 'NONE'
         env:
           # Only a pull request from this repository can push to the private
@@ -196,12 +214,10 @@ jobs:
               || continue
             model_name=$(basename "$model_folder")
 
-            if [ "$CHANGED_MODELS" != "ALL" ]; then
-              case ",${CHANGED_MODELS}," in
-                *",${model_name},"*) ;;
-                *) continue ;;
-              esac
-            fi
+            case ",${CHANGED_MODELS}," in
+              *",${model_name},"*) ;;
+              *) continue ;;
+            esac
 
             echo "::group::${model_name}"
             hash=$(git -C models ls-files -s "$model_name" | git hash-object --stdin)
@@ -255,16 +271,34 @@ jobs:
             exit 1
           fi
 
-
-      - name: Create PR report
-        if: steps.scope.outputs.changed_models != 'NONE' && github.event_name == 'pull_request'
+      - name: Report the result
+        # always(): a failed run is exactly when the report is worth having.
+        if: always() && steps.scope.outputs.changed_models != 'NONE'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OUTCOME: ${{ steps.validate_models.outcome }}
+          # A fork's pull request gets a read-only token whatever the permissions
+          # block asks for, so commenting on one 403s; the summary is the report.
+          CAN_COMMENT: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
+          set -euo pipefail
+
           summary=$(python - <<'PY'
+          from pathlib import Path
+
           import polars as pl
 
-          df = pl.read_csv("benchmark/metrics.csv")
+          path = Path("benchmark/metrics.csv")
+          # A run that failed before scoring leaves no file.
+          if not path.exists() or path.stat().st_size == 0:
+              print("_No metrics were produced._")
+              raise SystemExit
+
+          df = pl.read_csv(path)
+          if df.height == 0:
+              print("_No metrics were produced._")
+              raise SystemExit
+
           keys = ["game", "model", "split"]
           metrics = [c for c, t in df.schema.items() if c not in keys and t.is_numeric()]
           summary = (
@@ -280,8 +314,15 @@ jobs:
           PY
           )
 
+          if [ "$OUTCOME" = "success" ]; then
+            headline="✅ Every model built, ran and produced a scorable prediction set."
+          else
+            headline="❌ Validation failed. The per-model groups in the job log name the model and the stage."
+          fi
+
           cat <<EOF > report.md
-          ✅ The benchmark has been finished successfully.
+          ${headline}
+
           📈 Metrics averaged per model across datasets:
 
           ${summary}
@@ -290,11 +331,14 @@ jobs:
           that each model builds, runs and produces a scorable prediction set.</sub>
           EOF
 
-          # Post to the calling repository's pull request. CML inferred the
-          # repo from the git remote instead, which for a model submission is
-          # the benchmark checkout - so it combined that remote with the event's
-          # PR number and posted to proteingym-benchmark#<models PR>, which this
-          # token cannot write to (403 Resource not accessible by integration).
-          gh pr comment "${{ github.event.pull_request.number }}" \
-            --repo "${{ github.repository }}" \
-            --body-file report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+          # --repo is explicit: for a model submission the git remote here is the
+          # benchmark checkout, not the repository the PR number belongs to.
+          if [ "$CAN_COMMENT" = "true" ]; then
+            gh pr comment "${{ github.event.pull_request.number }}" \
+              --repo "${{ github.repository }}" \
+              --body-file report.md
+          else
+            echo "::notice::the report is in this job's summary; a fork pull request gets a read-only token and cannot be commented on"
+          fi

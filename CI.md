@@ -15,8 +15,10 @@ it also runs on pull requests here. It:
    `models/` (for a pull request here, it uses the `models` submodule instead),
 2. works out which model folders the pull request changed. A pull request here
    that touches `benchmark/`, `scripts/`, `requirements.txt` or the submodule pin
-   validates a representative pair (`blosum62` + `pls`) instead; the
-   `validate-all-models` label forces the full sweep,
+   validates a representative pair (`blosum62` + `pls`) instead; a manual
+   `workflow_dispatch` validates whichever folders its `models` input names,
+   and reads every model card either way so a clashing or untagged card
+   cannot reach `main`,
 3. replaces `datasets.json` with the dummy dataset in
    [ci_datasets.json](.github/workflows/ci_datasets.json),
 4. then, **for one model at a time**: builds its image (or pulls it from the
@@ -25,7 +27,9 @@ it also runs on pull requests here. It:
    card** with [scripts/generate_models_list.py](scripts/generate_models_list.py),
    runs `dvc repro`, and deletes the image before the next model. Building every
    image before running anything exhausts the runner's disk,
-5. posts `benchmark/metrics.csv` as a PR comment, failing if any model failed.
+5. writes `benchmark/metrics.csv` to the job summary and, when the token can
+   write (so not for a fork's pull request), also posts it as a PR comment.
+   It reports either way, and fails the run if any model failed.
 
 Because step 4 reads the card rather than a checked-in list, a new model is
 picked up automatically — you do not add it to `models.json` anywhere. The card

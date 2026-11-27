@@ -32,9 +32,11 @@ ProteinGym2 benchmark: DVC pipelines that benchmark the model zoo, and a website
   a model submission needs no change here.
 - CI is `.github/workflows/validate-model.yml`, a reusable workflow. proteingym-models
   calls it on its own pull requests (scoped to the model folders that PR changed); on
-  pull requests here it validates a representative pair (`blosum62` + `pls`) unless the
-  `validate-all-models` label is set. It builds, runs and prunes one model at a time —
-  all 24 images at once exhaust a runner's disk.
+  pull requests here it validates a representative pair (`blosum62` + `pls`), and a
+  `workflow_dispatch` validates the folders named in its `models` input. There is no
+  full sweep: all 34 images exhaust a runner's disk and its 6-hour limit. It builds
+  and prunes one model at a time, checks every card first, and reports into the job
+  summary — a fork's pull request cannot be commented on.
 - The `models` pin is an exact commit (a submodule cannot hold a branch).
   `.github/workflows/bump-models-pin.yml` fast-forwards it to proteingym-models' `main`,
   regenerates `models.json` and opens a pull request — never a push to `main`, so the new

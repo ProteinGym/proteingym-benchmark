@@ -4,7 +4,8 @@ The card is the single source of truth: its `name` is the model id used in
 results, its `tags` pick the setting, and the image is always `<folder>:latest`.
 Submitting a model therefore needs no edit in this repository — CI runs this
 with `--only` to synthesise a list covering just the models a pull request
-touched. `--check` exits non-zero when the committed lists have drifted.
+touched. `--check` exits non-zero when the committed lists have drifted, and
+`--validate` parses every card without writing anything.
 """
 
 import argparse
@@ -85,16 +86,30 @@ def main() -> int:
         action="store_true",
         help="exit non-zero if the committed lists differ from the cards",
     )
+    ap.add_argument(
+        "--validate",
+        action="store_true",
+        help="read every model card and exit; writes nothing",
+    )
     args = ap.parse_args()
 
     only = {s.strip() for s in args.only.split(",") if s.strip()} if args.only else None
     if args.check and only:
         ap.error("--check cannot be combined with --only")
+    if args.validate and (args.check or only):
+        ap.error("--validate cannot be combined with --check or --only")
 
     try:
-        lists = collect(only)
+        # --validate covers the whole zoo: `--only` never reads the other cards,
+        # so a name clash there would surface only in bump-models-pin.yml.
+        lists = collect(None if args.validate else only)
     except ModelCardError as exc:
         raise SystemExit(str(exc)) from exc
+
+    if args.validate:
+        entries = sum(len(models) for models in lists.values())
+        print(f"every model card is usable ({entries} model/setting entries)")
+        return 0
 
     stale = False
     for setting, models in lists.items():
