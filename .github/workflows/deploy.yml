@@ -4,13 +4,16 @@ on:
   push:
     branches:
       - main
+  schedule:
+    # Half an hour after sync-datasets.yml. Its push runs as GITHUB_TOKEN,
+    # which cannot trigger a workflow, so this is what puts a freshly synced
+    # manifests.json on the site.
+    - cron: '30 */6 * * *'
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+# gh-pages pushes the build to a branch, so only contents is needed
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 # Allow only one concurrent deployment
 concurrency:
