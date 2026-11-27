@@ -13,6 +13,14 @@
       "image": "esm-if1:latest"
     },
     {
+      "name": "esm1b",
+      "image": "esm1b:latest"
+    },
+    {
+      "name": "esm1v",
+      "image": "esm1v:latest"
+    },
+    {
       "name": "esm2",
       "image": "esm2:latest"
     },
@@ -37,16 +45,32 @@
       "image": "gemme:latest"
     },
     {
+      "name": "mif-st",
+      "image": "mif-st:latest"
+    },
+    {
       "name": "msa-pairformer",
       "image": "msa-pairformer:latest"
+    },
+    {
+      "name": "msa-transformer",
+      "image": "msa-transformer:latest"
     },
     {
       "name": "poet",
       "image": "poet:latest"
     },
     {
+      "name": "poet2",
+      "image": "poet2:latest"
+    },
+    {
       "name": "pottsmpnn",
       "image": "pottsmpnn:latest"
+    },
+    {
+      "name": "progen2",
+      "image": "progen2:latest"
     },
     {
       "name": "progen3",
@@ -59,6 +83,10 @@
     {
       "name": "proteinmpnn",
       "image": "proteinmpnn:latest"
+    },
+    {
+      "name": "protssn",
+      "image": "protssn:latest"
     },
     {
       "name": "rsalor",
@@ -79,6 +107,10 @@
     {
       "name": "tranception",
       "image": "tranception:latest"
+    },
+    {
+      "name": "vespag",
+      "image": "vespag:latest"
     }
   ]
 }
