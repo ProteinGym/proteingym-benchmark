@@ -131,8 +131,10 @@ dvc repro benchmark/zero_shot/dvc.yaml --single-item
 
 The [validate-model.yml](.github/workflows/validate-model.yml) workflow validates
 models through the real pipelines on a small dummy dataset
-([ci_datasets.json](.github/workflows/ci_datasets.json)) and posts the resulting
-metrics as a PR comment. It runs in two situations:
+([ci_datasets.json](.github/workflows/ci_datasets.json)) and writes the resulting
+metrics to the job summary, also commenting on the pull request when it can (a
+fork's pull request gets a read-only token, so there the summary is the report).
+It runs in two situations, plus by hand:
 
 - **a pull request in [proteingym-models](https://github.com/ProteinGym/proteingym-models)**,
   which calls it as a reusable workflow. This repository is checked out at `main`
@@ -140,9 +142,9 @@ metrics as a PR comment. It runs in two situations:
   are built and run.
 - **a pull request here**, which validates a small representative pair
   (`blosum62` + `pls`, one per game) whenever `benchmark/`, `scripts/`,
-  `requirements.txt` or the `models` submodule pin changes. Add the
-  `validate-all-models` label, or run the workflow manually with
-  `all_models=true`, to sweep every model instead.
+  `requirements.txt` or the `models` submodule pin changes. To validate
+  other models, run the workflow by hand and name them in the `models`
+  input (comma-separated folder names).
 
 Each model is built, run and then **pruned before the next one**: a runner has
 roughly 14 GB free and these images run to several GB each, so building them all
@@ -151,10 +153,11 @@ first. Images are reused from the GitHub Container Registry when the model
 folder's content hash is unchanged (fork PRs always build).
 
 > [!WARNING]
-> A full sweep builds every model sequentially and will exceed a GitHub runner's
-> 6-hour job limit (several models take over an hour to build on their own). Use
-> it deliberately, and expect sweeping changes to need self-hosted runners or
-> validation in batches.
+> There is deliberately no "validate everything" switch. Building the whole
+> zoo sequentially exceeds a GitHub runner's 6-hour job limit (several models
+> take over an hour on their own), and `poet` and `progen3` are GPU-only and
+> cannot pass CPU-only CI at all. A change that needs wide validation wants
+> self-hosted runners, or batches named in the `models` input.
 
 The [bump-models-pin.yml](.github/workflows/bump-models-pin.yml) workflow keeps
 the `models` submodule pin in step with proteingym-models' `main`. A submodule

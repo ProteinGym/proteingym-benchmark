@@ -81,3 +81,26 @@ def test_check_cannot_be_combined_with_only(monkeypatch):
         main()
 
     assert exc.value.code == 2  # argparse usage error
+
+
+def test_only_cannot_see_a_clash_in_a_folder_it_skips(tmp_path):
+    # why CI runs --validate too: --only never reads the other cards
+    card(tmp_path, "a", "a", '["zero-shot"]')
+    card(tmp_path, "b", "clash", '["zero-shot"]')
+    card(tmp_path, "c", "clash", '["zero-shot"]')
+
+    assert collect({"a"}, tmp_path)["zero_shot"] == [{"name": "a", "image": "a:latest"}]
+
+    with pytest.raises(ModelCardError, match="name 'clash' is already used by"):
+        collect(None, tmp_path)
+
+
+def test_validate_cannot_be_combined_with_only(monkeypatch):
+    monkeypatch.setattr(
+        sys, "argv", ["generate_models_list", "--validate", "--only", "a"]
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        main()
+
+    assert exc.value.code == 2  # argparse usage error

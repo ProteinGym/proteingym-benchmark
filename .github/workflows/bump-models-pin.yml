@@ -81,8 +81,8 @@ jobs:
 
           ---
           Opened by bump-models-pin.yml. The pin change makes validate-model.yml
-          build and run blosum62 + pls against the new zoo; add the
-          validate-all-models label for a full sweep.
+          build and run blosum62 + pls against the new zoo; each model in it was
+          validated on its own pull request in proteingym-models.
           EOF
 
           title="chore: bump the models submodule to ${after:0:7}"

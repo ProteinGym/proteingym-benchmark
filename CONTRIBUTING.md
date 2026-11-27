@@ -88,7 +88,7 @@ Concretely:
 - **Complete model card:** see the [proteingym-models README](https://github.com/ProteinGym/proteingym-models#readme) for the
   required structure and model card fields. The card should describe the
   architecture, training data, and hyperparameters, not just report a score.
-- **One model per PR**, following the [PR checklist](.github/pull_request_template.md).
+- **One model per PR**, following the [PR checklist](https://github.com/ProteinGym/proteingym-models/blob/main/.github/pull_request_template.md).
 
 ## Benchmarking
 
@@ -163,7 +163,6 @@ docker build -t <model-folder>:latest models/<model-folder>
 # generate models.json for just your model, then use the CI dataset
 python -m scripts.generate_models_list --only <model-folder>
 cp .github/workflows/ci_datasets.json benchmark/zero_shot/datasets.json
-cp datasets/splits/Dummy_test_P0DX94.splits.pgdata datasets/
 dvc repro benchmark/zero_shot/dvc.yaml --single-item
 ```
 
