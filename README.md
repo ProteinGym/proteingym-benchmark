@@ -164,7 +164,7 @@ pull request so the bump is validated before it lands on `main` and reaches the
 website. It polls daily, and proteingym-models can dispatch it on merge for an
 immediate bump instead. Both opening that pull request and dispatching it need a
 token — see
-[CONTRIBUTING.md](CONTRIBUTING.md#keeping-the-models-pin-up-to-date).
+[CI.md](CI.md#keeping-the-models-pin-up-to-date).
 
 > [!NOTE]
 > Submitting a model requires no change in this repository. CI synthesises

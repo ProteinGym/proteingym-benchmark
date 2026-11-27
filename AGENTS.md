@@ -4,6 +4,7 @@ ProteinGym2 benchmark: DVC pipelines that benchmark the model zoo, and a website
 
 - [README.md](README.md) – overview, datasets, running the benchmark, CI, website.
 - [CONTRIBUTING.md](CONTRIBUTING.md) – submission policy, pipeline details, local CI reproduction, website development.
+- [CI.md](CI.md) – how the GitHub Actions workflows and the models-pin automation work, and the tokens they need.
 - [proteingym-models README](https://github.com/ProteinGym/proteingym-models#readme) – model structure, model card fields, the evedesign runner, Dockerfile.
 - [docs/metric.md](docs/metric.md) – how metrics are computed and added.
 - [scripts/README.md](scripts/README.md) – helper scripts and website unit tests.

@@ -5,7 +5,7 @@ name: bump-models-pin
 # lists derived from the model cards, and opens a pull request rather than
 # pushing to main, so validate-model.yml runs the new zoo before deploy.yml
 # republishes the website from it. Setup, and the proteingym-models side of
-# repository_dispatch, are in CONTRIBUTING.md, "Keeping the models pin up to date".
+# repository_dispatch, are in CI.md, "Keeping the models pin up to date".
 
 on:
   schedule:
@@ -29,7 +29,7 @@ jobs:
     env:
       # A pull request opened with the default GITHUB_TOKEN cannot trigger other
       # workflows, so the bump would arrive with no CI at all. MODELS_BUMP_TOKEN
-      # is a PAT that gets around that; CONTRIBUTING.md says what it needs.
+      # is a PAT that gets around that; CI.md says what it needs.
       GH_TOKEN: ${{ secrets.MODELS_BUMP_TOKEN || secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
@@ -47,7 +47,7 @@ jobs:
       - name: Bump the pin and open a pull request
         run: |
           set -euo pipefail
-          branch=chore/bump-models-pin
+          branch=__ci_bump_models_pin__
 
           before=$(git rev-parse HEAD:models)
           git submodule update --init --remote models  # .gitmodules sets branch = main
