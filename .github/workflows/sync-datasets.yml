@@ -5,25 +5,42 @@ on:
   schedule:
     - cron: '0 */6 * * *'
 
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-datasets
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # the rebase below needs history; checkout is shallow by default
+          fetch-depth: 0
 
       - name: Download manifests.json from Hugging Face
         run: |
-          # histograms.json is not fetched: nothing produces one, so asking
-          # 404s and fails the job. Restore the pair, and the commit_hash check
-          # that went with it, once generate_metadata.py emits histograms.
+          # Only manifests.json: nothing publishes histograms.json, so asking
+          # for it 404s. Fetch both, and check their commit_hash matches, once
+          # generate_metadata.py emits it.
           curl -fsSL -o static/manifests.json \
             https://huggingface.co/datasets/ProteinGym/ProteinGym2.0/raw/metadata/manifests.json
 
       - name: Commit and push if changed
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add static/manifests.json
-          git diff --staged --quiet || git commit -m "chore: sync datasets from Hugging Face"
+          if git diff --staged --quiet; then
+            echo "::notice::manifests.json is unchanged"
+            exit 0
+          fi
+          git commit -m "chore: sync datasets from Hugging Face"
+          # main moves between the checkout and the push often enough to matter
+          git pull --rebase origin main
           git push
