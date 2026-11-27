@@ -3,7 +3,7 @@
   import { base } from "$app/paths";
   import { page } from "$app/stores";
   import { modelsStore } from "$lib/stores/models";
-  import { marked } from "marked";
+  import { renderMarkdown } from "$lib/markdown";
 
   const models = $derived($modelsStore);
 
@@ -75,8 +75,9 @@
     <main class="max-w-4xl mx-auto px-6 py-8">
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
         <div class="prose prose-sm max-w-none">
+          <!-- renderMarkdown escapes the raw HTML a submitted card may carry -->
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-          {@html marked(model.content)}
+          {@html renderMarkdown(model.content)}
         </div>
       </div>
     </main>

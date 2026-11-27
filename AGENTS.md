@@ -55,7 +55,7 @@ python -m scripts.generate_models_list                # regenerate models.json f
 python -m scripts.generate_models_list --check        # fail if the lists have drifted
 cd models/<model> && uv run pytest                    # model unit tests
 npm install && npm run dev                            # website
-npm run check && npm run lint                         # type check + lint (lint is red on main)
+npm run check && npm run lint                         # type check + lint (gated by CI)
 node scripts/normalize.test.ts && node scripts/stats.test.ts   # website stats tests
 ```
 

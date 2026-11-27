@@ -23,8 +23,14 @@ export function tooltip(node: Element, text: string) {
     el.textContent = text;
     el.hidden = false;
     // keep it on screen: flip to the other side of the pointer near the right/bottom edge
-    const x = clientX + OFFSET + el.offsetWidth > innerWidth ? clientX - OFFSET - el.offsetWidth : clientX + OFFSET;
-    const y = clientY + OFFSET + el.offsetHeight > innerHeight ? clientY - OFFSET - el.offsetHeight : clientY + OFFSET;
+    const x =
+      clientX + OFFSET + el.offsetWidth > innerWidth
+        ? clientX - OFFSET - el.offsetWidth
+        : clientX + OFFSET;
+    const y =
+      clientY + OFFSET + el.offsetHeight > innerHeight
+        ? clientY - OFFSET - el.offsetHeight
+        : clientY + OFFSET;
     el.style.left = `${Math.max(4, x)}px`;
     el.style.top = `${Math.max(4, y)}px`;
   };

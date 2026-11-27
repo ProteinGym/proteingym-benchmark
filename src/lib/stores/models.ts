@@ -30,7 +30,8 @@ function createModelsStore() {
           // Example: "# Title\nThis is the overview\nMore text" -> captures "This is the overview"
           // Example: "  \nFirst paragraph here\nSecond line" -> captures "First paragraph here"
           // Example: "> [!WARNING]\n> Alert text\nFirst paragraph" -> captures "First paragraph"
-          const overviewRegex = /^(?:#+[^\n]*\n+|>\s*\[!.*?\][\s\S]*?(?=\n(?!>)|\n#|$)|\s)*(.*?)(?=\n|$)/s;
+          const overviewRegex =
+            /^(?:#+[^\n]*\n+|>\s*\[!.*?\][\s\S]*?(?=\n(?!>)|\n#|$)|\s)*(.*?)(?=\n|$)/s;
           const overviewMatch = content.match(overviewRegex);
           const overview = overviewMatch?.[1] || "";
 

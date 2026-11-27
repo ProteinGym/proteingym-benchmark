@@ -1,8 +1,5 @@
 name: checks
 
-# `npm run lint` is absent on purpose: prettier and eslint both fail on code
-# already on main. Add each gate in the pull request that clears it.
-
 on:
   pull_request:
     branches: main
@@ -53,6 +50,9 @@ jobs:
 
       - name: Type check
         run: npm run check
+
+      - name: Lint
+        run: npm run lint
 
       - name: Statistics unit tests
         run: |

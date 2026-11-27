@@ -4,7 +4,12 @@
 // Abramowitz & Stegun 7.1.26, |error| < 1.5e-7.
 function normalCdf(z: number): number {
   const t = 1 / (1 + 0.3275911 * (Math.abs(z) / Math.SQRT2));
-  const poly = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
+  const poly =
+    t *
+    (0.254829592 +
+      t *
+        (-0.284496736 +
+          t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
   const erf = 1 - poly * Math.exp(-(z * z) / 2);
   return z >= 0 ? (1 + erf) / 2 : (1 - erf) / 2;
 }
@@ -17,7 +22,9 @@ export function studentizedRangeCdf(q: number, k: number): number {
   let sum = 0;
   for (let i = 0; i <= steps; i++) {
     const z = -8 + i * h;
-    const f = Math.exp(-(z * z) / 2) / Math.sqrt(2 * Math.PI) * (normalCdf(z + q) - normalCdf(z)) ** (k - 1);
+    const f =
+      (Math.exp(-(z * z) / 2) / Math.sqrt(2 * Math.PI)) *
+      (normalCdf(z + q) - normalCdf(z)) ** (k - 1);
     sum += f * (i === 0 || i === steps ? 1 : i % 2 ? 4 : 2);
   }
   return Math.min(1, (k * sum * h) / 3);
@@ -52,7 +59,10 @@ export function meanRanks(blocks: number[][]): number[] {
 
 /** Nemenyi critical difference: two models differ at level alpha iff |ΔR| > CD. */
 export function criticalDifference(k: number, n: number, alpha = 0.05): number {
-  return (studentizedRangeQuantile(1 - alpha, k) / Math.SQRT2) * Math.sqrt((k * (k + 1)) / (6 * n));
+  return (
+    (studentizedRangeQuantile(1 - alpha, k) / Math.SQRT2) *
+    Math.sqrt((k * (k + 1)) / (6 * n))
+  );
 }
 
 /**
@@ -60,7 +70,12 @@ export function criticalDifference(k: number, n: number, alpha = 0.05): number {
  * Pairs are resampled together (same units for both models); the RNG is seeded so
  * the interval doesn't change between renders.
  */
-export function pairedDeltaCI(a: number[], b: number[], reps = 10000, seed = 1) {
+export function pairedDeltaCI(
+  a: number[],
+  b: number[],
+  reps = 10000,
+  seed = 1,
+) {
   const d = a.map((v, i) => v - b[i]);
   const n = d.length;
   // mulberry32

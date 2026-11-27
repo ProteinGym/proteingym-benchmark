@@ -13,17 +13,17 @@
     try {
       await modelsStore.load();
     } catch (e) {
-      console.error('Failed to load models:', e);
+      console.error("Failed to load models:", e);
     }
     try {
       await datasetsStore.load();
     } catch (e) {
-      console.error('Failed to load datasets:', e);
+      console.error("Failed to load datasets:", e);
     }
     try {
       await benchmarkStore.load();
     } catch (e) {
-      console.error('Failed to load benchmark:', e);
+      console.error("Failed to load benchmark:", e);
     }
   });
 </script>

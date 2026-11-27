@@ -290,7 +290,7 @@ Each model is tested against the best separately, with no correction for compari
               <th class="w-0 px-2 py-3 text-right" aria-sort={ariaSort(modelSort.key === 'rank', modelSort.asc)}>
                 {@render sortHeader('Mean rank', modelSort.key === 'rank', modelSort.asc, () => (modelSort = toggleSort(modelSort, 'rank', true)), 'right')}
               </th>
-              {#each perPhenotype as p, i (p.phenotype)}
+              {#each perPhenotype as p (p.phenotype)}
                 <th class="px-2 py-3 text-right border-l border-gray-200" aria-sort={ariaSort(modelSort.key === phenoKey(p.phenotype), modelSort.asc)}>
                   {@render sortHeader(p.phenotype, modelSort.key === phenoKey(p.phenotype), modelSort.asc, () => (modelSort = toggleSort(modelSort, phenoKey(p.phenotype), false)), 'right')}
                   <span class="block font-normal normal-case tracking-normal text-gray-400">{p.units} {unitLabel}</span>

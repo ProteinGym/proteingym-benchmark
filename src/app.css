@@ -70,7 +70,9 @@ details[open]::details-content {
 
 @media (prefers-reduced-motion: reduce) {
   details::details-content {
-    transition: opacity 150ms ease, content-visibility 150ms allow-discrete;
+    transition:
+      opacity 150ms ease,
+      content-visibility 150ms allow-discrete;
   }
   button:not(:disabled):active,
   [role="button"]:active {

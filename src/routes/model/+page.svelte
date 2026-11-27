@@ -1,8 +1,8 @@
 <script lang="ts">
   import { base } from "$app/paths";
   import { modelsStore } from "$lib/stores/models";
-  import { marked } from "marked";
-  import Pagination from '$lib/components/Pagination.svelte';
+  import { renderMarkdown } from "$lib/markdown";
+  import Pagination from "$lib/components/Pagination.svelte";
 
   const modelsPerPage = 12;
 
@@ -15,8 +15,14 @@
     searchQuery
       ? models.filter((model) => {
           const query = searchQuery.toLowerCase();
-          const name = (typeof model.frontmatter.name === "string" ? model.frontmatter.name : "").toLowerCase();
-          const tags = (model.frontmatter.tags || []).map((t: string) => t.toLowerCase()).join(" ");
+          const name = (
+            typeof model.frontmatter.name === "string"
+              ? model.frontmatter.name
+              : ""
+          ).toLowerCase();
+          const tags = (model.frontmatter.tags || [])
+            .map((t: string) => t.toLowerCase())
+            .join(" ");
           return name.includes(query) || tags.includes(query);
         })
       : models,
@@ -42,27 +48,27 @@
 <div class="max-w-7xl mx-auto px-6 mt-6">
   <div class="flex relative max-w-xs">
     <div class="absolute top-2.5 left-2">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      class="h-4 w-4 text-gray-500"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke-width="1.5"
-      stroke="currentColor"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-      />
-    </svg>
-  </div>
-  <input
-    bind:value={searchQuery}
-    class="w-full bg-white text-base text-gray-700 pl-8 rounded-md border border-gray-200 h-9 pr-8 shadow-sm focus:outline-none focus:ring-2 focus:ring-accent-600/30 focus:border-accent-600"
-    type="text"
-    placeholder="Filter by model name or tags"
-  />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-4 w-4 text-gray-500"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+        />
+      </svg>
+    </div>
+    <input
+      bind:value={searchQuery}
+      class="w-full bg-white text-base text-gray-700 pl-8 rounded-md border border-gray-200 h-9 pr-8 shadow-sm focus:outline-none focus:ring-2 focus:ring-accent-600/30 focus:border-accent-600"
+      type="text"
+      placeholder="Filter by model name or tags"
+    />
   </div>
 </div>
 
@@ -76,7 +82,9 @@
       class="group bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:border-accent-600 hover:bg-accent-50 active:bg-accent-100 active:scale-[0.98] motion-reduce:active:scale-100 transition-[background-color,border-color,box-shadow,scale] duration-150 p-6 flex flex-col"
     >
       <div class="mb-4">
-        <h2 class="text-xl font-semibold text-gray-900 group-hover:text-accent-800 transition-colors duration-150 mb-2">
+        <h2
+          class="text-xl font-semibold text-gray-900 group-hover:text-accent-800 transition-colors duration-150 mb-2"
+        >
           {model.frontmatter.name}
         </h2>
         {#if model.frontmatter.tags}
@@ -94,9 +102,10 @@
         class="prose prose-sm max-w-none text-gray-600 overflow-hidden flex-1"
       >
         <div class="line-clamp-6">
-          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           <!-- the whole card is a link, so drop links inside the preview (no nested <a>) -->
-          {@html (marked(model.overview) as string).replace(/<\/?a\b[^>]*>/g, "")}
+          <!-- renderMarkdown escapes raw HTML; these tags are markdown-generated -->
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html renderMarkdown(model.overview).replace(/<\/?a\b[^>]*>/g, "")}
         </div>
       </div>
     </a>
@@ -107,4 +116,4 @@
   {/each}
 </main>
 
-<Pagination bind:currentPage {totalPages}/>
+<Pagination bind:currentPage {totalPages} />
