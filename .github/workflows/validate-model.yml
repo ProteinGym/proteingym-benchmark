@@ -67,8 +67,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           path: models
           fetch-depth: 0
-          # A model vendoring weights through LFS would build from pointers.
-          lfs: true
 
       # ------------------------------------------------------------ environment
       - uses: actions/setup-python@v4
@@ -155,6 +153,21 @@ jobs:
           else
             echo "Models to validate: $changed"
           fi
+
+      # kermut and pkermut vendor their upstream sources as LFS zips, and a
+      # pointer reaches the build as "not a zip file". Only the models being
+      # built are pulled: the whole zoo is ~88 MB of LFS per run.
+      - name: Fetch the LFS objects of the models being validated
+        if: steps.scope.outputs.changed_models != 'NONE'
+        env:
+          CHANGED_MODELS: ${{ steps.scope.outputs.changed_models }}
+        run: |
+          set -euo pipefail
+          patterns=""
+          for model_name in ${CHANGED_MODELS//,/ }; do
+            patterns="${patterns:+$patterns,}$model_name/**"
+          done
+          git -C models lfs pull --include="$patterns"
 
       # ---------------------------------------------------- disk and datasets
       - name: Reclaim runner disk
