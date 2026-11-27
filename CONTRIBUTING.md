@@ -142,34 +142,12 @@ dvc repro benchmark/zero_shot/dvc.yaml --single-item
 
 ### CI
 
-The [validate-model.yml](.github/workflows/validate-model.yml) workflow is a
-reusable workflow. A pull request in
-[proteingym-models](https://github.com/ProteinGym/proteingym-models) calls it;
-it also runs on pull requests here. It:
-
-1. checks this repository out at `main` and overlays the submitted models at
-   `models/` (for a pull request here, it uses the `models` submodule instead),
-2. works out which model folders the pull request changed. A pull request here
-   that touches `benchmark/`, `scripts/`, `requirements.txt` or the submodule pin
-   validates a representative pair (`blosum62` + `pls`) instead; the
-   `validate-all-models` label forces the full sweep,
-3. replaces `datasets.json` with the dummy dataset in
-   [ci_datasets.json](.github/workflows/ci_datasets.json),
-4. then, **for one model at a time**: builds its image (or pulls it from the
-   GitHub Container Registry cache when the folder's content hash is unchanged;
-   fork PRs always build), **synthesises a single-model `models.json` from its
-   card** with [scripts/generate_models_list.py](scripts/generate_models_list.py),
-   runs `dvc repro`, and deletes the image before the next model. Building every
-   image before running anything exhausts the runner's disk,
-5. posts `benchmark/metrics.csv` as a PR comment, failing if any model failed.
-
-Because step 4 reads the card rather than a checked-in list, a new model is
-picked up automatically — you do not add it to `models.json` anywhere. The card
-must carry a `name` and a `zero-shot` or `supervised` tag; CI fails loudly if it
-does not.
-
-Scores on the dummy dataset are meaningless. CI only proves the model builds,
-runs and produces a prediction set the metric step can score.
+Pull requests here and in proteingym-models are validated by
+[validate-model.yml](.github/workflows/validate-model.yml), which builds and
+runs one model at a time against a dummy dataset. Scores on it are meaningless;
+CI only proves the model builds, runs and produces a prediction set the metric
+step can score. See [CI.md](CI.md) for how the workflows and the models-pin
+automation work.
 
 ### How to pass CI
 

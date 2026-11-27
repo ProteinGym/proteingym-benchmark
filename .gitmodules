@@ -1,3 +1,7 @@
 [submodule "models"]
 	path = models
 	url = https://github.com/ProteinGym/proteingym-models.git
+	# Which branch `git submodule update --remote` follows. The committed pin is
+	# still an exact commit -- a submodule cannot hold a branch -- so this only
+	# says what to fast-forward it *to*. bump-models-pin.yml relies on it.
+	branch = main

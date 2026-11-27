@@ -1,0 +1,90 @@
+name: bump-models-pin
+
+# A submodule records one exact commit, so a merge in proteingym-models never
+# reaches this repository on its own. This fast-forwards the pin, regenerates the
+# lists derived from the model cards, and opens a pull request rather than
+# pushing to main, so validate-model.yml runs the new zoo before deploy.yml
+# republishes the website from it. Setup, and the proteingym-models side of
+# repository_dispatch, are in CI.md, "Keeping the models pin up to date".
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  repository_dispatch:
+    types: [models-main-updated]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Never race two bumps onto the one branch, which is force-pushed.
+concurrency:
+  group: bump-models-pin
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    env:
+      # A pull request opened with the default GITHUB_TOKEN cannot trigger other
+      # workflows, so the bump would arrive with no CI at all. MODELS_BUMP_TOKEN
+      # is a PAT that gets around that; CI.md says what it needs.
+      GH_TOKEN: ${{ secrets.MODELS_BUMP_TOKEN || secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Unshallow, so the pull request body can list the submodule commits.
+          fetch-depth: 0
+          submodules: true
+          # Pushes the branch too, so a re-bump re-triggers validation.
+          token: ${{ secrets.MODELS_BUMP_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Bump the pin and open a pull request
+        run: |
+          set -euo pipefail
+          branch=__ci_bump_models_pin__
+
+          before=$(git rev-parse HEAD:models)
+          git submodule update --init --remote models  # .gitmodules sets branch = main
+          after=$(git -C models rev-parse HEAD)
+          if [ "$before" = "$after" ]; then
+            echo "::notice::the pin is already at ${after:0:7}; nothing to do"
+            exit 0
+          fi
+
+          pip install -r requirements.txt
+          # Fails the run, rather than the pin, on a card the new zoo broke: no
+          # name, no game tag, or an id another card already uses.
+          python -m scripts.generate_models_list
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add models benchmark/*/models.json
+          git commit -m "chore: bump the models submodule to ${after:0:7}"
+          # Force: the branch is this workflow's alone, so an older bump nobody
+          # merged is superseded rather than merged into.
+          git push -f origin "$branch"
+
+          cat > "$RUNNER_TEMP/body.md" <<EOF
+          Fast-forwards models ${before:0:7} -> ${after:0:7}, the current tip of
+          proteingym-models' main, and regenerates the lists derived from its cards.
+
+          Model-zoo commits pulled in (newest first, at most 50):
+
+          $(git -C models log --oneline --no-decorate -n 50 "$before..$after" | sed 's/^/- /')
+
+          ---
+          Opened by bump-models-pin.yml. The pin change makes validate-model.yml
+          build and run blosum62 + pls against the new zoo; add the
+          validate-all-models label for a full sweep.
+          EOF
+
+          title="chore: bump the models submodule to ${after:0:7}"
+          gh pr create --base main --head "$branch" --title "$title" --body-file "$RUNNER_TEMP/body.md" \
+            || gh pr edit "$branch" --title "$title" --body-file "$RUNNER_TEMP/body.md"

@@ -4,6 +4,7 @@ ProteinGym2 benchmark: DVC pipelines that benchmark the model zoo, and a website
 
 - [README.md](README.md) – overview, datasets, running the benchmark, CI, website.
 - [CONTRIBUTING.md](CONTRIBUTING.md) – submission policy, pipeline details, local CI reproduction, website development.
+- [CI.md](CI.md) – how the GitHub Actions workflows and the models-pin automation work, and the tokens they need.
 - [proteingym-models README](https://github.com/ProteinGym/proteingym-models#readme) – model structure, model card fields, the evedesign runner, Dockerfile.
 - [docs/metric.md](docs/metric.md) – how metrics are computed and added.
 - [scripts/README.md](scripts/README.md) – helper scripts and website unit tests.
@@ -34,6 +35,11 @@ ProteinGym2 benchmark: DVC pipelines that benchmark the model zoo, and a website
   pull requests here it validates a representative pair (`blosum62` + `pls`) unless the
   `validate-all-models` label is set. It builds, runs and prunes one model at a time —
   all 24 images at once exhaust a runner's disk.
+- The `models` pin is an exact commit (a submodule cannot hold a branch).
+  `.github/workflows/bump-models-pin.yml` fast-forwards it to proteingym-models' `main`,
+  regenerates `models.json` and opens a pull request — never a push to `main`, so the new
+  zoo is validated before the website is rebuilt from it. `.gitmodules` carries
+  `branch = main` for `git submodule update --remote`.
 - Images are tagged `<model-folder>:latest`; the model card is baked into the image at
   `/opt/program/README.md` and predictions are written to `/opt/program/output`.
 - Models must run offline: weights are downloaded at Docker build time.
