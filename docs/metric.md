@@ -34,8 +34,9 @@ def metric_<name>(context: DatasetScoringContext) -> float:
     )
 ```
 
-Open the PR against proteingym-base. This repository installs it from its `main`
-branch (see [requirements.txt](../requirements.txt)).
+Open the PR against proteingym-base. This repository installs an exact PyPI
+release (see [requirements.txt](../requirements.txt)), so a new metric needs a
+release and a pin bump here and in every model's `pyproject.toml`.
 
 ### Step 2: Add the metric to `default.yaml`
 
