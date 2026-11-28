@@ -109,9 +109,14 @@ export function summarize(
 }
 
 // Size family: ESM2_8M_UR50D and ESM2_3B_UR50D both belong to ESM2_UR50D.
-// SaProt variants also differ in structure source (AF2 / PDB / AFDB), so they collapse to one family.
+/** Families whose variants differ in capacity but carry no `_<num>M/B` suffix to strip. */
+const PREFIX_FAMILIES: [RegExp, string][] = [
+  [/^SaProt/i, "SaProt"], // also differ in structure source (AF2 / PDB / AFDB)
+  [/^ProSST/i, "ProSST"], // _20 .. _4096 are structure-token vocabulary sizes, not parameter counts
+  [/^Tranception/i, "Tranception"], // Small / Medium / Large
+];
 export const sizeFamily = (model: string) =>
-  /^SaProt/i.test(model) ? "SaProt" : model.replace(/_\d+(\.\d+)?[MB](?=_|$)/i, "");
+  PREFIX_FAMILIES.find(([re]) => re.test(model))?.[1] ?? model.replace(/_\d+(\.\d+)?[MB](?=_|$)/i, "");
 
 /** Keep the first (best, given best-first input) member of each size family. */
 export const bestSizes = <T extends { model: string }>(ordered: T[]) =>
@@ -120,9 +125,11 @@ export const bestSizes = <T extends { model: string }>(ordered: T[]) =>
 // FAMILY_COLORS from the rank-correlation notebook, desaturated to 75% like sns.desaturate(c, 0.75).
 // shortcut: model -> family by name prefix; move to model README frontmatter once more models land.
 export const FAMILIES = [
-  { label: "Sequence-structure", color: "#156591", match: /^(RSALOR|AIDO)/i },
-  { label: "MSA", color: "#5CBAD0", match: /^(EVCOUPLINGS|EVmutation|GEMME|Site)/i },
-  { label: "pLM", color: "#EDC77D", match: /^(ESM2|ESMC|ESM1|ProGen|Tranception)/i },
-  { label: "Structure", color: "#E86861", match: /^(ProteinMPNN|MPNN|ESM-?IF|SaProt)/i },
+  { label: "Sequence-structure", color: "#156591", match: /^(RSALOR|AIDO|S3F|structuredca)/i },
+  { label: "MSA", color: "#5CBAD0", match: /^(EVCOUPLINGS|EVmutation|GEMME|Site|EVE|PoET|MSA)/i },
+  { label: "pLM", color: "#EDC77D", match: /^(ESM2|ESMC|ESM1|ProGen|Tranception|S2F)/i },
+  // ESM[-_]?IF: the metrics use ESM_IF1, the model folder esm-if1.
+  { label: "Structure", color: "#E86861", match: /^(ProteinMPNN|PottsMPNN|MPNN|ESM[-_]?IF|SaProt|ProSST)/i },
+  { label: "Baseline", color: "#9C8AC0", match: /^BLOSUM/i },
 ];
 export const familyColor = (model: string) => FAMILIES.find((f) => f.match.test(model))?.color ?? "#AAAAAA";
